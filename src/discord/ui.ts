@@ -6,6 +6,7 @@ import { describeRecipe, formatDate, formatWhen } from "../time/format.ts";
 import { QUICK_OPTIONS } from "../time/quick.ts";
 import { MINUTE, civilDay, fmtHHMM, startOfDay, wallOf } from "../time/tz.ts";
 import type { OccView } from "../db/types.ts";
+import { styleSummary } from "../personality/styleReport.ts";
 import { parseRecipe } from "../service.ts";
 import type { ActionRow, Button, MessageBody } from "./types.ts";
 
@@ -69,14 +70,21 @@ export function reminderMessage(a: {
     );
   }
   if (a.flavor) content += `
--# ${a.flavor}`;
+${subtext(a.flavor)}`;
   return { content, components: [row(...buttons)], allowed_mentions: { users: [ownerId] } };
 }
+
+/** Мелкий серый текст Discord («-# …»): каждая строка отдельно, чтобы манга-звук второй строкой тоже был мелким. */
+export const subtext = (text: string): string =>
+  text
+    .split("\n")
+    .map((l) => (l.startsWith("-# ") ? l : `-# ${l}`))
+    .join("\n");
 
 /** После закрытия кнопкой «Готово» сообщение остаётся записью, без кнопок. */
 export function doneMessage(title: string, ch: Character = "neutral", seed = 0, line: string | null = null): MessageBody {
   const extra = line ?? tired(ch, "done", seed); // реплика настроения главнее прежнего «характера»
-  return { content: `Готово: ${title}${extra ? `\n-# ${extra}` : ""}`, components: [], allowed_mentions: { parse: [] } };
+  return { content: `Готово: ${title}${extra ? `\n${subtext(extra)}` : ""}`, components: [], allowed_mentions: { parse: [] } };
 }
 
 /** Обычный текст плюс (для характера «горничная») короткая фраза через пробел. */
@@ -310,6 +318,7 @@ export function settingsMessage(s: AppSettings, now: number, dmOn: boolean): Mes
     `График света (Днепр): ${s.lightGroup ? `группа ${s.lightGroup}` : "выкл"}`,
     `Характер: ${CHARACTER_LABELS[s.character]}`,
     `Настроение горничной: ${s.moodOn ? "вкл (меняется от того, как вы выполняете дела; /mood)" : "выкл"}`,
+    `Стиль речи: ${styleSummary(s.style)}`,
   ];
   const preset = "preset" in s.defaultLadder ? s.defaultLadder.preset : "";
   return {

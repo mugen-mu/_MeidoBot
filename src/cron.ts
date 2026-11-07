@@ -87,7 +87,7 @@ export async function runCron(d: CronDeps): Promise<CronReport> {
 
   // настроение горничной (если включено в /settings): состояние читаем лениво, только когда оно понадобится
   const mood =
-    s.moodOn && owner ? new MoodSession({ repo, userId: owner, ctx: makeCtx(now, s), rand: d.rand }) : null;
+    s.moodOn && owner ? new MoodSession({ repo, userId: owner, ctx: makeCtx(now, s), rand: d.rand, style: s.style }) : null;
 
   // ---------- 1. созревшие срабатывания ----------
   const ops: Op[] = [];

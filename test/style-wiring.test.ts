@@ -1,0 +1,154 @@
+// Аниме-слой в боте (Х2): /style, /hints, /glossary, настройки, слова копятся в базе, манга-звук отдельной мелкой строкой.
+import { beforeEach, describe, expect, it } from "vitest";
+import { runCron } from "../src/cron.ts";
+import { countedApi } from "../src/discord/api.ts";
+import { COMMANDS } from "../src/discord/commands.ts";
+import { type Interaction, handleInteraction } from "../src/discord/interactions.ts";
+import { MINUTE } from "../src/time/tz.ts";
+import { NOW } from "./helpers.ts";
+import { CH_REMIND, OWNER, World } from "./world.ts";
+
+const min = (n: number) => NOW + n * MINUTE;
+
+let w: World;
+let pending: Promise<unknown>[];
+let seq = 0;
+
+async function run(now: number) {
+  const repo = w.repo(100);
+  return runCron({
+    repo,
+    api: countedApi(w.discord, repo.counter),
+    now,
+    env: {},
+    rand: () => 0,
+    fetchFn: (async () => new Response("down", { status: 503 })) as unknown as typeof fetch,
+  });
+}
+
+async function call(i: Partial<Interaction>, now = NOW): Promise<any> {
+  const r = await handleInteraction(
+    { id: String(++seq), token: "tok", application_id: "app1", guild_id: "g1", channel_id: "c1", member: { user: { id: OWNER } }, type: 2, ...i } as Interaction,
+    { repo: w.repo(100), api: w.discord, now, env: {}, rand: () => 0, defer: (p) => void pending.push(p) },
+  );
+  await Promise.all(pending.splice(0));
+  return r;
+}
+const click = (custom_id: string, now = NOW) => call({ type: 3, data: { custom_id }, message: { id: "m1" } }, now);
+const cmd = (name: string, options: { name: string; value: string | number | boolean }[] = [], now = NOW) =>
+  call({ type: 2, data: { name, type: 1, options } }, now);
+const row = () => w.d1.q<Record<string, any>>("SELECT * FROM mood_state WHERE user_id = ?", OWNER)[0];
+
+beforeEach(async () => {
+  w = new World();
+  pending = [];
+  await w.seed({ today: true, intake: true, settings: { summary_morning: "off", summary_evening: "off", weekly: "off" } });
+});
+
+describe("команды стиля", () => {
+  it("зарегистрированы /style, /hints, /glossary с нужными параметрами", () => {
+    const style = COMMANDS.find((c) => c.name === "style") as { options: { name: string }[] };
+    expect(style.options.map((o) => o.name)).toEqual(["level", "script", "sfx", "honorifics", "kaomoji"]);
+    expect(COMMANDS.find((c) => c.name === "hints")).toBeTruthy();
+    expect(COMMANDS.find((c) => c.name === "glossary")).toBeTruthy();
+    expect(COMMANDS.length).toBeLessThanOrEqual(100);
+  });
+
+  it("/style без параметров: показывает умолчания ТЗ и живые примеры, видно только владельцу", async () => {
+    const r = await cmd("style");
+    expect(r.data.flags).toBe(64);
+    const c = r.data.content as string;
+    expect(c).toContain("Уровень: 2 — фансаб-стиль");
+    expect(c).toContain("кириллица");
+    expect(c).toContain("Так это звучит сейчас:");
+    expect(c.split("\n").filter((l) => l.startsWith("• ")).length).toBe(3);
+  });
+
+  it("/style level:3 script:latin sfx:off: сохраняется в настройки и сразу видно в ответе", async () => {
+    const r = await cmd("style", [
+      { name: "level", value: 3 },
+      { name: "script", value: "latin" },
+      { name: "sfx", value: "off" },
+    ]);
+    expect(r.data.content).toContain("Изменено: уровень 3, письмо, манга-звуки");
+    expect(r.data.content).toContain("Уровень: 3 — полный отаку");
+    const s = (await w.settings()).style;
+    expect(s).toMatchObject({ level: 3, script: "latin", sfx: "off", hints: true });
+    expect((await cmd("settings")).data.content).toContain("Стиль речи: уровень 3, письмо: латиница");
+  });
+
+  it("/style honorifics:false kaomoji:on", async () => {
+    await cmd("style", [{ name: "honorifics", value: false }, { name: "kaomoji", value: "on" }]);
+    expect((await w.settings()).style).toMatchObject({ honorifics: false, kaomoji: "on" });
+  });
+
+  it("/hints: показать, выключить, включить", async () => {
+    expect((await cmd("hints")).data.content).toContain("включены");
+    expect((await cmd("hints", [{ name: "mode", value: "off" }])).data.content).toContain("выключены");
+    expect((await w.settings()).style.hints).toBe(false);
+    await cmd("hints", [{ name: "mode", value: "on" }]);
+    expect((await w.settings()).style.hints).toBe(true);
+  });
+
+  it("/glossary пуст, пока слов не было", async () => {
+    const r = await cmd("glossary");
+    expect(r.data.flags).toBe(64);
+    expect(r.data.content).toContain("Пока ни одного слова");
+  });
+});
+
+describe("слой в работе: cron и словарь", () => {
+  beforeEach(async () => {
+    await click("s_mood");
+  });
+
+  it("напоминание со стилем: слова копятся в базе, /glossary их показывает, суть по-русски", async () => {
+    await w.create("через 5 минут оплатить счёт");
+    await run(min(5));
+    const c = w.discord.live(CH_REMIND)[0].body.content as string;
+    expect(c).toContain("**Оплатить счёт**");
+    expect(c).toContain("Срок:");
+    const words = JSON.parse(row().style_data).words as Record<string, { u: number; l: number }>;
+    expect(Object.keys(words).length).toBeGreaterThan(0);
+    const g = (await cmd("glossary")).data.content as string;
+    expect(g).toContain("Слова Хару");
+    for (const id of Object.keys(words)) expect(words[id].u).toBe(1);
+    expect(g).toMatch(/• \*\*[^*]+\*\* — /u);
+  });
+
+  it("манга-звук идёт отдельной мелкой строкой (каждая строка с «-# »)", async () => {
+    await w.create("через 5 минут оплатить счёт");
+    await run(min(5));
+    const c = w.discord.live(CH_REMIND)[0].body.content as string;
+    const tail = c.split("\n").filter((l) => l.startsWith("-# "));
+    expect(tail.length).toBe(2); // фраза и манга-звук (rand=0: звук выпал)
+    expect(tail[1]).toBe("-# ハァ…");
+    for (const l of c.split("\n").slice(c.split("\n").findIndex((x) => x.startsWith("-# ")))) expect(l.startsWith("-# ")).toBe(true);
+  });
+
+  it("уровень 0: в напоминании ни японских слов, ни манга-звука, слов в словаре нет", async () => {
+    await cmd("style", [{ name: "level", value: 0 }]);
+    await w.create("через 5 минут оплатить счёт");
+    await run(min(5));
+    const c = w.discord.live(CH_REMIND)[0].body.content as string;
+    expect(c).not.toMatch(/[぀-ヿ]/u);
+    expect(c.split("\n").filter((l) => l.startsWith("-# ")).length).toBe(1);
+    expect(JSON.parse(row().style_data).words).toEqual({});
+  });
+
+  it("серьёзная тема: стиль не применяется вовсе", async () => {
+    await w.create("через 5 минут записаться к врачу");
+    await run(min(5));
+    const c = w.discord.live(CH_REMIND)[0].body.content as string;
+    expect(c).not.toMatch(/\n-# /);
+    expect(row()?.style_data ?? "{}").not.toContain("u");
+  });
+
+  it("/reset_mood сбрасывает и выученные слова", async () => {
+    await w.create("через 5 минут оплатить счёт");
+    await run(min(5));
+    expect(Object.keys(JSON.parse(row().style_data).words).length).toBeGreaterThan(0);
+    await cmd("reset_mood");
+    expect((await cmd("glossary")).data.content).toContain("Пока ни одного слова");
+  });
+});

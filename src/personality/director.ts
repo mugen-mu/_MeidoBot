@@ -5,6 +5,14 @@ import { type Repo, event, op } from "../db/repo.ts";
 import type { OccView, Op } from "../db/types.ts";
 import { type AppSettings, inQuietHours } from "../settings.ts";
 import { wallOf } from "../time/tz.ts";
+import {
+  STYLE_DEFAULT,
+  type StyleConfig,
+  type StyleState,
+  emptyStyleState,
+  parseStyleState,
+  renderStyled,
+} from "./animeStyle.ts";
 import { MOOD_CONFIG, type MoodConfig } from "./config.ts";
 import {
   type Mood,
@@ -52,6 +60,7 @@ interface Row {
   recent: string;
   last_drama_at: number | null;
   yandere_cleared: number;
+  style_data: string;
 }
 
 export function fromRow(r: Row, now: number): MoodState {
@@ -78,18 +87,19 @@ export function fromRow(r: Row, now: number): MoodState {
   };
 }
 
-export function saveOp(userId: string, s: MoodState): Op {
+export function saveOp(userId: string, s: MoodState, style: StyleState = emptyStyleState()): Op {
   return op(
     `INSERT INTO mood_state (user_id, affection, irritation, miss_streak, done_streak, last_activity, current_mood, mood_since,
-                             updated_at, idle_penalty, recent, last_drama_at, yandere_cleared)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                             updated_at, idle_penalty, recent, last_drama_at, yandere_cleared, style_data)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
      ON CONFLICT(user_id) DO UPDATE SET
        affection = excluded.affection, irritation = excluded.irritation, miss_streak = excluded.miss_streak,
        done_streak = excluded.done_streak, last_activity = excluded.last_activity, current_mood = excluded.current_mood,
        mood_since = excluded.mood_since, updated_at = excluded.updated_at, idle_penalty = excluded.idle_penalty,
-       recent = excluded.recent, last_drama_at = excluded.last_drama_at, yandere_cleared = excluded.yandere_cleared`,
+       recent = excluded.recent, last_drama_at = excluded.last_drama_at, yandere_cleared = excluded.yandere_cleared,
+       style_data = excluded.style_data`,
     userId, s.affection, s.irritation, s.missStreak, s.doneStreak, s.lastActivity, s.mood, s.moodSince,
-    s.updatedAt, s.idlePenalty, JSON.stringify(s.recent), s.lastDramaAt, s.yandereCleared ? 1 : 0,
+    s.updatedAt, s.idlePenalty, JSON.stringify(s.recent), s.lastDramaAt, s.yandereCleared ? 1 : 0, JSON.stringify(style),
   );
 }
 
@@ -102,17 +112,22 @@ export class MoodSession {
   readonly ctx: MoodCtx;
   readonly cfg: MoodConfig;
   readonly rand: () => number;
+  /** настройки аниме-слоя; без них — уровень 0 (обычный русский) */
+  readonly style: StyleConfig;
   /** до load() — null */
   state: MoodState | null = null;
+  /** какие слова словаря использованы (подсказки перевода, паузы, /glossary); живёт в строке настроения */
+  styleState: StyleState = emptyStyleState();
   private pending: Op[] = [];
   private dirty = false;
 
-  constructor(a: { repo: Repo; userId: string; ctx: MoodCtx; cfg?: MoodConfig; rand?: () => number }) {
+  constructor(a: { repo: Repo; userId: string; ctx: MoodCtx; cfg?: MoodConfig; rand?: () => number; style?: StyleConfig }) {
     this.repo = a.repo;
     this.userId = a.userId;
     this.ctx = a.ctx;
     this.cfg = a.cfg ?? MOOD_CONFIG;
     this.rand = a.rand ?? Math.random;
+    this.style = a.style ?? { ...STYLE_DEFAULT, level: 0 };
   }
 
   get loaded(): boolean {
@@ -124,6 +139,7 @@ export class MoodSession {
     if (this.state) return this.state;
     const row = await this.repo.first<Row>("SELECT * FROM mood_state WHERE user_id = ?", this.userId);
     this.state = row ? fromRow(row, this.ctx.now) : initialState(this.ctx.now, this.cfg);
+    this.styleState = row ? parseStyleState(row.style_data) : emptyStyleState();
     this.dirty = !row;
     this.apply({ type: "tick" });
     return this.state;
@@ -168,16 +184,29 @@ export class MoodSession {
     if (!p) return null;
     this.state = { ...st, recent: remember(st.recent, p.key, this.cfg), lastDramaAt: dramatic ? this.ctx.now : st.lastDramaAt };
     this.dirty = true;
-    return p.text;
+    // аниме-слой (Х2): поверх выбранной фразы; на уровне 0 это обычная подстановка без вставок
+    const r = renderStyled({
+      template: p.raw,
+      mood: mood ?? st.mood,
+      situation,
+      style: this.style,
+      state: this.styleState,
+      vars: { miss_count: st.missStreak, done_streak: st.doneStreak, ...vars },
+      rand: this.rand,
+      cfg: this.cfg,
+    });
+    this.styleState = r.state;
+    return r.text;
   }
 
   /** Снимок на случай неудачной отправки: откатить изменения этой сессии, чтобы не посчитать событие дважды. */
-  snapshot(): { state: MoodState | null; pending: number; dirty: boolean } {
-    return { state: this.state, pending: this.pending.length, dirty: this.dirty };
+  snapshot(): { state: MoodState | null; pending: number; dirty: boolean; styleState: StyleState } {
+    return { state: this.state, pending: this.pending.length, dirty: this.dirty, styleState: this.styleState };
   }
 
-  restore(snap: { state: MoodState | null; pending: number; dirty: boolean }): void {
+  restore(snap: { state: MoodState | null; pending: number; dirty: boolean; styleState: StyleState }): void {
     this.state = snap.state;
+    this.styleState = snap.styleState;
     this.pending = this.pending.slice(0, snap.pending);
     this.dirty = snap.dirty;
   }
@@ -185,7 +214,7 @@ export class MoodSession {
   /** Операции для записи: состояние (если менялось) и журнал переходов. Вызывать один раз перед repo.exec. */
   ops(): Op[] {
     const out = [...this.pending];
-    if (this.dirty && this.state) out.push(saveOp(this.userId, this.state));
+    if (this.dirty && this.state) out.push(saveOp(this.userId, this.state, this.styleState));
     this.pending = [];
     this.dirty = false;
     return out;

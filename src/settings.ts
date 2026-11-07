@@ -1,5 +1,6 @@
 // Настройки пользователя (таблица settings) и служебные значения (meta). Значения по умолчанию — только стартовые.
 import { type Character, parseCharacter } from "./flavor.ts";
+import { type StyleConfig, parseStyle } from "./personality/animeStyle.ts";
 import { DEFAULT_SPEC, type LadderSpec, parseSpec } from "./ladder.ts";
 import { DEFAULT_TZ, parseHHMM } from "./time/tz.ts";
 
@@ -31,11 +32,14 @@ export interface AppSettings {
   character: Character;
   /** настроение горничной («Характер 2»): выкл по умолчанию — тон нейтральный, как раньше */
   moodOn: boolean;
+  /** аниме-слой («Характер 2», Х2): уровень, письменность, манга-звуки, подсказки перевода */
+  style: StyleConfig;
 }
 
 export const SETTING_KEYS = [
   "tz", "default_ladder", "default_time", "quiet_enabled", "quiet_from", "quiet_to", "away_until",
   "summary_morning", "summary_evening", "weekly", "ch_remind", "ch_bot", "ch_today", "ch_forum", "ch_archive", "intake", "light", "character", "mood_on",
+  "style_level", "style_script", "style_sfx", "style_honorifics", "style_kaomoji", "hints_on",
 ] as const;
 
 function minutes(v: string | undefined, fallback: number | null): number | null {
@@ -81,6 +85,7 @@ export function readSettings(rows: { key: string; value: string }[]): AppSetting
     lightGroup: m.get("light") && m.get("light") !== "off" ? (m.get("light") as string) : null,
     character: parseCharacter(m.get("character")),
     moodOn: m.get("mood_on") === "1",
+    style: parseStyle(m),
   };
 }
 

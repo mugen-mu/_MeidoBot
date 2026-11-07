@@ -10,6 +10,8 @@ export interface PhraseVars {
   miss_count?: number;
   done_streak?: number;
   name?: string;
+  /** обращение для «зова» (запятая рядом, начало предложения); иначе user — аниме-слой ставит сюда «госюдзин-сама» */
+  userVoc?: string;
 }
 
 /** Короткий отпечаток текста фразы: по нему помним «последние 5», и он не ломается, когда пул пополняют. */
@@ -29,7 +31,13 @@ export function fill(text: string, vars: PhraseVars, cfg: MoodConfig = MOOD_CONF
   };
   // «{user}, …» в начале предложения подставляется с большой буквы: «Хозяин, …» (название дела {task} не трогаем)
   return text.replace(/\{(user|task|miss_count|done_streak|name)\}/gu, (_m, k: string, offset: number) => {
-    const v = map[k];
+    let v = map[k];
+    if (k === "user" && vars.userVoc !== undefined) {
+      const before = text.slice(0, offset);
+      const after = text.slice(offset + _m.length);
+      const sentenceStart = offset === 0 || /(?:[.!?…]|\*)\s+$/u.test(before);
+      if (/,\s*$/u.test(before) || (sentenceStart && /^(?:\s*$|\s*[,.!?…~])/u.test(after))) v = vars.userVoc;
+    }
     const atStart = k !== "task" && (offset === 0 || /(?:[.!?…]|\*)\s+$/u.test(text.slice(0, offset)));
     return atStart ? v.charAt(0).toUpperCase() + v.slice(1) : v;
   });
@@ -48,6 +56,8 @@ export function poolFor(mood: Mood, situation: Situation, bank: Phrases = PHRASE
 
 export interface Pick {
   text: string;
+  /** фраза из пула до подстановок: из неё аниме-слой собирает итоговый текст */
+  raw: string;
   /** отпечаток выбранной фразы (до подстановок) для списка последних */
   key: string;
 }
@@ -75,7 +85,7 @@ export function pickPhrase(a: {
     candidates = pool.length > 1 ? pool.filter((t) => fingerprint(t) !== last) : pool;
   }
   const text = candidates[Math.min(candidates.length - 1, Math.floor(a.rand() * candidates.length))];
-  return { text: fill(text, a.vars ?? {}, cfg), key: fingerprint(text) };
+  return { text: fill(text, a.vars ?? {}, cfg), raw: text, key: fingerprint(text) };
 }
 
 /** Добавить отпечаток к списку последних и оставить только N последних. */

@@ -8,6 +8,8 @@ import { MoodSession, makeCtx, recordDone, resetOps } from "../personality/direc
 import { MOODS, type Mood, isMood } from "../personality/moodEngine.ts";
 import { MOOD_CONFIG } from "../personality/config.ts";
 import { moodReport } from "../personality/report.ts";
+import { parseStyle, styleToSettings } from "../personality/animeStyle.ts";
+import { glossaryReport, styleReport } from "../personality/styleReport.ts";
 import { describeSpec, needsSnoozeQuestion, parseCustomSteps, parseSpec, type LadderSpec } from "../ladder.ts";
 import { fetchYasno, lightLines, normalizeGroup, nowLine } from "../light.ts";
 import { newPowerKey, readPower } from "../power.ts";
@@ -45,6 +47,7 @@ import {
   snoozedMessage,
   specKey,
   splitModal,
+  subtext,
   summModal,
   weekText,
   whenModal,
@@ -97,7 +100,7 @@ export async function handleInteraction(i: Interaction, ctx: HandlerCtx): Promis
   if (userId !== owner) return i.type === 4 ? { type: 8, data: { choices: [] } } : eph("Этот бот личный.");
 
   // настроение: любое действие хозяина (команда, кнопка, окно) — активность; состояние читаем, только если включено
-  const mood = new MoodSession({ repo: ctx.repo, userId: owner, ctx: makeCtx(ctx.now, s), rand: ctx.rand });
+  const mood = new MoodSession({ repo: ctx.repo, userId: owner, ctx: makeCtx(ctx.now, s), rand: ctx.rand, style: s.style });
   let returnLine: string | null = null;
   if (s.moodOn && (i.type === 2 || i.type === 3 || i.type === 5)) {
     await mood.load();
@@ -126,7 +129,7 @@ export async function handleInteraction(i: Interaction, ctx: HandlerCtx): Promis
   }
   const data = reply.data as { content?: string } | undefined;
   if (returnLine && data && typeof data.content === "string" && (reply.type === 4 || reply.type === 7)) data.content += `
--# ${returnLine}`;
+${subtext(returnLine)}`;
   return reply;
 }
 
@@ -198,6 +201,14 @@ async function onCommand(c: C): Promise<Reply> {
       await c.repo.exec(resetOps(c.owner));
       c.mood.state = null; // состояние сброшено: сессия больше ничего не пишет
       return eph("Готово: настроение, отношение и серии сброшены к начальным. Хару начинает с чистого листа.");
+    }
+    case "style":
+      return styleCommand(c);
+    case "hints":
+      return hintsCommand(c);
+    case "glossary": {
+      await c.mood.load();
+      return eph(glossaryReport({ state: c.mood.styleState, style: c.s.style }));
     }
     case "quiet":
       return eph(await quiet(c, opt(c, "hours")));
@@ -346,6 +357,40 @@ async function moodCommand(c: C): Promise<Reply> {
 ${moodReport({ state: c.mood.state!, enabled: c.s.moodOn })}`);
   }
   return eph(moodReport({ state: c.mood.state!, enabled: c.s.moodOn, greeting: c.mood.say("greeting") }));
+}
+
+/** /style: показать стиль речи или изменить (уровень, письмо, манга-звуки, обращения, каомодзи); в ответе — живые примеры. */
+async function styleCommand(c: C): Promise<Reply> {
+  const updates = new Map<string, string>();
+  const changed: string[] = [];
+  const set = (key: string, value: string, label: string) => {
+    updates.set(key, value);
+    changed.push(label);
+  };
+  const level = opt(c, "level");
+  if (level !== undefined) set("style_level", String(level), `уровень ${level}`);
+  const script = opt(c, "script");
+  if (script !== undefined) set("style_script", String(script), "письмо");
+  const sfx = opt(c, "sfx");
+  if (sfx !== undefined) set("style_sfx", String(sfx), "манга-звуки");
+  const honorifics = opt(c, "honorifics");
+  if (honorifics !== undefined) set("style_honorifics", honorifics ? "1" : "0", `обращения ${honorifics ? "вкл" : "выкл"}`);
+  const kaomoji = opt(c, "kaomoji");
+  if (kaomoji !== undefined) set("style_kaomoji", String(kaomoji), "каомодзи");
+  let style = c.s.style;
+  if (updates.size) {
+    await c.repo.exec([...updates].map(([k, v]) => setSetting(k, v)));
+    style = parseStyle(new Map([...styleToSettings(c.s.style), ...updates]));
+  }
+  return eph(styleReport({ style, rand: c.rand ?? Math.random, changed }));
+}
+
+/** /hints: подсказки перевода в скобках — включить, выключить или показать. */
+async function hintsCommand(c: C): Promise<Reply> {
+  const mode = opt(c, "mode");
+  if (mode === undefined) return eph(`Подсказки перевода: ${c.s.style.hints ? "включены" : "выключены"}. Они показываются первые 2 раза у каждого слова. Менять: /hints mode:выключить.`);
+  await c.repo.exec([setSetting("hints_on", mode === "on" ? "1" : "0")]);
+  return eph(mode === "on" ? "Подсказки перевода включены: новые слова будут с переводом в скобках (первые 2 раза)." : "Подсказки перевода выключены. Слова остаются в /glossary.");
 }
 
 /** /quiet: «горничная на выходном» — тот же режим, что «я в отъезде», но в часах. */
