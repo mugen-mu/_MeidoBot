@@ -254,7 +254,7 @@ export async function runCron(d: CronDeps): Promise<CronReport> {
           "SELECT COUNT(*) AS n FROM occurrences WHERE state = 'done' AND closed_reason = 'done' AND closed_at >= ?",
           now - 7 * 24 * 60 * MINUTE,
         );
-        content = weeklyText({ doneCount: row?.n ?? 0, items: list, now, tz: s.tz, ownerId: owner as string });
+        content = weeklyText({ doneCount: row?.n ?? 0, items: list, now, tz: s.tz, ownerId: owner as string, character: s.character });
       } else {
         let extra: string[] = [];
         if (s.lightGroup && room2(3)) {
@@ -266,7 +266,7 @@ export async function runCron(d: CronDeps): Promise<CronReport> {
             ? lightLines(kind === "evening" ? "tomorrow" : "today", s.lightGroup, light, localDate(kind === "evening" ? addDaysWall(now, 1, s.tz) : now, s.tz))
             : ["График света: не удалось получить данные (Yasno не отвечает)."];
         }
-        content = summaryText(kind, { items: list, now, tz: s.tz, ownerId: owner as string, extra });
+        content = summaryText(kind, { items: list, now, tz: s.tz, ownerId: owner as string, extra, character: s.character });
       }
       try {
         await api.postMessage(s.chRemind as string, { content, allowed_mentions: { users: [owner as string] } });
@@ -282,7 +282,7 @@ export async function runCron(d: CronDeps): Promise<CronReport> {
 
     // 2в. панель «Горит»: правим одно сообщение, раз в 5 минут и только если изменилась
     if (!away && s.chToday && Math.floor(now / MINUTE) % 5 === 0 && room2(3)) {
-      const text = panelText(await getItems(), now, s.tz);
+      const text = panelText(await getItems(), now, s.tz, s.character);
       const h = hash(text);
       if (meta.get("panel_hash") !== h) {
         const body = { content: text, allowed_mentions: { parse: [] } };

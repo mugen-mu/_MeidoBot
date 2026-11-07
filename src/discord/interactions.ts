@@ -3,6 +3,7 @@
 import { type Repo, setMeta, setSetting, updateOcc } from "../db/repo.ts";
 import type { OccView, Op } from "../db/types.ts";
 import { EMPTY_REPLY, EMPTY_SERIES_REPLY, NOT_RECURRING_REPLY, SECRET_REPLY, createFromText } from "../intake.ts";
+import { tired } from "../flavor.ts";
 import { describeSpec, needsSnoozeQuestion, parseCustomSteps, parseSpec, type LadderSpec } from "../ladder.ts";
 import { normalizeGroup } from "../light.ts";
 import { detectSecret } from "../secrets.ts";
@@ -141,9 +142,9 @@ async function onCommand(c: C): Promise<Reply> {
     case "every":
       return createReply(c, normalizeEvery(String(opt(c, "text") ?? "")), "slash", { requireRecurring: true });
     case "list":
-      return eph(listText(await c.repo.openMain(50), c.now, c.s.tz));
+      return eph(listText(await c.repo.openMain(50), c.now, c.s.tz, c.s.character));
     case "week":
-      return eph(weekText(await c.repo.openMain(100), c.now, c.s.tz));
+      return eph(weekText(await c.repo.openMain(100), c.now, c.s.tz, c.s.character));
     case "cancel": {
       const item = await c.repo.getItem(Number(opt(c, "id")));
       if (!item || item.archived_at) return eph("Такого дела нет (или оно уже закрыто). Номера — в /list.");
@@ -219,7 +220,7 @@ async function setup(c: C): Promise<Reply> {
           setSetting("intake", JSON.stringify([...intake])),
           setMeta("guild_id", guildId),
         ]);
-        text = `Готово. Каналы: <#${ids["напоминания"]}> (напоминания), <#${ids["бот"]}> (пишите сюда обычным текстом), <#${ids["сегодня"]}> (панель «Горит»).${created.length ? ` Создано: ${created.join(", ")}.` : " Все каналы уже были."}`;
+        text = `Готово. Каналы: <#${ids["напоминания"]}> (напоминания), <#${ids["бот"]}> (пишите сюда обычным текстом), <#${ids["сегодня"]}> (панель «Горит»).${created.length ? ` Создано: ${created.join(", ")}.` : " Все каналы уже были."}${tired(c.s.character, "setupDone") ? `\n-# ${tired(c.s.character, "setupDone")}` : ""}`;
       } catch {
         text = "Не получилось создать каналы. Проверьте, что у бота есть право «Управлять каналами», и повторите /setup.";
       }
@@ -296,7 +297,7 @@ async function onComponent(c: C): Promise<Reply> {
       const occ = await asOcc(c, a);
       if (!occ || occ.state === "done" || occ.state === "cancelled") return gone();
       await c.repo.exec(doneOps(occ, c.now));
-      return update(doneMessage(occ.title));
+      return update(doneMessage(occ.title, c.s.character, occ.id));
     }
     case "snz": {
       const occ = await asOcc(c, a);
@@ -403,6 +404,8 @@ async function onSettingsComponent(c: C, kind: string, values: string[]): Promis
       return { type: 9, data: ladderNumsModal().data };
     case "s_light":
       return { type: 9, data: lightModal(c.s).data };
+    case "s_char":
+      return redo([setSetting("character", c.s.character === "maid" ? "neutral" : "maid")]);
     case "s_dm": {
       const on = await dmOn(c);
       let dm = c.meta.get("dm_channel_id");

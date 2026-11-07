@@ -1,4 +1,5 @@
 // Настройки пользователя (таблица settings) и служебные значения (meta). Значения по умолчанию — только стартовые.
+import { type Character, parseCharacter } from "./flavor.ts";
 import { DEFAULT_SPEC, type LadderSpec, parseSpec } from "./ladder.ts";
 import { DEFAULT_TZ, parseHHMM } from "./time/tz.ts";
 
@@ -26,11 +27,13 @@ export interface AppSettings {
   intake: string[];
   /** группа отключений света для сводок («3» или «3.1») или null — не показывать */
   lightGroup: string | null;
+  /** характер бота: нейтральный (по умолчанию) или «уставшая горничная» */
+  character: Character;
 }
 
 export const SETTING_KEYS = [
   "tz", "default_ladder", "default_time", "quiet_enabled", "quiet_from", "quiet_to", "away_until",
-  "summary_morning", "summary_evening", "weekly", "ch_remind", "ch_bot", "ch_today", "ch_forum", "ch_archive", "intake", "light",
+  "summary_morning", "summary_evening", "weekly", "ch_remind", "ch_bot", "ch_today", "ch_forum", "ch_archive", "intake", "light", "character",
 ] as const;
 
 function minutes(v: string | undefined, fallback: number | null): number | null {
@@ -74,6 +77,7 @@ export function readSettings(rows: { key: string; value: string }[]): AppSetting
     chArchive: m.get("ch_archive") || null,
     intake,
     lightGroup: m.get("light") && m.get("light") !== "off" ? (m.get("light") as string) : null,
+    character: parseCharacter(m.get("character")),
   };
 }
 

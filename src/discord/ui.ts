@@ -1,4 +1,5 @@
 // Сообщения, кнопки и окна бота: тон нейтральный и короткий, всё по-русски.
+import { CHARACTER_LABELS, type Character, tired } from "../flavor.ts";
 import { type FirePlan, type LadderSpec, PRESET_LABELS, describeSpec } from "../ladder.ts";
 import { type AppSettings } from "../settings.ts";
 import { describeRecipe, formatDate, formatWhen } from "../time/format.ts";
@@ -63,9 +64,13 @@ export function reminderMessage(a: { occ: OccView; plan: FirePlan; ownerId: stri
 }
 
 /** После закрытия кнопкой «Готово» сообщение остаётся записью, без кнопок. */
-export function doneMessage(title: string): MessageBody {
-  return { content: `Готово: ${title}`, components: [], allowed_mentions: { parse: [] } };
+export function doneMessage(title: string, ch: Character = "neutral", seed = 0): MessageBody {
+  const extra = tired(ch, "done", seed);
+  return { content: `Готово: ${title}${extra ? `\n-# ${extra}` : ""}`, components: [], allowed_mentions: { parse: [] } };
 }
+
+/** Обычный текст плюс (для характера «горничная») короткая фраза через пробел. */
+const withTired = (text: string, extra: string | null): string => (extra ? `${text} ${extra}` : text);
 
 export function snoozedMessage(a: { occId: number; title: string; whenText: string; itemId: number }): MessageBody {
   return {
@@ -179,20 +184,20 @@ function joinLines(head: string, lines: string[], max = 1900): string {
   return out;
 }
 
-export function listText(items: OccView[], now: number, tz: string): string {
-  if (items.length === 0) return "Открытых дел нет.";
+export function listText(items: OccView[], now: number, tz: string, ch: Character = "neutral"): string {
+  if (items.length === 0) return withTired("Открытых дел нет.", tired(ch, "listEmpty", now));
   return joinLines(`Открытые дела (${items.length}):`, items.map((o) => itemLine(o, now, tz)));
 }
 
 const isBurning = (o: OccView) => o.state === "overdue" || o.state === "fired";
 
-export function panelText(items: OccView[], now: number, tz: string): string {
+export function panelText(items: OccView[], now: number, tz: string, ch: Character = "neutral"): string {
   const hot = items.filter(isBurning);
-  if (hot.length === 0) return "**Горит**\nГорящего нет.";
+  if (hot.length === 0) return withTired("**Горит**\nГорящего нет.", tired(ch, "panelEmpty", 0));
   return joinLines("**Горит**", hot.map((o) => itemLine(o, now, tz)));
 }
 
-export function weekText(items: OccView[], now: number, tz: string): string {
+export function weekText(items: OccView[], now: number, tz: string, ch: Character = "neutral"): string {
   const today = startOfDay(now, tz);
   const end = today + 7 * 24 * 60 * MINUTE;
   const hot = items.filter(isBurning);
@@ -215,14 +220,16 @@ export function weekText(items: OccView[], now: number, tz: string): string {
     }
     lines.push(`• ${fmtHHMM(w.h * 60 + w.mi)} ${clip(o.title, 80)} (#${o.item_id})`);
   }
-  if (lines.length === 0) return "На ближайшие 7 дней дел нет.";
+  if (lines.length === 0) return withTired("На ближайшие 7 дней дел нет.", tired(ch, "weekEmpty", now));
   return joinLines("Ближайшие 7 дней:", lines);
 }
 
 export function summaryText(
   kind: "morning" | "evening" | "return",
-  a: { items: OccView[]; now: number; tz: string; ownerId: string; extra?: string[] },
+  a: { items: OccView[]; now: number; tz: string; ownerId: string; extra?: string[]; character?: Character },
 ): string {
+  const ch = a.character ?? "neutral";
+  const day = Math.floor(a.now / (24 * 60 * MINUTE));
   const { items, now, tz } = a;
   const today = startOfDay(now, tz);
   const tomorrow = today + 24 * 60 * MINUTE;
@@ -251,11 +258,15 @@ export function summaryText(
   }
   if (drafts) lines.push(`Без срока: ${drafts}. Список — /list.`);
   if (a.extra?.length) lines.push(...a.extra);
-  if (kind === "morning") lines.push("Бот на месте.");
+  if (kind === "morning") lines.push(tired(ch, "morningSign", day) ?? "Бот на месте.");
+  if (kind === "evening") {
+    const sign = tired(ch, "eveningSign", day);
+    if (sign) lines.push(sign);
+  }
   return joinLines(`<@${a.ownerId}> ${head}`, lines);
 }
 
-export function weeklyText(a: { doneCount: number; items: OccView[]; now: number; tz: string; ownerId: string }): string {
+export function weeklyText(a: { doneCount: number; items: OccView[]; now: number; tz: string; ownerId: string; character?: Character }): string {
   const hot = a.items.filter(isBurning);
   const drafts = a.items.filter((o) => o.state === "draft");
   const lines = [
@@ -263,6 +274,8 @@ export function weeklyText(a: { doneCount: number; items: OccView[]; now: number
   ];
   if (hot.length) lines.push("**Не закрыто:**", ...hot.map((o) => itemLine(o, a.now, a.tz)));
   if (drafts.length) lines.push("**Без срока (назначьте время или удалите):**", ...drafts.map((o) => itemLine(o, a.now, a.tz)));
+  const sign = tired(a.character ?? "neutral", "weeklySign", Math.floor(a.now / (7 * 24 * 60 * MINUTE)));
+  if (sign) lines.push(sign);
   return joinLines(`<@${a.ownerId}> Итоги недели.`, lines);
 }
 
@@ -285,6 +298,7 @@ export function settingsMessage(s: AppSettings, now: number, dmOn: boolean): Mes
     `Сводки: утром ${s.morning === null ? "выкл" : fmtHHMM(s.morning)}, вечером ${s.evening === null ? "выкл" : fmtHHMM(s.evening)}; итоги недели: ${describeWeekly(s)}`,
     `Приём обычного текста: канал «бот»${s.chBot ? "" : " (не создан: /setup)"}; личка: ${dmOn ? "вкл" : "выкл"}`,
     `График света (Днепр): ${s.lightGroup ? `группа ${s.lightGroup}` : "выкл"}`,
+    `Характер: ${CHARACTER_LABELS[s.character]}`,
   ];
   const preset = "preset" in s.defaultLadder ? s.defaultLadder.preset : "";
   return {
@@ -308,7 +322,7 @@ export function settingsMessage(s: AppSettings, now: number, dmOn: boolean): Mes
         btn("Я в отъезде…", "s_away"),
       ),
       row(btn("Сводки и пояс…", "s_summ"), btn("Свои числа лестницы…", "s_ladn"), btn(dmOn ? "Личка: выключить" : "Личка: включить", "s_dm")),
-      row(btn("Свет: группа…", "s_light")),
+      row(btn("Свет: группа…", "s_light"), btn(s.character === "maid" ? "Характер: нейтральный" : "Характер: уставшая горничная", "s_char")),
     ],
   };
 }
