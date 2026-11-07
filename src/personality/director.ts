@@ -160,7 +160,7 @@ export class MoodSession {
     const p = pickPhrase({
       mood: mood ?? st.mood,
       situation,
-      vars: { miss_count: st.missStreak, ...vars },
+      vars: { miss_count: st.missStreak, done_streak: st.doneStreak, ...vars },
       recent: st.recent,
       rand: this.rand,
       cfg: this.cfg,
@@ -205,5 +205,5 @@ export function recordDone(m: MoodSession, occ: Pick<OccView, "kind" | "item_kin
   if (counts && r.milestone !== null) return m.say("streak_praise", vars, "proud");
   if (counts && r.relief) return m.say("relief", vars);
   if (counts && m.rand() < m.cfg.randomPraiseChance) return m.say("done", vars, "proud");
-  return m.say("done", vars);
+  return m.say(counts && occ.state === "overdue" ? "done_late" : "done", vars);
 }

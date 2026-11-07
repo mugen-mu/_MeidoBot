@@ -8,6 +8,7 @@ export interface PhraseVars {
   user?: string;
   task?: string;
   miss_count?: number;
+  done_streak?: number;
   name?: string;
 }
 
@@ -23,9 +24,15 @@ export function fill(text: string, vars: PhraseVars, cfg: MoodConfig = MOOD_CONF
     user: vars.user ?? cfg.address,
     task: vars.task ?? "дело",
     miss_count: String(vars.miss_count ?? 0),
+    done_streak: String(vars.done_streak ?? 0),
     name: vars.name ?? cfg.name,
   };
-  return text.replace(/\{(user|task|miss_count|name)\}/g, (_, k: string) => map[k]);
+  // «{user}, …» в начале предложения подставляется с большой буквы: «Хозяин, …» (название дела {task} не трогаем)
+  return text.replace(/\{(user|task|miss_count|done_streak|name)\}/gu, (_m, k: string, offset: number) => {
+    const v = map[k];
+    const atStart = k !== "task" && (offset === 0 || /(?:[.!?…]|\*)\s+$/u.test(text.slice(0, offset)));
+    return atStart ? v.charAt(0).toUpperCase() + v.slice(1) : v;
+  });
 }
 
 /** Список фраз для пары «настроение — ситуация» с учётом запасной ситуации; пусто — фраз нет. */
