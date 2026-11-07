@@ -92,8 +92,11 @@ export const isAppId = (s: string): boolean => /^\d{17,20}$/.test(s.trim());
 export const isBotToken = (s: string): boolean => /^[\w-]{20,}\.[\w-]{4,}\.[\w-]{20,}$/.test(s.trim());
 export const isWatchdogUrl = (s: string): boolean => /^https:\/\/[^\s]+$/i.test(s.trim());
 
-/** Права бота: View Channels, Send Messages, Read Message History, Manage Channels (для /setup). */
-export const BOT_PERMISSIONS = 1024 + 2048 + 65536 + 16;
+/**
+ * Права бота: View Channels, Send Messages, Read Message History, Manage Channels (для /setup),
+ * плюс Embed Links и Add Reactions (для характера: embed с цветом настроения, реакции): чтобы потом не добавлять бота заново.
+ */
+export const BOT_PERMISSIONS = 1024 + 2048 + 65536 + 16 + 16384 + 64;
 
 export function installLinks(appId: string): { server: string; user: string } {
   const base = `https://discord.com/oauth2/authorize?client_id=${appId}`;

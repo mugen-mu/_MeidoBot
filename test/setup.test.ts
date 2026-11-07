@@ -71,7 +71,8 @@ describe("помощники установки", () => {
   it("ссылки установки: сервер с правами и на пользователя", () => {
     const l = installLinks(APP);
     expect(l.server).toContain(`client_id=${APP}`);
-    expect(l.server).toContain("permissions=68624"); // View Channels + Send Messages + Read Message History + Manage Channels
+    // View Channels + Send Messages + Read Message History + Manage Channels + Embed Links + Add Reactions
+    expect(l.server).toContain("permissions=85072");
     expect(l.user).toContain("integration_type=1");
   });
 
