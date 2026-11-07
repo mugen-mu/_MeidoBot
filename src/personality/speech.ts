@@ -1,0 +1,77 @@
+// Выбор фразы: случайная из пула настроения и ситуации, без повторов последних N (ТЗ, раздел 8, режим A).
+// Чистая логика: случайность приходит аргументом, чтобы тесты были предсказуемыми.
+import { MOOD_CONFIG, type MoodConfig } from "./config.ts";
+import type { Mood } from "./moodEngine.ts";
+import { FALLBACK_SITUATION, PHRASES, type Phrases, type Situation } from "./phrases.ts";
+
+export interface PhraseVars {
+  user?: string;
+  task?: string;
+  miss_count?: number;
+  name?: string;
+}
+
+/** Короткий отпечаток текста фразы: по нему помним «последние 5», и он не ломается, когда пул пополняют. */
+export function fingerprint(text: string): string {
+  let h = 5381;
+  for (let i = 0; i < text.length; i++) h = ((h << 5) + h + text.charCodeAt(i)) | 0;
+  return (h >>> 0).toString(36);
+}
+
+export function fill(text: string, vars: PhraseVars, cfg: MoodConfig = MOOD_CONFIG): string {
+  const map: Record<string, string> = {
+    user: vars.user ?? cfg.address,
+    task: vars.task ?? "дело",
+    miss_count: String(vars.miss_count ?? 0),
+    name: vars.name ?? cfg.name,
+  };
+  return text.replace(/\{(user|task|miss_count|name)\}/g, (_, k: string) => map[k]);
+}
+
+/** Список фраз для пары «настроение — ситуация» с учётом запасной ситуации; пусто — фраз нет. */
+export function poolFor(mood: Mood, situation: Situation, bank: Phrases = PHRASES): string[] {
+  const moodBank = bank[mood];
+  if (!moodBank) return [];
+  const direct = moodBank[situation];
+  if (direct && direct.length) return direct;
+  const fb = FALLBACK_SITUATION[situation];
+  const alt = fb ? moodBank[fb] : undefined;
+  return alt ?? [];
+}
+
+export interface Pick {
+  text: string;
+  /** отпечаток выбранной фразы (до подстановок) для списка последних */
+  key: string;
+}
+
+/**
+ * Выбрать фразу. recent — отпечатки последних использованных (самые свежие в конце).
+ * Если все фразы пула недавно были, берём самую давнюю из использованных (без повтора подряд).
+ */
+export function pickPhrase(a: {
+  mood: Mood;
+  situation: Situation;
+  vars?: PhraseVars;
+  recent: string[];
+  rand: () => number;
+  bank?: Phrases;
+  cfg?: MoodConfig;
+}): Pick | null {
+  const cfg = a.cfg ?? MOOD_CONFIG;
+  const pool = poolFor(a.mood, a.situation, a.bank);
+  if (pool.length === 0) return null;
+  const banned = new Set(a.recent.slice(-cfg.noRepeat));
+  let candidates = pool.filter((t) => !banned.has(fingerprint(t)));
+  if (candidates.length === 0) {
+    const last = a.recent[a.recent.length - 1];
+    candidates = pool.length > 1 ? pool.filter((t) => fingerprint(t) !== last) : pool;
+  }
+  const text = candidates[Math.min(candidates.length - 1, Math.floor(a.rand() * candidates.length))];
+  return { text: fill(text, a.vars ?? {}, cfg), key: fingerprint(text) };
+}
+
+/** Добавить отпечаток к списку последних и оставить только N последних. */
+export function remember(recent: string[], key: string, cfg: MoodConfig = MOOD_CONFIG): string[] {
+  return [...recent.filter((k) => k !== key), key].slice(-Math.max(cfg.noRepeat, 1));
+}
