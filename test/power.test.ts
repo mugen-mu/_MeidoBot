@@ -101,6 +101,16 @@ describe("свет: приём сигнала от телефона", () => {
     expect(readPower(await meta()).state).toBe("on");
   });
 
+  it("отключение дольше минуты, но cron ещё не успел объявить: «появился» всё равно сообщает о возвращении", async () => {
+    await signal("off", T0);
+    const r = await signal("on", T0 + 108_000);
+    expect(await r.text()).toBe("restored");
+    expect(remindPosts()).toHaveLength(1);
+    expect(remindPosts()[0].body.content).toBe(`<@${OWNER}> Свет вернулся в 17:43, не было 2 мин`);
+    await w.run(T0 + 3 * MINUTE);
+    expect(remindPosts()).toHaveLength(1); // «света нет» уже не уйдёт: свет вернулся
+  });
+
   it("«появился» после сообщения: «Свет вернулся в 18:05, не было 23 мин»", async () => {
     await signal("off", T0);
     await w.run(T0 + 2 * MINUTE);

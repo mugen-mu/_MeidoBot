@@ -78,7 +78,9 @@ export function applySignal(p: PowerState, signal: PowerSignal, now: number): { 
     return { action: "ignored", ops: p.state === null ? [setMeta("power_state", "on"), setMeta("power_since", String(now))] : [] };
   }
   const ops = [setMeta("power_state", "on"), setMeta("power_since", String(now)), setMeta("power_announced", "0"), event(now, "power_on", null, `ms=${now - p.since}`)];
-  return p.announced
+  // cron объявляет «света нет» раз в минуту, поэтому при отключении дольше минуты, но раньше следующего запуска,
+  // «появился» тоже считается возвращением (иначе настоящее отключение прошло бы молча)
+  return p.announced || p.state === "off" && now - p.since >= BLINK_MS
     ? { action: "restored", ops, offMs: now - p.since, offAt: p.since }
     : { action: "blink", ops, offMs: now - p.since, offAt: p.since };
 }
