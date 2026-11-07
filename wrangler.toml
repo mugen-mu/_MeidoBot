@@ -14,7 +14,7 @@ crons = ["* * * * *"]
 [[d1_databases]]
 binding = "DB"
 database_name = "meido"
-database_id = "REPLACE_WITH_D1_DATABASE_ID"
+database_id = "dff7e4eb-4782-49c1-867e-4ce836fe65d3"
 migrations_dir = "migrations"
 
 # Секреты (wrangler secret put ...), в файл не пишем:
