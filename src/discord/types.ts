@@ -32,7 +32,9 @@ export interface ActionRow {
 export interface MessageBody {
   content?: string;
   components?: ActionRow[];
-  allowed_mentions?: { parse?: string[]; users?: string[] };
+  allowed_mentions?: { parse?: string[]; users?: string[]; replied_user?: boolean };
+  /** ответ на сообщение (Reply); без ошибки, если исходное уже удалено */
+  message_reference?: { message_id: string; fail_if_not_exists?: boolean };
   /** 64 = виден только вам; 4096 = без уведомления */
   flags?: number;
 }
@@ -48,6 +50,10 @@ export interface IncomingMessage {
   content: string;
   author: { id: string; bot?: boolean };
   attachments?: unknown[];
+  /** время отправки по часам Discord (ISO 8601) */
+  timestamp?: string;
+  /** если это ответ (Reply): на какое сообщение */
+  message_reference?: { message_id?: string };
 }
 
 export interface GuildChannel {

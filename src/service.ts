@@ -196,5 +196,7 @@ export function scrubOps(now: number): Op[] {
            AND COALESCE((SELECT MAX(closed_at) FROM occurrences o WHERE o.item_id = i.id), i.archived_at, i.created_at) < ?)`,
       now, cutoff,
     ),
+    // id прежних копий напоминаний нужны для ответов (Reply) только пока копии могут быть у пользователя на виду
+    op("DELETE FROM occ_messages WHERE sent_at < ?", now - 30 * 24 * 60 * MINUTE),
   ];
 }

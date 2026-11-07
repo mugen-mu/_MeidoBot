@@ -81,6 +81,16 @@ export class Repo {
     return this.first<OccView>(`${OCC_VIEW_SELECT} WHERE o.id = ?`, id);
   }
 
+  /** Дело по id сообщения-напоминания: актуальному или одной из прежних копий (ответ мог прийти на удалённую). */
+  occByMessageId(messageId: string): Promise<OccView | null> {
+    return this.first<OccView>(
+      `${OCC_VIEW_SELECT} WHERE o.id = COALESCE(
+         (SELECT occ_id FROM occ_messages WHERE message_id = ?),
+         (SELECT id FROM occurrences WHERE last_message_id = ? LIMIT 1))`,
+      messageId, messageId,
+    );
+  }
+
   getItem(id: number): Promise<Item | null> {
     return this.first<Item>("SELECT * FROM items WHERE id = ?", id);
   }
@@ -162,6 +172,10 @@ export const setMeta = (key: string, value: string): Op =>
   op("INSERT INTO meta (key, value) VALUES (?, ?) ON CONFLICT(key) DO UPDATE SET value = excluded.value", key, value);
 
 export const deleteMeta = (key: string): Op => op("DELETE FROM meta WHERE key = ?", key);
+
+/** Запомнить id отправленной копии напоминания: ответ (Reply) на неё найдёт дело, даже когда копию заменят новой. */
+export const rememberMessage = (messageId: string, channelId: string, occId: number, now: number): Op =>
+  op("INSERT OR REPLACE INTO occ_messages (message_id, channel_id, occ_id, sent_at) VALUES (?, ?, ?, ?)", messageId, channelId, occId, now);
 
 /** Событие в журнал: только служебные подробности, никогда текст дела. */
 export const event = (now: number, kind: string, occId: number | null = null, detail: string | null = null): Op =>

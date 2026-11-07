@@ -23,16 +23,25 @@ export type CreateResult =
   | { kind: "empty_series" }
   | { kind: "not_recurring" };
 
+/**
+ * Время отправки сообщения по часам Discord: от него считаем «через 2 минуты», а не от того, когда бот
+ * прочитал сообщение (бот просыпается раз в минуту). Нет метки или она из будущего — берём `now`.
+ */
+export function messageTime(m: { timestamp?: string }, now: number): number {
+  const t = m.timestamp ? Date.parse(m.timestamp) : NaN;
+  return Number.isFinite(t) ? Math.min(t, now) : now;
+}
+
 export async function createFromText(
   ctx: CreateCtx,
   text: string,
   source: Source,
-  opts: { body?: string | null; requireRecurring?: boolean } = {},
+  opts: { body?: string | null; requireRecurring?: boolean; /** время отправки сообщения: от него считаются «через N минут» и «сегодня» */ at?: number } = {},
 ): Promise<CreateResult> {
   const { repo, settings, now } = ctx;
   // Секрет не сохраняем, не разбираем и не пишем в журнал (DESIGN §10).
   if (detectSecret(text).secret) return { kind: "secret" };
-  const parsed = parseInput(text, { now, tz: settings.tz, defaultTime: settings.defaultTime });
+  const parsed = parseInput(text, { now: opts.at ?? now, tz: settings.tz, defaultTime: settings.defaultTime });
   if (parsed.seriesEmpty) return { kind: "empty_series" };
   if (!parsed.title) return { kind: "empty" };
   if (opts.requireRecurring && !parsed.recipe) return { kind: "not_recurring" };

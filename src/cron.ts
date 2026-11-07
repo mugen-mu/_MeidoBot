@@ -1,7 +1,7 @@
 // Цикл cron раз в минуту (DESIGN §8). Worker без памяти: всё состояние в базе, любой сбой подхватит следующий запуск.
 // На бесплатном плане за запуск можно сделать 50 подзапросов (D1 и Discord вместе): считаем их и оставляем запас
 // на запись результата и пинг сторожу.
-import { BudgetExceeded, type Repo, event, releaseLocks, setMeta, setSetting, updateOcc } from "./db/repo.ts";
+import { BudgetExceeded, type Repo, event, releaseLocks, rememberMessage, setMeta, setSetting, updateOcc } from "./db/repo.ts";
 import type { OccView, Op } from "./db/types.ts";
 import { type DiscordApi, DiscordError } from "./discord/types.ts";
 import {
@@ -10,7 +10,8 @@ import {
   summaryText,
   weeklyText,
 } from "./discord/ui.ts";
-import { createFromText, EMPTY_REPLY, EMPTY_SERIES_REPLY, SECRET_REPLY } from "./intake.ts";
+import { createFromText, EMPTY_REPLY, EMPTY_SERIES_REPLY, messageTime, SECRET_REPLY } from "./intake.ts";
+import { handleReply } from "./reply.ts";
 import { fetchYasno, lightLines, type LightData } from "./light.ts";
 import { planFire } from "./ladder.ts";
 import { ladderFor, nextSeriesOps, scrubOps } from "./service.ts";
@@ -157,6 +158,7 @@ export async function runCron(d: CronDeps): Promise<CronReport> {
             lock_token: null,
           }),
           event(now, "sent", occ.id, `i=${plan.index};${plan.phase}`),
+          rememberMessage(sent.id, sent.channel_id, occ.id, now),
         );
         if (occ.state === "planned" && occ.kind === "main") ops.push(...nextSeriesOps(occ, now));
         report.sent++;
@@ -178,9 +180,12 @@ export async function runCron(d: CronDeps): Promise<CronReport> {
     const getItems = async () => (items ??= await repo.openMain(100));
     const today = localDate(now, s.tz);
 
-    // 2а. обычный текст из каналов приёма: основной путь записи дел
+    // 2а. обычный текст из каналов приёма: основной путь записи дел;
+    // канал напоминаний читаем только ради ответов (Reply) на сообщения-напоминания
     if (owner) {
-      for (const ch of s.intake) {
+      const channels = s.intake.map((ch) => ({ ch, replies: false }));
+      if (s.chRemind && !s.intake.includes(s.chRemind)) channels.push({ ch: s.chRemind, replies: true });
+      for (const { ch, replies } of channels) {
         if (!room2(2)) break;
         const lastKey = `intake_last:${ch}`;
         const last = meta.get(lastKey);
@@ -193,14 +198,18 @@ export async function runCron(d: CronDeps): Promise<CronReport> {
         let lastId = last;
         let blind = 0;
         for (const m of msgs) {
-          if (!room2(3)) break;
+          if (!room2(replies ? 5 : 3)) break;
           lastId = m.id;
           if (m.author.bot || m.author.id !== owner) continue;
+          if (replies) {
+            if ((await handleReply({ repo, api, s, now }, m, ch)) === "handled") report.intake++;
+            continue;
+          }
           if (!m.content.trim()) {
             if (!m.attachments?.length) blind++;
             continue;
           }
-          const r = await createFromText({ repo, settings: s, now }, m.content, "channel");
+          const r = await createFromText({ repo, settings: s, now }, m.content, "channel", { at: messageTime(m, now) });
           report.intake++;
           const reply =
             r.kind === "created"

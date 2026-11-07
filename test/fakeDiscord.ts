@@ -80,13 +80,15 @@ export class FakeDiscord implements DiscordApi {
   }
 
   /** Добавить входящее сообщение в канал. */
-  say(channel: string, authorId: string, content: string, opts: { bot?: boolean } = {}): IncomingMessage {
+  say(channel: string, authorId: string, content: string, opts: { bot?: boolean; /** время отправки, мс */ at?: number; /** ответ на сообщение с этим id */ ref?: string } = {}): IncomingMessage {
     const m: IncomingMessage = {
       id: this.nextId(),
       channel_id: channel,
       content,
       author: { id: authorId, bot: opts.bot },
       attachments: [],
+      ...(opts.at !== undefined ? { timestamp: new Date(opts.at).toISOString() } : {}),
+      ...(opts.ref ? { message_reference: { message_id: opts.ref } } : {}),
     };
     this.inbox.set(channel, [...(this.inbox.get(channel) ?? []), m]);
     return m;

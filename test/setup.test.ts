@@ -23,6 +23,9 @@ import {
 import { type Asker, type RunOpts, type Runner, wranglerEnv } from "../scripts/lib/runner.ts";
 import { runSetup } from "../scripts/lib/setup.ts";
 
+/** Настоящий wrangler.toml после первой установки хранит настоящий id базы: для тестов возвращаем заглушку, как до установки. */
+const templateToml = (): string => setDatabaseId(readFileSync("wrangler.toml", "utf8"), PLACEHOLDER_DB_ID);
+
 const DB = "4f1c2b7e-9a3d-4c55-8e21-0b6f5a7d1c33";
 const APP = "123456789012345678";
 const PUB = "a".repeat(64);
@@ -38,7 +41,7 @@ describe("помощники установки", () => {
   });
 
   it("wrangler.toml: заглушка -> id, настоящий id читается, чужое не трогается", () => {
-    const toml = readFileSync("wrangler.toml", "utf8");
+    const toml = templateToml();
     expect(currentDatabaseId(toml)).toBeNull();
     expect(toml).toContain(PLACEHOLDER_DB_ID);
     const next = setDatabaseId(toml, DB);
@@ -142,7 +145,7 @@ function setupWorld(
   overrides: { whoami?: (n: number) => number; whoamiOut?: string; dbOut?: string; deployOut?: string; secretFail?: string } = {},
 ) {
   const dir = mkdtempSync(join(tmpdir(), "meido-setup-"));
-  writeFileSync(join(dir, "wrangler.toml"), readFileSync("wrangler.toml", "utf8"), "utf8");
+  writeFileSync(join(dir, "wrangler.toml"), templateToml(), "utf8");
   const calls: Call[] = [];
   let whoamis = 0;
   const runner: Runner = {
