@@ -131,11 +131,14 @@ export function confirmMessage(a: {
   ladderText: string;
   /** null — у таймера лестницы нет, выбор настойчивости не показываем */
   ladderKey: string | null;
+  /** строка-пояснение под записью (например, «время поняла модель») */
+  note?: string;
 }): MessageBody {
   const lines = [`Записано: **${a.title}** — ${a.whenText}`];
   if (a.recur) lines.push(`Повтор: ${a.recur}`);
   if (a.lead) lines.push(`Заранее: ${a.lead}`);
   lines.push(`Настойчивость: ${a.ladderText} · #${a.itemId}`);
+  if (a.note) lines.push(`-# ${a.note}`);
   const rows: ActionRow[] = [];
   if (a.ladderKey !== null) {
     rows.push(
@@ -336,6 +339,7 @@ export function settingsMessage(s: AppSettings, now: number, dmOn: boolean): Mes
     `Характер: ${CHARACTER_LABELS[s.character]}`,
     `Настроение горничной: ${s.moodOn ? "вкл (меняется от того, как вы выполняете дела; /mood)" : "выкл"}`,
     `Стиль речи: ${styleSummary(s.style)}`,
+    `Понимание фраз моделью: ${s.llmOn ? "вкл (если бот не понял время, спросит языковую модель; запись нужно проверить)" : "выкл"}`,
   ];
   const preset = "preset" in s.defaultLadder ? s.defaultLadder.preset : "";
   return {
@@ -360,6 +364,7 @@ export function settingsMessage(s: AppSettings, now: number, dmOn: boolean): Mes
       ),
       row(btn("Сводки и пояс…", "s_summ"), btn("Свои числа лестницы…", "s_ladn"), btn(dmOn ? "Личка: выключить" : "Личка: включить", "s_dm")),
       row(btn("Свет: группа…", "s_light"), btn(s.character === "maid" ? "Характер: нейтральный" : "Характер: уставшая горничная", "s_char"), btn(s.moodOn ? "Настроение: выключить" : "Настроение: включить", "s_mood")),
+      row(btn(s.llmOn ? "Понимание моделью: выключить" : "Понимание моделью: включить", "s_llm")),
     ],
   };
 }

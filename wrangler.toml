@@ -13,6 +13,11 @@ enabled = true
 [assets]
 directory = "./public"
 
+# Workers AI: понимание фраз, которые обычный разбор не понял (src/llm.ts; режим выключен по умолчанию, включается в /settings).
+# Бесплатная суточная норма — 10 000 нейронов; вызов gemma-4 — около 3.
+[ai]
+binding = "AI"
+
 [triggers]
 crons = ["* * * * *"]
 

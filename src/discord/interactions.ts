@@ -2,6 +2,7 @@
 // Ответ нужен за 3 секунды: быстрые действия отвечают сразу, долгие (/setup) — «отложенным» ответом и правкой потом.
 import { type Repo, setMeta, setSetting, updateOcc } from "../db/repo.ts";
 import type { OccView, Op } from "../db/types.ts";
+import type { AiBinding } from "../llm.ts";
 import { EMPTY_REPLY, EMPTY_SERIES_REPLY, NOT_RECURRING_REPLY, SECRET_REPLY, createFromText } from "../intake.ts";
 import { tired } from "../flavor.ts";
 import { MoodSession, makeCtx, recordDone, resetOps } from "../personality/director.ts";
@@ -78,6 +79,8 @@ export interface HandlerCtx {
   fetchFn?: typeof fetch;
   /** случайность для фраз настроения; по умолчанию Math.random */
   rand?: () => number;
+  /** привязка Workers AI (env.AI) для понимания фраз; необязательна */
+  ai?: AiBinding;
 }
 
 type Reply = Record<string, unknown>;
@@ -156,7 +159,7 @@ const publicHere = (c: C) => c.i.channel_id !== undefined && c.i.channel_id === 
 const out = (c: C, body: MessageBody): Reply => msg(publicHere(c) ? body : { ...body, flags: 64 });
 
 async function createReply(c: C, text: string, source: "slash" | "menu", extra: { body?: string; requireRecurring?: boolean } = {}): Promise<Reply> {
-  const r = await createFromText({ repo: c.repo, settings: c.s, now: c.now }, text, source, extra);
+  const r = await createFromText({ repo: c.repo, settings: c.s, now: c.now, ai: c.ai, aiTimeoutMs: 1500 }, text, source, extra);
   switch (r.kind) {
     case "created":
       return out(c, r.message);
@@ -599,6 +602,8 @@ async function onSettingsComponent(c: C, kind: string, values: string[]): Promis
       return redo([setSetting("character", c.s.character === "maid" ? "neutral" : "maid")]);
     case "s_mood":
       return redo([setSetting("mood_on", c.s.moodOn ? "0" : "1")]);
+    case "s_llm":
+      return redo([setSetting("llm_on", c.s.llmOn ? "0" : "1")]);
     case "s_dm": {
       const on = await dmOn(c);
       let dm = c.meta.get("dm_channel_id");

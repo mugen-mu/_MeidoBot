@@ -6,6 +6,8 @@ import { type Interaction, handleInteraction } from "./discord/interactions.ts";
 import { verifySignature } from "./discord/verify.ts";
 import { handlePower } from "./power.ts";
 
+import type { AiBinding } from "./llm.ts";
+
 export interface Env {
   DB: D1Database;
   DISCORD_PUBLIC_KEY: string;
@@ -13,6 +15,8 @@ export interface Env {
   DISCORD_APP_ID?: string;
   WATCHDOG_URL?: string;
   OWNER_ID?: string;
+  /** Workers AI (привязка [ai] в wrangler.toml) — понимание фраз, шаг 1 языковой модели */
+  AI?: AiBinding;
 }
 
 const FAIL_REPLY = {
@@ -63,6 +67,7 @@ export default {
         now: Date.now(),
         env: { ownerId: env.OWNER_ID, origin: url.origin },
         defer: (p) => ctx.waitUntil(p),
+        ai: env.AI,
       });
       return Response.json(reply);
     } catch {
@@ -76,6 +81,6 @@ export default {
     const repo = new Repo(env.DB, counter);
     const api = countedApi(createDiscordApi(env.DISCORD_BOT_TOKEN), counter);
     const cronEnv: CronEnv = { ownerId: env.OWNER_ID, watchdogUrl: env.WATCHDOG_URL };
-    ctx.waitUntil(runCron({ repo, api, now: Date.now(), env: cronEnv }));
+    ctx.waitUntil(runCron({ repo, api, now: Date.now(), env: cronEnv, ai: env.AI }));
   },
 };

@@ -11,6 +11,7 @@ import {
   summaryText,
   weeklyText,
 } from "./discord/ui.ts";
+import type { AiBinding } from "./llm.ts";
 import { createFromText, EMPTY_REPLY, EMPTY_SERIES_REPLY, messageTime, SECRET_REPLY } from "./intake.ts";
 import { MoodSession, canStyle, makeCtx } from "./personality/director.ts";
 import { maidEmbed, pickReaction, wantSprite } from "./personality/look.ts";
@@ -44,6 +45,8 @@ export interface CronDeps {
   maxSends?: number;
   /** для запроса графика света; по умолчанию fetch */
   fetchFn?: typeof fetch;
+  /** привязка Workers AI (env.AI) для понимания фраз; необязательна */
+  ai?: AiBinding;
   /** случайность для фраз настроения; по умолчанию Math.random */
   rand?: () => number;
 }
@@ -290,7 +293,7 @@ export async function runCron(d: CronDeps): Promise<CronReport> {
               continue;
             }
           }
-          const r = await createFromText({ repo, settings: s, now }, m.content, "channel", { at: messageTime(m, now) });
+          const r = await createFromText({ repo, settings: s, now, ai: d.ai }, m.content, "channel", { at: messageTime(m, now) });
           report.intake++;
           const reply =
             r.kind === "created"

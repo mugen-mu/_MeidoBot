@@ -34,12 +34,14 @@ export interface AppSettings {
   moodOn: boolean;
   /** аниме-слой («Характер 2», Х2): уровень, письменность, манга-звуки, подсказки перевода */
   style: StyleConfig;
+  /** языковая модель понимает фразы, которые обычный разбор не понял (шаг 1): выкл по умолчанию */
+  llmOn: boolean;
 }
 
 export const SETTING_KEYS = [
   "tz", "default_ladder", "default_time", "quiet_enabled", "quiet_from", "quiet_to", "away_until",
   "summary_morning", "summary_evening", "weekly", "ch_remind", "ch_bot", "ch_today", "ch_forum", "ch_archive", "intake", "light", "character", "mood_on",
-  "style_level", "style_script", "style_sfx", "style_honorifics", "style_kaomoji", "hints_on",
+  "style_level", "style_script", "style_sfx", "style_honorifics", "style_kaomoji", "hints_on", "llm_on",
 ] as const;
 
 function minutes(v: string | undefined, fallback: number | null): number | null {
@@ -86,6 +88,7 @@ export function readSettings(rows: { key: string; value: string }[]): AppSetting
     character: parseCharacter(m.get("character")),
     moodOn: m.get("mood_on") === "1",
     style: parseStyle(m),
+    llmOn: m.get("llm_on") === "1",
   };
 }
 
