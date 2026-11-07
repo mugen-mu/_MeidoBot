@@ -20,13 +20,14 @@ export type CreateResult =
   | { kind: "created"; itemId: number; occId: number; draft: boolean; message: MessageBody }
   | { kind: "secret" }
   | { kind: "empty" }
-  | { kind: "empty_series" };
+  | { kind: "empty_series" }
+  | { kind: "not_recurring" };
 
 export async function createFromText(
   ctx: CreateCtx,
   text: string,
   source: Source,
-  opts: { body?: string | null } = {},
+  opts: { body?: string | null; requireRecurring?: boolean } = {},
 ): Promise<CreateResult> {
   const { repo, settings, now } = ctx;
   // Секрет не сохраняем, не разбираем и не пишем в журнал (DESIGN §10).
@@ -34,6 +35,7 @@ export async function createFromText(
   const parsed = parseInput(text, { now, tz: settings.tz, defaultTime: settings.defaultTime });
   if (parsed.seriesEmpty) return { kind: "empty_series" };
   if (!parsed.title) return { kind: "empty" };
+  if (opts.requireRecurring && !parsed.recipe) return { kind: "not_recurring" };
   const wasPast = parsed.past;
   if (parsed.past) parsed.due = null; // прошедшее время не годится: спросим, когда
 
@@ -68,4 +70,5 @@ export async function createFromText(
 export const SECRET_REPLY =
   "Похоже на пароль, ключ или номер карты. Бот такое не сохраняет и не записывает. Храните в менеджере паролей (например, Bitwarden), а здесь напишите без значения.";
 export const EMPTY_REPLY = "О чём напомнить? Например: «завтра в 10 купить хлеб».";
+export const NOT_RECURRING_REPLY = "Не понял повтор. Пример: «каждые 20 минут проверить плиту до 23:00» или «каждый месяц 20-го оплатить ФОП».";
 export const EMPTY_SERIES_REPLY = "Этот повтор уже закончился до первого срабатывания (проверьте «до …»).";

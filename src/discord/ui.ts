@@ -67,6 +67,18 @@ export function doneMessage(title: string): MessageBody {
   return { content: `Готово: ${title}`, components: [], allowed_mentions: { parse: [] } };
 }
 
+export function snoozedMessage(a: { occId: number; title: string; whenText: string; itemId: number }): MessageBody {
+  return {
+    content: `Отложено: **${a.title}** — до ${a.whenText} · #${a.itemId}`,
+    allowed_mentions: { parse: [] },
+    components: [row(btn("Готово", cid("done", a.occId), 3), btn("Изменить", cid("edit", a.occId)))],
+  };
+}
+
+export function plainMessage(content: string, ephemeral = false): MessageBody {
+  return { content, allowed_mentions: { parse: [] }, components: [], ...(ephemeral ? { flags: 64 } : {}) };
+}
+
 // ---------- «Верно / Изменить» и вопросы ----------
 
 export function confirmMessage(a: {
@@ -84,10 +96,9 @@ export function confirmMessage(a: {
   if (a.recur) lines.push(`Повтор: ${a.recur}`);
   if (a.lead) lines.push(`Заранее: ${a.lead}`);
   lines.push(`Настойчивость: ${a.ladderText} · #${a.itemId}`);
-  return {
-    content: lines.join("\n"),
-    allowed_mentions: { parse: [] },
-    components: [
+  const rows: ActionRow[] = [];
+  if (a.ladderKey !== null) {
+    rows.push(
       row({
         type: 3,
         custom_id: cid("lad", a.occId),
@@ -98,9 +109,10 @@ export function confirmMessage(a: {
           default: k === a.ladderKey,
         })),
       }),
-      row(btn("Верно", cid("ok", a.occId), 3), btn("Изменить", cid("edit", a.occId)), btn("Отменить", cid("rm", a.itemId), 4)),
-    ],
-  };
+    );
+  }
+  rows.push(row(btn("Верно", cid("ok", a.occId), 3), btn("Изменить", cid("edit", a.occId)), btn("Отменить", cid("rm", a.itemId), 4)));
+  return { content: lines.join("\n"), allowed_mentions: { parse: [] }, components: rows };
 }
 
 export function confirmedMessage(a: { title: string; whenText: string; itemId: number }): MessageBody {
