@@ -5,7 +5,7 @@ import type { OccView, Op } from "../db/types.ts";
 import { EMPTY_REPLY, EMPTY_SERIES_REPLY, NOT_RECURRING_REPLY, SECRET_REPLY, createFromText } from "../intake.ts";
 import { tired } from "../flavor.ts";
 import { describeSpec, needsSnoozeQuestion, parseCustomSteps, parseSpec, type LadderSpec } from "../ladder.ts";
-import { normalizeGroup } from "../light.ts";
+import { fetchYasno, lightLines, normalizeGroup, nowLine } from "../light.ts";
 import { newPowerKey, readPower } from "../power.ts";
 import { detectSecret } from "../secrets.ts";
 import {
@@ -23,7 +23,7 @@ import type { AppSettings } from "../settings.ts";
 import { describeLead, describeRecipe, formatWhen } from "../time/format.ts";
 import { normalizeEvery, parseInput, parseWhen } from "../time/parse.ts";
 import { quickDue } from "../time/quick.ts";
-import { DAY, MINUTE, fmtHHMM, nextTimeOfDay, parseHHMM, wallOf } from "../time/tz.ts";
+import { DAY, MINUTE, addDaysWall, fmtHHMM, localDate, nextTimeOfDay, parseHHMM, wallOf } from "../time/tz.ts";
 import type { DiscordApi, MessageBody } from "./types.ts";
 import {
   awayModal,
@@ -66,6 +66,8 @@ export interface HandlerCtx {
   env: { ownerId?: string; origin?: string };
   /** фоновая работа после ответа (в Worker — ctx.waitUntil) */
   defer: (p: Promise<unknown>) => void;
+  /** для запроса графика света; по умолчанию fetch */
+  fetchFn?: typeof fetch;
 }
 
 type Reply = Record<string, unknown>;
@@ -167,12 +169,32 @@ async function onCommand(c: C): Promise<Reply> {
       return setup(c);
     case "power":
       return powerCommand(c);
+    case "light":
+      return lightCommand(c);
     default:
       return eph("Такой команды бот не знает.");
   }
 }
 
 /** /power: ссылки для телефона. Видны только хозяину («только вам»); ключ не попадает ни в журнал, ни в чат. */
+/** /light: график отключений на сегодня и завтра для группы из настроек и «что сейчас». Запрос к Yasno — после ответа Discord (до 5 секунд). */
+async function lightCommand(c: C): Promise<Reply> {
+  const group = c.s.lightGroup;
+  if (!group) return eph("Группа света не задана: /settings → «Свет: группа…» → впишите номер (например, 3).");
+  c.defer(
+    (async () => {
+      const data = await fetchYasno(c.fetchFn ?? fetch);
+      const today = localDate(c.now, c.s.tz);
+      const tomorrow = localDate(addDaysWall(c.now, 1, c.s.tz), c.s.tz);
+      const text = data
+        ? [...lightLines("today", group, data, today), nowLine(c.now, group, data, c.s.tz), ...lightLines("tomorrow", group, data, tomorrow)].filter(Boolean).join("\n")
+        : "Не удалось получить график: Yasno не отвечает. Попробуйте позже.";
+      if (c.i.application_id) await c.api.editInteractionOriginal(c.i.application_id, c.i.token, plainMessage(text, true)).catch(() => undefined);
+    })(),
+  );
+  return { type: 5, data: { flags: 64 } };
+}
+
 /** «Только вам» (64) и без предпросмотра ссылок (4): Discord не должен сам открывать ссылки с ключом. */
 const powerReply = (text: string): Reply => msg({ ...plainMessage(text, true), flags: 68 });
 

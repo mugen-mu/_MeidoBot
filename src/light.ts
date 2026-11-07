@@ -123,3 +123,31 @@ export function checkSchedule(at: number, group: string, data: LightData, tz: st
   if (results.every((r) => r.verdict === first.verdict && r.range === first.range)) return first;
   return { verdict: "mixed" };
 }
+
+/** Опубликован ли график на «сегодня» или «завтра» для всех подгрупп группы (на нужную дату). */
+export function publishedFor(which: "today" | "tomorrow", group: string, data: LightData, expectedDate: string): boolean {
+  const keys = groupsFor(group, data);
+  return keys.length > 0 && keys.every((k) => data[k][which].status === "ScheduleApplies" && data[k][which].date === expectedDate);
+}
+
+/** «Сейчас по графику…»: идёт ли отключение и когда следующее. null — график на сегодня неизвестен или подгруппы расходятся. */
+export function nowLine(now: number, group: string, data: LightData, tz: string): string | null {
+  const w = wallOf(now, tz);
+  const date = `${w.y}-${String(w.mo).padStart(2, "0")}-${String(w.d).padStart(2, "0")}`;
+  const minute = w.h * 60 + w.mi;
+  const lines = new Set<string>();
+  for (const k of groupsFor(group, data)) {
+    const day = data[k].today;
+    if (day.status !== "ScheduleApplies" || day.date !== date) return null;
+    const inside = day.off.find((s) => minute >= s.start && minute < s.end);
+    const next = day.off.find((s) => s.start > minute);
+    lines.add(
+      inside
+        ? `Сейчас по графику света нет, включат около ${fmtHHMM(inside.end)}.`
+        : next
+          ? `Сейчас по графику свет есть, ближайшее отключение в ${fmtHHMM(next.start)}.`
+          : "Сейчас по графику свет есть, сегодня отключений больше нет.",
+    );
+  }
+  return lines.size === 1 ? [...lines][0] : null;
+}

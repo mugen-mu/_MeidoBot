@@ -127,3 +127,9 @@ export function nextTimeOfDay(after: number, minutesOfDay: number, tz: string): 
   }
   throw new Error("nextTimeOfDay: недостижимо");
 }
+
+/** Дата по часам пояса: ГГГГ-ММ-ДД. */
+export function localDate(ms: number, tz: string): string {
+  const w = wallOf(ms, tz);
+  return `${w.y}-${String(w.mo).padStart(2, "0")}-${String(w.d).padStart(2, "0")}`;
+}

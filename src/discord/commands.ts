@@ -60,6 +60,7 @@ export const COMMANDS = [
     contexts: EVERYWHERE,
     options: [{ type: 5, name: "reset", description: "Выдать новый ключ (старые ссылки перестанут работать)", required: false }],
   },
+  { name: "light", description: "График отключений света: сегодня, завтра и что сейчас (видно только вам)", type: 1, integration_types: BOTH, contexts: EVERYWHERE },
   { name: "setup", description: "Завести каналы бота на этом сервере (один раз)", type: 1, integration_types: [0], contexts: [0] },
   // Команда из меню сообщения (долгое нажатие -> Приложения). Описание у такой команды не указывается.
   { name: "Напомнить об этом", type: 3, integration_types: BOTH, contexts: EVERYWHERE },
