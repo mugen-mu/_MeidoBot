@@ -1,0 +1,10 @@
+# Секреты и локальное состояние Cloudflare
+.dev.vars
+.env
+.wrangler/
+node_modules/
+dist/
+*.local.*
+
+# Сгенерированное: страница решений собирается из design/build.py
+design/page.html

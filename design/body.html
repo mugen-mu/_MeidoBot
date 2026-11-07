@@ -1,0 +1,343 @@
+<div class="wrap">
+  <header class="hero">
+    <h1>Проект Discord-бота</h1>
+    <div class="sub" id="sub"></div>
+    <nav class="toc" aria-label="Разделы страницы">
+      <a href="#idea">Главное</a><a href="#ladder">Лестница настойчивости</a><a href="#life">Жизнь дела</a><a href="#look">Как выглядит</a><a href="#features">Что умеет</a><a href="#limits">Нельзя, но можно так</a><a href="#mine">Решил я</a><a href="#questions">Вопросы</a>
+    </nav>
+  </header>
+
+  <section class="blk" id="idea">
+    <h2 class="sec">Главное</h2>
+    <p class="lead">Бот помнит за тебя. Дело живёт, пока ты сам не нажал «Готово». Всё внутри Discord: без Google Календаря и других чужих сервисов. Работает на бесплатном Cloudflare и не требует включённого компьютера.</p>
+    <div class="pr3">
+      <div class="pr"><h3>Дело не исчезает</h3><p>«Отложить» не закрывает: бот помнит, на когда отложено и сколько раз ты откладывал. Повторяющееся дело: каждое повторение отдельное. Не закрыл вчерашнее, оно висит «просрочено», а сегодняшнее приходит само.</p></div>
+      <div class="pr"><h3>Записать за три секунды</h3><p>Голосом через Siri, кнопкой «Поделиться» из любого приложения, долгим нажатием на сообщение или обычным текстом в личку боту. Чем легче записать, тем меньше теряется.</p></div>
+      <div class="pr"><h3>Бот следит за собой</h3><p>Каждое утро пишет «я на месте». Если замолчит, внешний сторож пришлёт письмо. После любого сбоя бот сам догоняет пропущенное: время сдвигается, но ничего не теряется.</p></div>
+    </div>
+    <div class="note"><b>Проверено по документации Discord и Cloudflare 7 ноября.</b> Три места документация не подтверждает, их проверим на живом боте: придёт ли push при сообщении в личку, читается ли текст в канале «Входящие» без постоянного соединения, как обновлять ссылки на старые вложения. Для каждого есть запасной путь.</div>
+  </section>
+
+  <section class="blk" id="ladder">
+    <h2 class="sec">Лестница настойчивости</h2>
+    <p class="lead">Что происходит, если ты не нажал ничего. Времена здесь стандартные; в вопросе A2 ты выберешь свой вариант.</p>
+    <div class="two">
+      <ol class="lad">
+        <li><span class="lt">0 минут</span><span class="lb">Личка с упоминанием и кнопками</span><span class="ld">«Готово», «15 мин», «1 час», «На…». Приходит как обычное сообщение, со звуком.</span></li>
+        <li><span class="lt">+10 минут</span><span class="lb">Второй раз</span><span class="ld">«Это 2-е напоминание». Тот же вид, чтобы не пугать.</span></li>
+        <li class="w"><span class="lt">+20 минут</span><span class="lb">Третий раз и дубль в «срочное»</span><span class="ld">Второе уведомление из другого места: если личку заглушил, канал мог дойти.</span></li>
+        <li class="w"><span class="lt">+40 минут</span><span class="lb">Запасной канал</span><span class="ld">Telegram или ntfy, если ты включил (вопрос A3). Независим от Discord.</span></li>
+        <li class="r"><span class="lt">+2 часа</span><span class="lb">«Просрочено»</span><span class="ld">Дело попадает в панель «Горит» и в вечернюю сводку. Повтор раз в 2 часа три раза, дальше раз в сутки в сводке. Удалить само не может.</span></li>
+      </ol>
+      <div style="display:grid;gap:10px">
+        <div class="pr"><h3>Тихие часы</h3><p>По умолчанию 23:00–07:00. Повторы в это время не шлются, а накопленное приходит одним сообщением утром. Дело, помеченное «пробивающим», игнорирует тихие часы.</p></div>
+        <div class="pr"><h3>«Отложить на конкретное время»</h3><p>Быстрые кнопки «15 мин» и «1 час», а кнопка «На…» открывает окно: «через 30 минут», «вечером», «завтра 9:00» или своя строка «завтра 10:30». Календарика выбора даты у Discord нет, поэтому так.</p></div>
+        <div class="pr"><h3>Если откладываешь снова и снова</h3><p>На 3-й раз бот спрашивает: «Делаем сегодня, разбить на шаги или удалить?» (вопрос A5).</p></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="blk" id="life">
+    <h2 class="sec">Жизнь одного дела</h2>
+    <p class="lead">Любое дело проходит эти состояния. Конец только один: «Готово», нажатое тобой. Повторяющееся дело после этого не заканчивается: следующее повторение уже ждёт в «Запланировано».</p>
+    <figure class="fig">
+      <div class="scroll">
+        <svg viewBox="0 0 720 290" role="img" aria-label="Состояния дела: записано, запланировано, сработало, готово или просрочено; отложить возвращает в запланировано, у повторяющегося следующее повторение создаётся само">
+          <defs><marker id="ah1" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" class="ar"/></marker></defs>
+          <rect class="nd" x="20" y="130" width="120" height="40" rx="8"/><text class="t-b" x="80" y="154" text-anchor="middle">Записано</text>
+          <rect class="nd-a" x="190" y="130" width="120" height="40" rx="8"/><text class="t-b" x="250" y="154" text-anchor="middle">Запланировано</text>
+          <rect class="nd-w" x="370" y="130" width="120" height="40" rx="8"/><text class="t-b" x="430" y="154" text-anchor="middle">Сработало</text>
+          <rect class="nd-ok" x="580" y="60" width="120" height="40" rx="8"/><text class="t-b" x="640" y="84" text-anchor="middle">Готово</text>
+          <rect class="nd-r" x="370" y="232" width="120" height="40" rx="8"/><text class="t-b" x="430" y="256" text-anchor="middle">Просрочено</text>
+          <path class="ln" d="M140 150 H188" marker-end="url(#ah1)"/>
+          <text class="t-m" x="165" y="186" text-anchor="middle">«когда?»</text>
+          <path class="ln" d="M310 150 H368" marker-end="url(#ah1)"/>
+          <text class="t-m" x="339" y="186" text-anchor="middle">пора</text>
+          <path class="ln" d="M490 138 L578 90" marker-end="url(#ah1)"/>
+          <text class="t-m" x="548" y="130">Готово</text>
+          <path class="ln" d="M430 130 V100 H285 V128" marker-end="url(#ah1)"/>
+          <text class="t-m" x="357" y="93" text-anchor="middle">отложить на время (счётчик +1)</text>
+          <path class="ln" d="M430 170 V230" marker-end="url(#ah1)"/>
+          <text class="t-m" x="440" y="205">не нажал: лестница</text>
+          <path class="ln" d="M490 252 H640 V102" marker-end="url(#ah1)"/>
+          <text class="t-m" x="565" y="246" text-anchor="middle">нажал «Готово»</text>
+          <path class="ln-d" d="M640 58 V20 H215 V128" marker-end="url(#ah1)"/>
+          <text class="t-m" x="430" y="13" text-anchor="middle">повторяющееся: следующее дело уже ждёт здесь</text>
+          <text class="t-m" x="430" y="284" text-anchor="middle">висит в панели «Горит» и в сводке, не удаляется</text>
+          <text class="t-m" x="80" y="118" text-anchor="middle">без времени:</text>
+          <text class="t-m" x="80" y="200" text-anchor="middle">бот спросит</text>
+        </svg>
+      </div>
+      <figcaption>«Записано» без срока бывает только у дел, добавленных без времени: бот сразу спрашивает «когда?» кнопками. «Отложить» возвращает в «Запланировано» на новое время.</figcaption>
+    </figure>
+    <div class="pr3">
+      <div class="pr"><h3>Примеры повторов</h3><p>Каждые 20 минут проверить плиту, до 23:00. Каждый месяц 20-го платёж. Последний день месяца. Каждая вторая пятница. Раз в квартал отчёт. Раз в год страховка или документ.</p></div>
+      <div class="pr"><h3>«Заранее»</h3><p>За 7, 3 и 1 день и в день срока: четыре отдельных напоминания об одном сроке. Каждое со своими кнопками.</p></div>
+      <div class="pr"><h3>Что бот не делает</h3><p>Не стирает пропущенное, не закрывает за тебя, не решает, что дело «уже не нужно». Закрыть может только твоя кнопка.</p></div>
+    </div>
+  </section>
+
+  <section class="blk" id="look">
+    <h2 class="sec">Как это выглядит в Discord</h2>
+    <p class="lead">Макеты на тёмной теме Discord. Настоящий вид будет чуть другим, но состав, порядок и кнопки такие же.</p>
+    <div class="tabs" role="tablist" aria-label="Макеты">
+      <button class="tab" role="tab" data-tab="p1" aria-selected="true">Напоминание</button>
+      <button class="tab" role="tab" data-tab="p2" aria-selected="false">Отложить на…</button>
+      <button class="tab" role="tab" data-tab="p3" aria-selected="false">Панель «Горит»</button>
+      <button class="tab" role="tab" data-tab="p4" aria-selected="false">Запись текстом</button>
+      <button class="tab" role="tab" data-tab="p5" aria-selected="false">Входящие</button>
+      <button class="tab" role="tab" data-tab="p6" aria-selected="false">Меню сообщения</button>
+      <button class="tab" role="tab" data-tab="p7" aria-selected="false">Сводки</button>
+    </div>
+
+    <div class="pane" id="p1" role="tabpanel">
+      <p>Так напоминание приходит в личку. Если не нажать, через 10 минут придёт второе, где видно, как долго это тянется.</p>
+      <div class="dc">
+        <div class="dm"><div class="av">М</div><div>
+          <div class="dn">Meido<span class="bot">БОТ</span><span class="tm">Сегодня, 18:30</span></div>
+          <div><span class="mn">@Ihor</span></div>
+          <div class="emb"><div class="et">Выключить духовку</div><div class="ed"><span class="m">Поставлено в 18:02 · это 1-е напоминание</span></div></div>
+          <div class="btns"><span class="bt g">Готово</span><span class="bt">15 мин</span><span class="bt">1 час</span><span class="bt">На…</span></div>
+        </div></div>
+        <div class="dm"><div class="av">М</div><div>
+          <div class="dn">Meido<span class="bot">БОТ</span><span class="tm">Сегодня, 18:50</span></div>
+          <div><span class="mn">@Ihor</span></div>
+          <div class="emb y"><div class="et">Выключить духовку</div><div class="ed">Это 3-е напоминание, прошло 20 минут. Ты уже откладывал это 2 раза.</div></div>
+          <div class="btns"><span class="bt g">Готово</span><span class="bt">15 мин</span><span class="bt">1 час</span><span class="bt">На…</span></div>
+        </div></div>
+        <div class="dm"><div class="av">М</div><div>
+          <div class="dn">Meido<span class="bot">БОТ</span><span class="tm">Сегодня, 19:00</span></div>
+          <div class="emb g"><div class="et">Проверить плиту</div><div class="ed"><span class="m">каждые 20 минут, до 23:00 · следующий раз в 19:20</span></div></div>
+          <div class="btns"><span class="bt g">Всё в порядке</span><span class="bt">Через 5 минут</span><span class="bt r">Стоп</span></div>
+        </div></div>
+      </div>
+    </div>
+
+    <div class="pane" id="p2" role="tabpanel" hidden>
+      <p>Окно после кнопки «На…». Дата выбирается быстрыми вариантами, а если нужно другое время, пишется строкой обычными словами.</p>
+      <div class="dc">
+        <div class="modal">
+          <div class="mt">Отложить: выключить духовку</div>
+          <div class="lab">Когда напомнить?</div>
+          <div class="rad">
+            <div><span class="rd"></span>Через 30 минут</div>
+            <div><span class="rd on"></span>Сегодня вечером, 19:00</div>
+            <div><span class="rd"></span>Завтра, 9:00</div>
+            <div><span class="rd"></span>В понедельник, 9:00</div>
+          </div>
+          <div class="lab">Или своё время</div>
+          <div class="inp ph">например: завтра 10:30</div>
+          <div class="btns"><span class="bt b">Отложить</span></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="pane" id="p3" role="tabpanel" hidden>
+      <p>Одно сообщение в канале «сегодня». Бот правит его сам, ничего искать не нужно. Кнопки работают прямо в нём.</p>
+      <div class="dc">
+        <div class="ch"># сегодня</div>
+        <div class="dm"><div class="av">М</div><div>
+          <div class="dn">Meido<span class="bot">БОТ</span><span class="tm">обновлено 18:31</span></div>
+          <div class="emb r"><div class="et">Просрочено (2)</div><div class="ed">Оплатить интернет: вчера 18:00 · пропущено 1 раз<br>Позвонить в сервис: 3 дня · откладывал 4 раза</div></div>
+          <div class="emb y"><div class="et">Сегодня (3)</div><div class="ed">18:00 Выключить духовку<br>20:00 Спортзал<br>каждые 20 минут: плита, до 23:00</div></div>
+          <div class="emb"><div class="et">Скоро</div><div class="ed">Завтра 09:00 Отчёт<br>Через 3 дня: страховка (заранее)</div></div>
+          <div class="btns"><span class="bt b">Добавить</span><span class="bt">Все дела</span><span class="bt">Пауза</span></div>
+        </div></div>
+      </div>
+    </div>
+
+    <div class="pane" id="p4" role="tabpanel" hidden>
+      <p>Обычный текст в личку боту. Бот читает новые сообщения раз в минуту и отвечает. Время всегда показывает, чтобы ошибку «не та пятница» было видно сразу.</p>
+      <div class="dc">
+        <div class="dm"><div class="av me">I</div><div><div class="dn">Ihor<span class="tm">18:04</span></div><div>завтра в 10 купить хлеб</div></div></div>
+        <div class="dm"><div class="av">М</div><div>
+          <div class="dn">Meido<span class="bot">БОТ</span><span class="tm">18:04</span></div>
+          <div class="emb g"><div class="et">Записано: купить хлеб</div><div class="ed"><span class="m">завтра, суббота, 10:00 · обычное</span></div></div>
+          <div class="btns"><span class="bt g">Верно</span><span class="bt">Изменить</span><span class="bt r">Отмена</span></div>
+        </div></div>
+        <div class="dm"><div class="av me">I</div><div><div class="dn">Ihor<span class="tm">18:07</span></div><div>каждый месяц 20-го оплатить интернет, напомнить за 3 дня</div></div></div>
+        <div class="dm"><div class="av">М</div><div>
+          <div class="dn">Meido<span class="bot">БОТ</span><span class="tm">18:07</span></div>
+          <div class="emb g"><div class="et">Повтор: оплатить интернет</div><div class="ed"><span class="m">каждый месяц, 20-го, 09:00 · заранее за 3 дня и в день срока</span></div></div>
+          <div class="btns"><span class="bt g">Верно</span><span class="bt">Изменить</span></div>
+        </div></div>
+        <div class="dm"><div class="av me">I</div><div><div class="dn">Ihor<span class="tm">18:09</span></div><div>пароль от вайфая 12345678</div></div></div>
+        <div class="dm"><div class="av">М</div><div>
+          <div class="dn">Meido<span class="bot">БОТ</span><span class="tm">18:09</span></div>
+          <div class="emb r"><div class="et">Похоже на пароль</div><div class="ed">Я удалил сообщение и ничего не сохранил. Для паролей лучше Bitwarden: Discord не для этого.</div></div>
+        </div></div>
+      </div>
+    </div>
+
+    <div class="pane" id="p5" role="tabpanel" hidden>
+      <p>«Входящие» как форум с тегами. Бот сам создаёт пост и ставит теги, закрытое уходит в архив. Это основа Meido: защита от свалки.</p>
+      <div class="dc">
+        <div class="ch"># входящие</div>
+        <div class="post"><div class="pt">Ссылка: статья про Cloudflare D1</div><div><span class="tg">ссылка</span><span class="tg n">новое</span><span class="tg u">прочитать позже</span></div><div class="ed"><span class="m">Meido: Напомнить прочитать?</span></div><div class="btns" style="margin-top:0"><span class="bt">Вечером</span><span class="bt">В субботу</span><span class="bt">Не надо</span></div></div>
+        <div class="post"><div class="pt">Страховка авто: документ</div><div><span class="tg">документ</span><span class="tg u">срок 15.12</span></div><div class="ed"><span class="m">Meido: Поставил напоминания за 7, 3 и 1 день до 15.12.</span></div></div>
+        <div class="post"><div class="pt">Идея: чат-бот для семьи</div><div><span class="tg">идея</span><span class="tg n">новое</span></div></div>
+      </div>
+    </div>
+
+    <div class="pane" id="p6" role="tabpanel" hidden>
+      <p>Долгое нажатие на любое сообщение, в том числе в чужом чате, если поставить бота «на себя». Бот получает сообщение целиком: текст, ссылку, вложение, голосовое.</p>
+      <div class="dc">
+        <div class="sel"><div class="dn">Мария</div><div>завтра до 12 пришлите, пожалуйста, подписанный акт</div></div>
+        <div class="menu">
+          <div>Приложения</div>
+          <div>Напомнить об этом</div>
+          <div>Записать во «Входящие»</div>
+          <div>Расшифровать голосовое</div>
+          <div class="x">Это секрет: удалить и забыть</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="pane" id="p7" role="tabpanel" hidden>
+      <p>Две сводки в день. Утром план, вечером «закрой или перенеси на конкретное время»: ничего не остаётся без решения.</p>
+      <div class="dc">
+        <div class="dm"><div class="av">М</div><div>
+          <div class="dn">Meido<span class="bot">БОТ</span><span class="tm">08:00</span></div>
+          <div class="emb"><div class="et">Доброе утро. Я на месте.</div><div class="ed">Сегодня: 4 дела, 2 повторяющихся<br>Просрочено: 2 (самое старое: 3 дня)<br>Скоро: страховка через 3 дня</div></div>
+        </div></div>
+        <div class="dm"><div class="av">М</div><div>
+          <div class="dn">Meido<span class="bot">БОТ</span><span class="tm">20:00</span></div>
+          <div class="emb y"><div class="et">Вечер: что осталось</div><div class="ed">Не закрыто сегодня: позвонить в сервис, оплатить интернет<br>Закрой или назови время, на которое переносим.</div></div>
+          <div class="btns"><span class="bt g">Закрыть всё сделанное</span><span class="bt">Перенести на завтра</span><span class="bt">Разобрать по одному</span></div>
+        </div></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="blk" id="features">
+    <h2 class="sec">Что умеет</h2>
+    <p class="lead">Метка <b>Ядро</b>: входит в первую версию и без него бот не решает задачу. <b>Предлагаю</b>: хорошая вещь, нужно твоё «да». <b>Идея</b>: на потом. Ничего из «Предлагаю» и «Идея» не делаю без ответа. Справа от названия номер вопроса, где это решается.</p>
+    <div class="cat">
+      <div class="cg"><h3>Не дать забыть</h3><ul>
+        <li><span class="st st-core">Ядро</span><span><b>Повтор до «Готово»</b> и лестница настойчивости<span class="d">Напоминание не пропадает, пока не нажата кнопка. <a href="#q-A2">A2</a></span></span></li>
+        <li><span class="st st-core">Ядро</span><span><b>Отложить на конкретное время</b><span class="d">Быстрые кнопки и окно «На…» со списком и строкой «завтра 10:30».</span></span></li>
+        <li><span class="st st-core">Ядро</span><span><b>Тихие часы и «пробивающие» дела</b><span class="d"><a href="#q-A4">A4</a></span></span></li>
+        <li><span class="st st-core">Ядро</span><span><b>Догонялка после сбоя</b><span class="d">Если бот или Cloudflare были недоступны, всё пропущенное приходит сразу после возвращения.</span></span></li>
+        <li><span class="st st-offer">Предлагаю</span><span><b>Сторож «бот жив»</b><span class="d">Письмо на почту, если бот замолчал на 15 минут. <a href="#q-A6">A6</a></span></span></li>
+        <li><span class="st st-offer">Предлагаю</span><span><b>Подсказка при частом откладывании</b><span class="d">На 3-й раз: «делаем сегодня, разбить на шаги или удалить?» <a href="#q-A5">A5</a></span></span></li>
+        <li><span class="st st-offer">Предлагаю</span><span><b>Пауза «я в отъезде»</b><span class="d">Бот молчит N дней, потом присылает одну сводку накопленного. <a href="#q-E3">E3</a></span></span></li>
+      </ul></div>
+      <div class="cg"><h3>Быстро записать</h3><ul>
+        <li><span class="st st-core">Ядро</span><span><b>Команды /remind и /every</b><span class="d">С диктовкой голосом в поле команды на iPhone. <a href="#q-B1">B1</a></span></span></li>
+        <li><span class="st st-offer">Предлагаю</span><span><b>Обычный текст в личку боту</b><span class="d">«Завтра в 10 купить хлеб». Бот читает личку раз в минуту. <a href="#q-B1">B1</a></span></span></li>
+        <li><span class="st st-offer">Предлагаю</span><span><b>Меню на сообщении</b><span class="d">«Напомнить об этом», «Записать во Входящие». Работает в любом чате, если бот поставлен «на себя». <a href="#q-B1">B1</a></span></span></li>
+        <li><span class="st st-offer">Предлагаю</span><span><b>Siri и «Поделиться» на iPhone</b><span class="d">«Привет, Siri, запиши боту …» или «Поделиться» ссылкой, текстом, фото. Настройка один раз, около 6 нажатий. <a href="#q-B1">B1</a></span></span></li>
+        <li><span class="st st-idea">Идея</span><span><b>Голосовое сообщение в текст</b><span class="d">Бесплатный лимит у Cloudflare есть, размер файлов не подтверждён: проверю при сборке. <a href="#q-B1">B1</a></span></span></li>
+        <li><span class="st st-idea">Идея</span><span><b>Текст в канал «Входящие»</b><span class="d">Нужен один переключатель в Developer Portal; сработает ли без постоянного соединения, проверю на живом боте. <a href="#q-B1">B1</a></span></span></li>
+        <li><span class="st st-core">Ядро</span><span><b>«Когда?» для дел без времени</b><span class="d">Дело без срока не лежит молча. <a href="#q-B2">B2</a></span></span></li>
+      </ul></div>
+      <div class="cg"><h3>Повторяющиеся дела и сроки</h3><ul>
+        <li><span class="st st-core">Ядро</span><span><b>Повторы</b><span class="d">Минуты, часы, дни недели, месяц (число, последний день, «вторая пятница»), квартал, год. <a href="#q-C1">C1</a></span></span></li>
+        <li><span class="st st-core">Ядро</span><span><b>«Заранее»</b><span class="d">За 7, 3 и 1 день и в день срока.</span></span></li>
+        <li><span class="st st-core">Ядро</span><span><b>Пропущенное не стирается</b><span class="d">Каждое повторение отдельное, пропущенное видно: «пропущено 2 раза». <a href="#q-C2">C2</a></span></span></li>
+        <li><span class="st st-offer">Предлагаю</span><span><b>Шаблоны рутин</b><span class="d">Платежи, документы, отчётность ФОП, ТО авто, подписки: заготовки, даты вводишь сам. Налоговых советов бот не даёт. <a href="#q-C3">C3</a></span></span></li>
+        <li><span class="st st-core">Ядро</span><span><b>Интервальные проверки</b><span class="d">«Каждые 20 минут проверить плиту, до 23:00» с кнопками «Всё в порядке» и «Стоп».</span></span></li>
+      </ul></div>
+      <div class="cg"><h3>Порядок: Meido</h3><ul>
+        <li><span class="st st-offer">Предлагаю</span><span><b>Форум «Входящие» с тегами</b><span class="d">Задача, ссылка, заметка, документ, идея. Закрыл, пост уходит в архив. <a href="#q-D1">D1</a></span></span></li>
+        <li><span class="st st-offer">Предлагаю</span><span><b>Поиск /find</b><span class="d">По заметкам, ссылкам и описаниям файлов.</span></span></li>
+        <li><span class="st st-offer">Предлагаю</span><span><b>Дубли</b><span class="d">«Похоже, ты это уже записывал: вот тот пост».</span></span></li>
+        <li><span class="st st-offer">Предлагаю</span><span><b>Недельная уборка</b><span class="d">«12 вещей без категории, 3 дубля. Разложить?» <a href="#q-D4">D4</a></span></span></li>
+        <li><span class="st st-offer">Предлагаю</span><span><b>Файлы и документы в самом Discord</b><span class="d">Бот хранит описание, срок и ссылку на сообщение. Бесплатно и без карты. <a href="#q-D6">D6</a></span></span></li>
+        <li><span class="st st-core">Ядро</span><span><b>Защита от паролей</b><span class="d">Бот узнаёт пароли, ключи и номера карт, удаляет сообщение, не сохраняет и не пишет в журнал, советует Bitwarden.</span></span></li>
+      </ul></div>
+      <div class="cg"><h3>Сводки и обзор</h3><ul>
+        <li><span class="st st-core">Ядро</span><span><b>Утро и вечер</b><span class="d">Утром план, вечером «закрой или перенеси». <a href="#q-D3">D3</a></span></span></li>
+        <li><span class="st st-offer">Предлагаю</span><span><b>Панель «Горит»</b><span class="d">Одно сообщение, которое бот обновляет. <a href="#q-D2">D2</a></span></span></li>
+        <li><span class="st st-offer">Предлагаю</span><span><b>/week и календарь без Google</b><span class="d">Неделя в Discord; по желанию подписка в Календарь iPhone по секретной ссылке. <a href="#q-D5">D5</a></span></span></li>
+        <li><span class="st st-idea">Идея</span><span><b>Итоги недели и погода в утренней сводке</b><span class="d"><a href="#q-E3">E3</a></span></span></li>
+      </ul></div>
+      <div class="cg"><h3>Надёжность и характер</h3><ul>
+        <li><span class="st st-core">Ядро</span><span><b>Копии</b><span class="d">База откатывается на любой момент за 7 дней (у Cloudflare), плюс команда /export отдаёт всё файлом.</span></span></li>
+        <li><span class="st st-idea">Идея</span><span><b>Привычки с серией дней</b><span class="d">Кнопка «сделал», счётчик подряд. <a href="#q-E3">E3</a></span></span></li>
+        <li><span class="st st-idea">Идея</span><span><b>«Прочитать позже» и таймер фокуса</b><span class="d">Ссылка с названием статьи; /focus 25. <a href="#q-E3">E3</a></span></span></li>
+        <li><span class="st st-idea">Идея</span><span><b>Тон бота</b><span class="d">Нейтральный, мягкий, строгий или «горничная Meido». <a href="#q-E1">E1</a></span></span></li>
+      </ul></div>
+    </div>
+  </section>
+
+  <section class="blk" id="limits">
+    <h2 class="sec">Нельзя, но можно так</h2>
+    <p class="lead">Что хотелось и не получится напрямую, почему, и чем это заменяем. Если замена не нравится, напиши в комментарии к соответствующему вопросу.</p>
+    <div class="scroll">
+      <table class="lim">
+        <thead><tr><th>Хотелось</th><th>Почему нельзя</th><th>Как сделаем</th></tr></thead>
+        <tbody>
+          <tr><td>Писать боту обычным текстом в канале</td><td>Бот на Cloudflare не держит постоянного соединения с Discord и не слышит канал сразу. Текст в канале ему без отдельного разрешения не показывают.</td><td>В личке с ботом текст виден без разрешений: бот заглядывает туда раз в минуту и отвечает. Для канала «Входящие» нужен один переключатель в Developer Portal, проверю на живом боте.</td></tr>
+          <tr><td>Чтобы Discord сам ловил пароли в сообщениях (AutoMod)</td><td>Владельца и администраторов сервера AutoMod не проверяет (по справке Discord).</td><td>Проверка внутри бота: нашёл похожее на пароль, удалил, предупредил, не сохранил. Видит то, что пришло через бота: личка, «Входящие», меню сообщения.</td></tr>
+          <tr><td>Выбрать дату календариком в окне «Отложить»</td><td>В окнах Discord есть список, радио, галочки, текст и файл, но выбора даты нет.</td><td>Радио с быстрыми вариантами и строка «своё время: завтра 10:30».</td></tr>
+          <tr><td>Пробить «Не беспокоить» на iPhone любой ценой</td><td>«Критичные» уведомления Apple разрешает только приложениям со специальным допуском. У Discord его нет. У ntfy в официальном приложении приоритет режим тоже не обходит.</td><td>В режиме фокуса разрешаем приложение Discord (2 минуты, дам пошаговую инструкцию). Плюс лестница настойчивости и запасной канал.</td></tr>
+          <tr><td>Позвонить или прислать SMS</td><td>Бесплатного звонка или SMS из бота нет.</td><td>Запасной канал: Telegram или ntfy. Решается в вопросе A3.</td></tr>
+          <tr><td>Чтобы бот видел, что ты прочитал, и считал сделанным</td><td>Discord не сообщает боту о прочтении.</td><td>Считаем только нажатие «Готово». Это и есть принцип «не исчезает, пока не закрыто».</td></tr>
+          <tr><td>Таймер с точностью до секунды</td><td>Cloudflare запускает проверку раз в минуту, и секунда старта не гарантирована.</td><td>Точность в пределах минуты. Для «каждые 20 минут проверить плиту» этого достаточно.</td></tr>
+          <tr><td>Хранить файлы в облаке Cloudflare (R2)</td><td>Бесплатные 10 ГБ есть, но при включении просят банковскую карту.</td><td>Файлы остаются в Discord, бот хранит описание, срок и ссылку. R2 подключим только по твоему слову (D6).</td></tr>
+          <tr><td>Пересылать письма боту на адрес почты</td><td>Нужен свой домен на Cloudflare, а домен платный.</td><td>Кнопка «Поделиться» в почтовом приложении iPhone: письмо или его текст уходит боту.</td></tr>
+          <tr><td>Бот пишет в личку сам, когда захочет</td><td>Discord просит, чтобы личка начиналась с действия человека. Приходит ли при этом push на телефон, документация не уточняет.</td><td>Ты один раз пишешь боту команду /start в личке. Дальше он пишет сам; push проверим на живом боте в первый вечер.</td></tr>
+          <tr><td>Календарь без Google</td><td>Это твоё решение, ограничения нет.</td><td>/week и панель «Горит» в Discord; по желанию подписка в Календарь iPhone по секретной ссылке (D5).</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section class="blk" id="mine">
+    <h2 class="sec">Что я решил сам</h2>
+    <p class="lead">Это техника, про неё не спрашиваю. Если что-то не нравится, скажи.</p>
+    <figure class="fig">
+      <div class="scroll">
+        <svg viewBox="0 0 720 320" role="img" aria-label="Схема: Discord и Siri отправляют действия в одну программу на Cloudflare; она хранит дела в базе, раз в минуту сама просыпается по расписанию и шлёт сообщения в Discord, запасной канал и сторожу">
+          <defs><marker id="ah2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" class="ar"/></marker></defs>
+          <rect class="nd" x="20" y="70" width="150" height="70" rx="8"/><text class="t-b" x="95" y="100" text-anchor="middle">Discord</text><text class="t-m" x="95" y="119" text-anchor="middle">телефон и ПК</text>
+          <rect class="nd" x="20" y="205" width="150" height="70" rx="8"/><text class="t-b" x="95" y="235" text-anchor="middle">iPhone</text><text class="t-m" x="95" y="254" text-anchor="middle">Siri, «Поделиться»</text>
+          <rect class="nd" x="300" y="12" width="120" height="38" rx="8"/><text class="t-b" x="360" y="35" text-anchor="middle">Cron: раз в минуту</text>
+          <rect class="nd-a" x="275" y="105" width="170" height="100" rx="10"/><text class="t-b" x="360" y="133" text-anchor="middle">Одна программа</text><text class="t-m" x="360" y="152" text-anchor="middle">на Cloudflare (Worker)</text><text class="t-m" x="360" y="170" text-anchor="middle">принимает кнопки и команды,</text><text class="t-m" x="360" y="186" text-anchor="middle">шлёт напоминания</text>
+          <rect class="nd" x="290" y="245" width="140" height="56" rx="8"/><text class="t-b" x="360" y="270" text-anchor="middle">База дел (D1)</text><text class="t-m" x="360" y="287" text-anchor="middle">откат на 7 дней</text>
+          <rect class="nd-w" x="550" y="105" width="150" height="100" rx="10"/><text class="t-b" x="625" y="136" text-anchor="middle">Запасной канал</text><text class="t-m" x="625" y="155" text-anchor="middle">Telegram или ntfy</text><text class="t-b" x="625" y="180" text-anchor="middle">Сторож</text><text class="t-m" x="625" y="197" text-anchor="middle">письмо, если тишина</text>
+          <path class="ln" d="M170 100 H273" marker-end="url(#ah2)"/><text class="t-m" x="222" y="93" text-anchor="middle">кнопки, команды</text>
+          <path class="ln" d="M273 135 H172" marker-end="url(#ah2)"/><text class="t-m" x="222" y="153" text-anchor="middle">сообщения, личка</text>
+          <path class="ln" d="M170 240 L273 190" marker-end="url(#ah2)"/><text class="t-m" x="214" y="233" text-anchor="middle">текст + ключ</text>
+          <path class="ln" d="M360 50 V103" marker-end="url(#ah2)"/>
+          <path class="ln" d="M360 205 V243" marker-start="url(#ah2)" marker-end="url(#ah2)"/><text class="t-m" x="372" y="228">дела</text>
+          <path class="ln" d="M447 155 H548" marker-end="url(#ah2)"/><text class="t-m" x="498" y="148" text-anchor="middle">«я жив», срочное</text>
+        </svg>
+      </div>
+      <figcaption>Всё состояние в базе, у программы нет памяти. После любого сбоя следующая минутная проверка подхватывает дела из базы. Компьютер дома не нужен.</figcaption>
+    </figure>
+    <ul class="mine">
+      <li>Хостинг только на бесплатном Cloudflare: одна программа, одна база, раз в минуту сама просыпается. Бесплатных лимитов хватает с огромным запасом (100 тысяч запросов в сутки при ожидаемых нескольких сотнях).</li>
+      <li>Часовой пояс Киев (Europe/Kyiv): время считается в нём, переход на летнее и зимнее время и 29–31 числа покрыты тестами.</li>
+      <li>Сообщения обычные, текст с кнопками: они работают одинаково на iPhone и на ПК.</li>
+      <li>Закрытые дела стираются через 90 дней, остаются только счётчики для серий и итогов. Минимум данных.</li>
+      <li>Копии: Cloudflare откатывает базу на любой момент за 7 дней, и ещё /export присылает всё файлом.</li>
+      <li>Секреты (ключи Discord, Telegram, Siri) хранит Cloudflare, не код и не git. Установка спрашивает их у тебя в консоли, в чат ты их не присылаешь.</li>
+      <li>Установка одним действием: <code>setup.cmd</code>. Вход в Cloudflare откроется в браузере, приложение в Discord создаётся по инструкции (около 10 минут, один раз).</li>
+      <li>Проверка у меня: тесты на реальных фразах («через 20 минут», «в пятницу в 15:00», «каждую вторую пятницу», последний день месяца) и сухой прогон. Живой Discord и Cloudflare проверяешь ты по короткому списку, я напишу прямо, что не проверено.</li>
+    </ul>
+  </section>
+
+  <section class="blk" id="questions">
+    <h2 class="sec">Вопросы</h2>
+    <div class="how">
+      <div><b>Вариант</b>: выбери один (или несколько, где так сказано). Первым стоит вариант, который я рекомендую.</div>
+      <div><b>Отложить</b>: вернёмся позже, ничего не решаем. <b>Не делать</b>: закрываем пункт. <b>Решай сам</b>: выберу по рекомендации и скажу, что выбрал.</div>
+      <div>Свой вариант или уточнение пиши в поле комментария. Ответы сохраняются сразу. Когда закончишь, напиши в чате «ответил».</div>
+    </div>
+    <div class="banner" id="nodb" hidden>Ответы не уходят в базу страницы: войди в аккаунт или открой страницу из claude.ai. Пока они хранятся только в этом браузере, а кнопка «Скопировать ответы» отдаст текст.</div>
+    <div class="sticky">
+      <div class="bar" id="bar"></div>
+      <div class="nums" id="nums"></div>
+      <div class="chips" id="chips"></div>
+      <div class="tools">
+        <button id="onlyOpen" aria-pressed="false">Только без ответа</button>
+        <button id="copy">Скопировать ответы</button>
+      </div>
+    </div>
+    <textarea id="exp" hidden readonly aria-label="Текст ответов"></textarea>
+    <div id="list"></div>
+  </section>
+</div>
+<div id="toast" hidden></div>
