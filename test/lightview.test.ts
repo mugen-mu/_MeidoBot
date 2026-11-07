@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it } from "vitest";
 import { setSetting } from "../src/db/repo.ts";
 import { type Interaction, handleInteraction } from "../src/discord/interactions.ts";
-import { nowLine, parseYasno, publishedFor } from "../src/light.ts";
+import { nowLine, parseYasno, publishedFor, tomorrowDigest, usDate } from "../src/light.ts";
 import { MINUTE } from "../src/time/tz.ts";
 import { kyiv } from "./helpers.ts";
 import { CH_REMIND, OWNER, World } from "./world.ts";
@@ -93,7 +93,7 @@ describe("/light: просмотр графика", () => {
 
 describe("дайджест: график на завтра вышел позже вечерней сводки", () => {
   const tenPast = (h: number, mi: number) => kyiv(2026, 11, 7, h, mi);
-  const posts = () => w.discord.posted.filter((p) => p.channel === CH_REMIND && (p.body.content ?? "").includes("График света на завтра опубликован"));
+  const posts = () => w.discord.posted.filter((p) => p.channel === CH_REMIND && (p.body.content ?? "").includes("Хозяин, "));
 
   it("20:00 — сводка «ещё не опубликован»; в 21:10 график вышел — одно сообщение с упоминанием, потом тишина", async () => {
     await w.repo().exec([setSetting("light", "3")]);
@@ -106,8 +106,7 @@ describe("дайджест: график на завтра вышел позже
     await w.run(tenPast(21, 10));
     expect(posts()).toHaveLength(1);
     const m = posts()[0].body;
-    expect(m.content).toContain(`<@${OWNER}> График света на завтра опубликован.`);
-    expect(m.content).toContain("света не будет 00:00–05:00");
+    expect(m.content).toBe(`<@${OWNER}> Хозяин, график отключений на завтра 11.08.2026 опубликован.\nСвета не будет 00:00–05:00.`);
     expect(m.allowed_mentions).toEqual({ users: [OWNER] });
     await w.run(tenPast(21, 20));
     await w.run(tenPast(23, 50));
@@ -146,5 +145,37 @@ describe("дайджест: график на завтра вышел позже
     const before = w.lightFetches;
     for (let m = 1; m <= 9; m++) await w.run(tenPast(20, 0) + m * MINUTE);
     expect(w.lightFetches).toBe(before);
+  });
+});
+
+describe("сообщение «график на завтра опубликован»: формулировки и формат", () => {
+  it("американский формат даты месяц.день.год", () => {
+    expect(usDate("2026-11-08")).toBe("11.08.2026");
+    expect(usDate("2027-01-05")).toBe("01.05.2027");
+  });
+  it("четыре формулировки по дате; вторая строка — интервалы; обращение с большой буквы", () => {
+    const data = parseYasno({
+      "3.1": { today: day("2026-11-07", "ScheduleApplies", G3), tomorrow: day("2026-11-08", "ScheduleApplies", [[210, 450, "Definite"], [840, 1080, "Definite"]]) },
+    });
+    const heads = new Set<string>();
+    for (let d = 1; d <= 8; d++) {
+      const iso = `2026-11-${String(d).padStart(2, "0")}`;
+      const lines = tomorrowDigest("3.1", data, iso, "хозяин").split("\n");
+      expect(lines[0].startsWith("Хозяин, ")).toBe(true);
+      expect(lines[0]).toContain(usDate(iso));
+      expect(lines[1]).toBe("Света не будет 03:30–07:30, 14:00–18:00.");
+      heads.add(lines[0].replace(usDate(iso), "D"));
+    }
+    expect(heads.size).toBe(4);
+  });
+  it("без отключений и при разных подгруппах", () => {
+    const none = parseYasno({ "3.1": { today: day("2026-11-07", "ScheduleApplies", G3), tomorrow: day("2026-11-08", "ScheduleApplies", WAIT) } });
+    expect(tomorrowDigest("3.1", none, "2026-11-08", "хозяин").split("\n")[1]).toBe("Отключений не будет.");
+    const mixed = parseYasno({
+      "3.1": { today: day("2026-11-07", "ScheduleApplies", G3), tomorrow: day("2026-11-08", "ScheduleApplies", T3) },
+      "3.2": { today: day("2026-11-07", "ScheduleApplies", G3), tomorrow: day("2026-11-08", "ScheduleApplies", WAIT) },
+    });
+    const lines = tomorrowDigest("3", mixed, "2026-11-08", "хозяин").split("\n");
+    expect(lines.slice(1)).toEqual(["Группа 3.1: света не будет 00:00–05:00.", "Группа 3.2: отключений не будет."]);
   });
 });

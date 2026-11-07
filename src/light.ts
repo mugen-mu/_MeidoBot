@@ -151,3 +151,33 @@ export function nowLine(now: number, group: string, data: LightData, tz: string)
   }
   return lines.size === 1 ? [...lines][0] : null;
 }
+
+/** «2026-11-08» -> «11.08.2026» (американский формат месяц.день.год: решение пользователя 2026-11-08). */
+export function usDate(iso: string): string {
+  const [y, m, d] = iso.split("-");
+  return `${m}.${d}.${y}`;
+}
+
+const DIGEST_HEADS: ((a: string, date: string) => string)[] = [
+  (a, date) => `${a}, график отключений на завтра ${date} опубликован.`,
+  (a, date) => `${a}, на завтра (${date}) вышел график отключений.`,
+  (a, date) => `${a}, график света на ${date} уже появился.`,
+  (a, date) => `${a}, график отключений на ${date} опубликован.`,
+];
+
+/**
+ * Сообщение «график на завтра опубликован»: заголовок (одна из нескольких формулировок, выбор по дате, чтобы не повторяться изо дня в день)
+ * и строка «Света не будет 03:30–07:30, 14:00–18:00.». Если подгруппы расходятся, строка на каждую.
+ */
+export function tomorrowDigest(group: string, data: LightData, tomorrowIso: string, address: string): string {
+  const a = address.charAt(0).toUpperCase() + address.slice(1);
+  const seed = Number(tomorrowIso.replace(/-/g, "")) % DIGEST_HEADS.length;
+  const head = DIGEST_HEADS[seed](a, usDate(tomorrowIso));
+  const keys = groupsFor(group, data);
+  const days = keys.map((k) => data[k].tomorrow);
+  const text = (d: LightDay) => (d.off.length ? `Света не будет ${d.off.map(range).join(", ")}.` : "Отключений не будет.");
+  const body = days.every((d) => same(d, days[0]))
+    ? [text(days[0])]
+    : keys.map((k, i) => `Группа ${k}: ${text(days[i]).charAt(0).toLowerCase()}${text(days[i]).slice(1)}`);
+  return [head, ...body].join("\n");
+}

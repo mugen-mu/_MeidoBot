@@ -18,7 +18,8 @@ import { isPolite, isSeriousTopic } from "./personality/moodEngine.ts";
 import { detectUserWord } from "./personality/userWords.ts";
 import { announceOutage } from "./power.ts";
 import { handleReply } from "./reply.ts";
-import { fetchYasno, lightLines, publishedFor, type LightData } from "./light.ts";
+import { fetchYasno, lightLines, publishedFor, tomorrowDigest, type LightData } from "./light.ts";
+import { MOOD_CONFIG } from "./personality/config.ts";
 import { planFire } from "./ladder.ts";
 import { ladderFor, nextSeriesOps, scrubOps } from "./service.ts";
 import { type AppSettings, inQuietHours } from "./settings.ts";
@@ -403,7 +404,7 @@ export async function runCron(d: CronDeps): Promise<CronReport> {
         if (data && publishedFor("tomorrow", s.lightGroup, data, tmr)) {
           try {
             await api.postMessage(s.chRemind, {
-              content: `<@${owner}> График света на завтра опубликован.\n${lightLines("tomorrow", s.lightGroup, data, tmr).join("\n")}`,
+              content: `<@${owner}> ${tomorrowDigest(s.lightGroup, data, tmr, MOOD_CONFIG.address)}`,
               allowed_mentions: { users: [owner] },
             });
             ops2.push(setMeta("light_tmr", tmr), event(now, "light_tomorrow"));
