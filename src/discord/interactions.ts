@@ -504,7 +504,7 @@ async function onComponent(c: C): Promise<Reply> {
       const occ = await asOcc(c, a);
       if (!occ || !isOpen(occ)) return gone();
       const w = occ.due_at !== null && occ.kind === "main" && occ.item_kind !== "timer" && !occ.rule_recipe ? wallOf(occ.due_at, c.s.tz) : null;
-      const whenText = w ? `${w.d}.${String(w.mo).padStart(2, "0")} ${fmtHHMM(w.h * 60 + w.mi)}` : null;
+      const whenText = w ? `${String(w.mo).padStart(2, "0")}.${String(w.d).padStart(2, "0")} ${fmtHHMM(w.h * 60 + w.mi)}` : null;
       return { type: 9, data: editModal({ occId: occ.id, title: occ.title, whenText, ladderKey: "" }).data };
     }
     case "stop": {

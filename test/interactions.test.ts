@@ -245,7 +245,7 @@ describe("кнопки напоминания", () => {
     expect(m.type).toBe(9);
     const fields = modalValues(m.data.components.map((l: any) => ({ ...l, component: { ...l.component, value: l.component.value } })));
     expect(fields.get("title")).toBe("Созвон");
-    expect(fields.get("when")).toBe("8.11 10:00");
+    expect(fields.get("when")).toBe("11.08 10:00");
     const u = await submit(`m_edit:${occId}`, { title: "Созвон с командой", when: "завтра 11:30", ladder: ["custom"], nums: "0 5 15" });
     expect(u.data.content).toContain("Записано: **Созвон с командой** — завтра, 11:30");
     expect(u.data.content).toContain("свои числа: 0, 5, 15 мин");

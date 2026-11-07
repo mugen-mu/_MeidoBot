@@ -196,10 +196,12 @@ function extractDate(w: Work, now: number, tz: string, allowWeekday = true): Dat
   if (w.take(rx(`${B}завтра${E}`))) return dayPart(1);
   if (w.take(rx(`${B}сегодня${E}`))) return dayPart(0);
 
+  const beforeDm = w.s;
   const dm = w.take(rx(`(?<![\\d.:])(\\d{1,2})\\.(\\d{1,2})(?:\\.(\\d{2,4}))?(?![\\d:])`));
   if (dm) {
-    const mo = Number(dm[2]);
-    const d = Number(dm[1]);
+    // американский порядок: месяц.день[.год] (решение пользователя 2026-11-08)
+    const mo = Number(dm[1]);
+    const d = Number(dm[2]);
     if (mo >= 1 && mo <= 12 && d >= 1 && d <= 31) {
       let y = dm[3] ? Number(dm[3]) : nw.y;
       if (y < 100) y += 2000;
@@ -210,6 +212,7 @@ function extractDate(w: Work, now: number, tz: string, allowWeekday = true): Dat
       }
       return part;
     }
+    w.s = beforeDm; // не дата месяц.день (например «20.11») — текст остаётся как был
   }
 
   // «20 ноября», «15 марта 2027» — через chrono (ru)

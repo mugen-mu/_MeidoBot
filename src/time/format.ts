@@ -2,10 +2,6 @@
 import type { Recipe } from "../recur.ts";
 import { civilDay, fmtHHMM, wallOf } from "./tz.ts";
 
-const MONTH_GEN = [
-  "января", "февраля", "марта", "апреля", "мая", "июня",
-  "июля", "августа", "сентября", "октября", "ноября", "декабря",
-];
 const WD_ACC = ["", "в понедельник", "во вторник", "в среду", "в четверг", "в пятницу", "в субботу", "в воскресенье"];
 const WD_DAT = ["", "понедельникам", "вторникам", "средам", "четвергам", "пятницам", "субботам", "воскресеньям"];
 const WD_NOM = ["", "понедельник", "вторник", "среду", "четверг", "пятницу", "субботу", "воскресенье"];
@@ -30,7 +26,12 @@ export function formatDate(ms: number, now: number, tz: string): string {
   if (diff === 1) return "завтра";
   if (diff === -1) return "вчера";
   if (diff > 1 && diff < 7) return WD_ACC[w.wd];
-  return `${w.d} ${MONTH_GEN[w.mo - 1]}${w.y !== n.y ? ` ${w.y}` : ""}`;
+  return usDate(w.y, w.mo, w.d);
+}
+
+/** Американский формат месяц.день.год: «11.20.2026» (решение пользователя 2026-11-08, везде). */
+export function usDate(y: number, mo: number, d: number): string {
+  return `${String(mo).padStart(2, "0")}.${String(d).padStart(2, "0")}.${y}`;
 }
 
 /** «завтра, 10:00»; для близкого будущего — «через 20 мин, 14:35». */
@@ -101,7 +102,7 @@ export function describeRecipe(r: Recipe, tz: string): string {
       const w = wallOf(r.anchor, tz);
       const d = typeof r.monthDay === "number" ? r.monthDay : w.d;
       const mo = r.month ?? w.mo;
-      s = `${n === 1 ? "каждый год" : `каждые ${n} ${plural(n, "год", "года", "лет")}`} ${d} ${MONTH_GEN[mo - 1]}${at}`;
+      s = `${n === 1 ? "каждый год" : `каждые ${n} ${plural(n, "год", "года", "лет")}`} ${String(mo).padStart(2, "0")}.${String(d).padStart(2, "0")}${at}`;
     }
   }
   if (r.until !== undefined) s += `, до ${hhmm(r.until, tz)}`;
