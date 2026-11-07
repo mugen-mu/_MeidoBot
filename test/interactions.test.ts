@@ -327,7 +327,7 @@ describe("настройки", () => {
     expect(r.data.content).toContain("Тихие часы: выкл (23:00–07:00)");
     expect(r.data.content).toContain("утром 08:00, вечером 20:00");
     expect(r.data.flags).toBe(64);
-    expect(flat(r)).toEqual(["s_lad", "s_q", "s_qt", "s_away", "s_summ", "s_ladn", "s_dm", "s_light", "s_char"]);
+    expect(flat(r)).toEqual(["s_lad", "s_q", "s_qt", "s_away", "s_summ", "s_ladn", "s_dm", "s_light", "s_char", "s_mood"]);
   });
 
   it("переключатель тихих часов, время, сводки, отъезд, лестница по умолчанию, личка", async () => {
@@ -394,7 +394,7 @@ describe("описание команд для Discord", () => {
       }
       expect(c.integration_types).toContain(c.name === "setup" ? 0 : 1);
     }
-    expect(COMMANDS.map((c) => c.name)).toEqual(["remind", "every", "list", "week", "cancel", "snooze", "settings", "away", "power", "light", "setup", "Напомнить об этом"]);
+    expect(COMMANDS.map((c) => c.name)).toEqual(["remind", "every", "list", "week", "cancel", "snooze", "settings", "away", "power", "mood", "reset_mood", "quiet", "light", "setup", "Напомнить об этом"]);
   });
 });
 

@@ -4,6 +4,10 @@ import { type Repo, setMeta, setSetting, updateOcc } from "../db/repo.ts";
 import type { OccView, Op } from "../db/types.ts";
 import { EMPTY_REPLY, EMPTY_SERIES_REPLY, NOT_RECURRING_REPLY, SECRET_REPLY, createFromText } from "../intake.ts";
 import { tired } from "../flavor.ts";
+import { MoodSession, makeCtx, recordDone, resetOps } from "../personality/director.ts";
+import { MOODS, type Mood, isMood } from "../personality/moodEngine.ts";
+import { MOOD_CONFIG } from "../personality/config.ts";
+import { moodReport } from "../personality/report.ts";
 import { describeSpec, needsSnoozeQuestion, parseCustomSteps, parseSpec, type LadderSpec } from "../ladder.ts";
 import { fetchYasno, lightLines, normalizeGroup, nowLine } from "../light.ts";
 import { newPowerKey, readPower } from "../power.ts";
@@ -68,6 +72,8 @@ export interface HandlerCtx {
   defer: (p: Promise<unknown>) => void;
   /** для запроса графика света; по умолчанию fetch */
   fetchFn?: typeof fetch;
+  /** случайность для фраз настроения; по умолчанию Math.random */
+  rand?: () => number;
 }
 
 type Reply = Record<string, unknown>;
@@ -90,19 +96,38 @@ export async function handleInteraction(i: Interaction, ctx: HandlerCtx): Promis
   if (owner === null) return i.type === 4 ? { type: 8, data: { choices: [] } } : eph("Бот ещё не настроен. Выполните /setup на своём сервере.");
   if (userId !== owner) return i.type === 4 ? { type: 8, data: { choices: [] } } : eph("Этот бот личный.");
 
-  const c = { ...ctx, s, meta, owner, i };
+  // настроение: любое действие хозяина (команда, кнопка, окно) — активность; состояние читаем, только если включено
+  const mood = new MoodSession({ repo: ctx.repo, userId: owner, ctx: makeCtx(ctx.now, s), rand: ctx.rand });
+  let returnLine: string | null = null;
+  if (s.moodOn && (i.type === 2 || i.type === 3 || i.type === 5)) {
+    await mood.load();
+    if (mood.apply({ type: "activity" }).returned) returnLine = mood.say("return_after_pause");
+  }
+  const c: C = { ...ctx, s, meta, owner, i, mood };
+  let reply: Reply;
   switch (i.type) {
     case 2:
-      return i.data?.type === 3 ? onMessageCommand(c) : onCommand(c);
+      reply = i.data?.type === 3 ? await onMessageCommand(c) : await onCommand(c);
+      break;
     case 3:
-      return onComponent(c);
+      reply = await onComponent(c);
+      break;
     case 4:
       return onAutocomplete(c);
     case 5:
-      return onModal(c);
+      reply = await onModal(c);
+      break;
     default:
       return eph("Это действие бот не поддерживает.");
   }
+  if (mood.loaded) {
+    const ops = mood.ops();
+    if (ops.length) await ctx.repo.exec(ops);
+  }
+  const data = reply.data as { content?: string } | undefined;
+  if (returnLine && data && typeof data.content === "string" && (reply.type === 4 || reply.type === 7)) data.content += `
+-# ${returnLine}`;
+  return reply;
 }
 
 interface C extends HandlerCtx {
@@ -110,6 +135,8 @@ interface C extends HandlerCtx {
   meta: Map<string, string>;
   owner: string;
   i: Interaction;
+  /** настроение горничной; load() сделан, только если оно включено (или нужно команде /mood) */
+  mood: MoodSession;
 }
 
 const opt = (c: C, name: string): string | number | undefined =>
@@ -165,6 +192,15 @@ async function onCommand(c: C): Promise<Reply> {
       }
       return eph(await setAway(c, Number(days)));
     }
+    case "mood":
+      return moodCommand(c);
+    case "reset_mood": {
+      await c.repo.exec(resetOps(c.owner));
+      c.mood.state = null; // состояние сброшено: сессия больше ничего не пишет
+      return eph("Готово: настроение, отношение и серии сброшены к начальным. Хару начинает с чистого листа.");
+    }
+    case "quiet":
+      return eph(await quiet(c, opt(c, "hours")));
     case "setup":
       return setup(c);
     case "power":
@@ -297,6 +333,33 @@ async function setAway(c: C, days: number): Promise<string> {
   return `Бот молчит до ${formatWhen(until, c.now, c.s.tz)}. При возвращении придёт одна сводка.`;
 }
 
+// ---------- настроение горничной (Характер 2, этап Х1) ----------
+
+async function moodCommand(c: C): Promise<Reply> {
+  const set = opt(c, "set");
+  await c.mood.load();
+  if (set !== undefined) {
+    if (!isMood(set)) return eph(`Такого настроения нет. Бывают: ${MOODS.join(", ")}.`);
+    c.mood.force(set as Mood);
+    return eph(`Настроение задано вручную: ${set}. Оно сменится само, когда числа и время скажут иначе.
+
+${moodReport({ state: c.mood.state!, enabled: c.s.moodOn })}`);
+  }
+  return eph(moodReport({ state: c.mood.state!, enabled: c.s.moodOn, greeting: c.mood.say("greeting") }));
+}
+
+/** /quiet: «горничная на выходном» — тот же режим, что «я в отъезде», но в часах. */
+async function quiet(c: C, hours: string | number | undefined): Promise<string> {
+  const h = hours === undefined ? MOOD_CONFIG.quietDefaultHours : Number(hours);
+  if (h <= 0) {
+    await c.repo.exec([setSetting("away_until", "0")]);
+    return "Горничная вышла с выходного: напоминания снова идут.";
+  }
+  const until = c.now + h * 60 * MINUTE;
+  await c.repo.exec([setSetting("away_until", String(until))]);
+  return `Горничная на выходном до ${formatWhen(until, c.now, c.s.tz)}: напоминаний не будет, дела сохранятся. Вернуться раньше: /quiet hours:0`;
+}
+
 async function settingsReply(c: C): Promise<Reply> {
   return msg(settingsMessage(c.s, c.now, await dmOn(c)));
 }
@@ -353,8 +416,10 @@ async function onComponent(c: C): Promise<Reply> {
     case "done": {
       const occ = await asOcc(c, a);
       if (!occ || occ.state === "done" || occ.state === "cancelled") return gone();
+      let line: string | null = null;
+      if (c.s.moodOn) line = recordDone(c.mood, occ);
       await c.repo.exec(doneOps(occ, c.now));
-      return update(doneMessage(occ.title, c.s.character, occ.id));
+      return update(doneMessage(occ.title, c.s.character, occ.id, line));
     }
     case "snz": {
       const occ = await asOcc(c, a);
@@ -463,6 +528,8 @@ async function onSettingsComponent(c: C, kind: string, values: string[]): Promis
       return { type: 9, data: lightModal(c.s).data };
     case "s_char":
       return redo([setSetting("character", c.s.character === "maid" ? "neutral" : "maid")]);
+    case "s_mood":
+      return redo([setSetting("mood_on", c.s.moodOn ? "0" : "1")]);
     case "s_dm": {
       const on = await dmOn(c);
       let dm = c.meta.get("dm_channel_id");

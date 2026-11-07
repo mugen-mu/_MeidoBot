@@ -60,6 +60,38 @@ export const COMMANDS = [
     contexts: EVERYWHERE,
     options: [{ type: 5, name: "reset", description: "Выдать новый ключ (старые ссылки перестанут работать)", required: false }],
   },
+  {
+    name: "mood",
+    description: "Настроение горничной: как она к вам сейчас относится (видно только вам)",
+    type: 1,
+    integration_types: BOTH,
+    contexts: EVERYWHERE,
+    options: [
+      {
+        type: 3,
+        name: "set",
+        description: "Задать настроение вручную (для проверки)",
+        required: false,
+        choices: [
+          { name: "устала (tired)", value: "tired" },
+          { name: "цундере (tsundere)", value: "tsundere" },
+          { name: "яндере (yandere)", value: "yandere" },
+          { name: "обижена (sulking)", value: "sulking" },
+          { name: "гордится (proud)", value: "proud" },
+          { name: "сонная (sleepy)", value: "sleepy" },
+        ],
+      },
+    ],
+  },
+  { name: "reset_mood", description: "Сбросить настроение, отношение и серии к начальным", type: 1, integration_types: BOTH, contexts: EVERYWHERE },
+  {
+    name: "quiet",
+    description: "Горничная на выходном: бот молчит несколько часов (по умолчанию 4)",
+    type: 1,
+    integration_types: BOTH,
+    contexts: EVERYWHERE,
+    options: [{ type: 4, name: "hours", description: "Сколько часов (0 — вернуть сейчас)", required: false, min_value: 0, max_value: 72 }],
+  },
   { name: "light", description: "График отключений света: сегодня, завтра и что сейчас (видно только вам)", type: 1, integration_types: BOTH, contexts: EVERYWHERE },
   { name: "setup", description: "Завести каналы бота на этом сервере (один раз)", type: 1, integration_types: [0], contexts: [0] },
   // Команда из меню сообщения (долгое нажатие -> Приложения). Описание у такой команды не указывается.

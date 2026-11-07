@@ -11,6 +11,8 @@ import {
   weeklyText,
 } from "./discord/ui.ts";
 import { createFromText, EMPTY_REPLY, EMPTY_SERIES_REPLY, messageTime, SECRET_REPLY } from "./intake.ts";
+import { MoodSession, canStyle, makeCtx } from "./personality/director.ts";
+import { isPolite } from "./personality/moodEngine.ts";
 import { announceOutage } from "./power.ts";
 import { handleReply } from "./reply.ts";
 import { fetchYasno, lightLines, publishedFor, type LightData } from "./light.ts";
@@ -38,6 +40,8 @@ export interface CronDeps {
   maxSends?: number;
   /** для запроса графика света; по умолчанию fetch */
   fetchFn?: typeof fetch;
+  /** случайность для фраз настроения; по умолчанию Math.random */
+  rand?: () => number;
 }
 
 export interface CronReport {
@@ -81,6 +85,10 @@ export async function runCron(d: CronDeps): Promise<CronReport> {
     return w.h * 60 + w.mi;
   })();
 
+  // настроение горничной (если включено в /settings): состояние читаем лениво, только когда оно понадобится
+  const mood =
+    s.moodOn && owner ? new MoodSession({ repo, userId: owner, ctx: makeCtx(now, s), rand: d.rand }) : null;
+
   // ---------- 1. созревшие срабатывания ----------
   const ops: Op[] = [];
   try {
@@ -112,11 +120,27 @@ export async function runCron(d: CronDeps): Promise<CronReport> {
           ops.push(updateOcc(occ.id, { next_fire_at: null, lock_until: null, lock_token: null }));
           continue;
         }
-        const body = reminderMessage({ occ, plan, ownerId: owner as string, tz: s.tz, now });
+        // настроение: пропуск (дело стало «просрочено») и реплика под напоминанием; при сбое отправки откатываем
+        const snap = mood?.snapshot();
+        let flavor: string | null = null;
+        if (mood && occ.kind === "main" && occ.item_kind === "reminder" && room(3)) {
+          await mood.load();
+          const becameOverdue = plan.phase === "overdue" && occ.state !== "overdue";
+          if (becameOverdue) mood.apply({ type: "miss" });
+          if (canStyle(occ.title, occ.critical)) {
+            const situation = becameOverdue
+              ? mood.state!.missStreak === 1 ? "missed_first" : "missed"
+              : plan.phase === "overdue" ? "missed" : occ.fire_count === 0 && occ.state === "planned" ? "reminder" : "reminder_repeat";
+            // повторное «просрочено» не должно каждый раз грозить: драма — с паузой, внутри say()
+            flavor = mood.say(situation, { task: occ.title });
+          }
+        }
+        const body = reminderMessage({ occ, plan, ownerId: owner as string, tz: s.tz, now, flavor });
         let sent;
         try {
           sent = await api.postMessage(s.chRemind as string, body);
         } catch (e) {
+          if (mood && snap) mood.restore(snap);
           if (e instanceof BudgetExceeded) break;
           healthy = false;
           report.failed++;
@@ -167,6 +191,7 @@ export async function runCron(d: CronDeps): Promise<CronReport> {
     report.notes.push(`ошибка: ${(e as Error).message}`);
     ops.push(event(now, "cron_error", null, String((e as Error).message).slice(0, 200)));
   }
+  if (mood?.loaded) ops.push(...mood.ops());
   ops.push(releaseLocks(token));
   await repo.exec(ops); // результат фиксируем всегда: запас подзапросов на это есть
 
@@ -200,12 +225,27 @@ export async function runCron(d: CronDeps): Promise<CronReport> {
           lastId = m.id;
           if (m.author.bot || m.author.id !== owner) continue;
           if (replies) {
-            if ((await handleReply({ repo, api, s, now }, m, ch)) === "handled") report.intake++;
+            if ((await handleReply({ repo, api, s, now, mood }, m, ch)) === "handled") report.intake++;
             continue;
           }
           if (!m.content.trim()) {
             if (!m.attachments?.length) blind++;
             continue;
+          }
+          // настроение: любое сообщение хозяина — активность; «спасибо» горничной — вежливость, дело из этого не создаём
+          if (mood && room2(3)) {
+            await mood.load();
+            const polite = isPolite(m.content);
+            mood.apply({ type: "activity", polite });
+            if (polite) {
+              report.intake++;
+              try {
+                await api.postMessage(ch, { content: mood.say("thanks") ?? "Пожалуйста.", allowed_mentions: { parse: [] } });
+              } catch (e) {
+                if (e instanceof BudgetExceeded) break;
+              }
+              continue;
+            }
           }
           const r = await createFromText({ repo, settings: s, now }, m.content, "channel", { at: messageTime(m, now) });
           report.intake++;
@@ -366,6 +406,7 @@ export async function runCron(d: CronDeps): Promise<CronReport> {
     report.notes.push(`ошибка: ${(e as Error).message}`);
     ops2.push(event(now, "cron_error", null, String((e as Error).message).slice(0, 200)));
   }
+  if (mood?.loaded) ops2.push(...mood.ops());
   if (ops2.length) await repo.exec(ops2);
 
   // ---------- 3. пинг сторожу: раз в 10 минут ----------

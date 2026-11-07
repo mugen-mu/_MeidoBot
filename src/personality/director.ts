@@ -2,7 +2,7 @@
 // Одна сессия на запрос (cron или нажатие кнопки): загрузили состояние один раз (один подзапрос),
 // применили события, сказали фразы, записали всё одной пачкой вместе с остальными операциями.
 import { type Repo, event, op } from "../db/repo.ts";
-import type { Op } from "../db/types.ts";
+import type { OccView, Op } from "../db/types.ts";
 import { type AppSettings, inQuietHours } from "../settings.ts";
 import { wallOf } from "../time/tz.ts";
 import { MOOD_CONFIG, type MoodConfig } from "./config.ts";
@@ -171,6 +171,17 @@ export class MoodSession {
     return p.text;
   }
 
+  /** Снимок на случай неудачной отправки: откатить изменения этой сессии, чтобы не посчитать событие дважды. */
+  snapshot(): { state: MoodState | null; pending: number; dirty: boolean } {
+    return { state: this.state, pending: this.pending.length, dirty: this.dirty };
+  }
+
+  restore(snap: { state: MoodState | null; pending: number; dirty: boolean }): void {
+    this.state = snap.state;
+    this.pending = this.pending.slice(0, snap.pending);
+    this.dirty = snap.dirty;
+  }
+
   /** Операции для записи: состояние (если менялось) и журнал переходов. Вызывать один раз перед repo.exec. */
   ops(): Op[] {
     const out = [...this.pending];
@@ -179,4 +190,20 @@ export class MoodSession {
     this.dirty = false;
     return out;
   }
+}
+
+/**
+ * «Готово» по делу: событие для настроения и фраза для сообщения (или null — стиль выключен / фраз нет).
+ * Выполнение главного напоминания до просрочки — «вовремя», после — «с опозданием»; остальное (таймеры, «заранее») — просто активность.
+ * Приоритет фраз: особая похвала за серию → «наконец-то» после пропусков → редкая скупая похвала → обычная для настроения.
+ */
+export function recordDone(m: MoodSession, occ: Pick<OccView, "kind" | "item_kind" | "state" | "title" | "critical">): string | null {
+  const counts = occ.kind === "main" && occ.item_kind === "reminder";
+  const r = m.apply(counts ? { type: "done", onTime: occ.state !== "overdue" } : { type: "activity" });
+  if (!canStyle(occ.title, occ.critical)) return null;
+  const vars = { task: occ.title };
+  if (counts && r.milestone !== null) return m.say("streak_praise", vars, "proud");
+  if (counts && r.relief) return m.say("relief", vars);
+  if (counts && m.rand() < m.cfg.randomPraiseChance) return m.say("done", vars, "proud");
+  return m.say("done", vars);
 }

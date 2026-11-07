@@ -24,7 +24,15 @@ const clip = (s: string, n: number) => (s.length > n ? `${s.slice(0, n - 1)}…`
 
 // ---------- напоминание ----------
 
-export function reminderMessage(a: { occ: OccView; plan: FirePlan; ownerId: string; tz: string; now: number }): MessageBody {
+export function reminderMessage(a: {
+  occ: OccView;
+  plan: FirePlan;
+  ownerId: string;
+  tz: string;
+  now: number;
+  /** реплика горничной под сообщением (настроение); суть напоминания остаётся без изменений */
+  flavor?: string | null;
+}): MessageBody {
   const { occ, plan, ownerId, tz, now } = a;
   const due = occ.due_at ?? now;
   const ref = `#${occ.item_id}`;
@@ -60,12 +68,14 @@ export function reminderMessage(a: { occ: OccView; plan: FirePlan; ownerId: stri
       btn("Изменить", cid("edit", occ.id)),
     );
   }
+  if (a.flavor) content += `
+-# ${a.flavor}`;
   return { content, components: [row(...buttons)], allowed_mentions: { users: [ownerId] } };
 }
 
 /** После закрытия кнопкой «Готово» сообщение остаётся записью, без кнопок. */
-export function doneMessage(title: string, ch: Character = "neutral", seed = 0): MessageBody {
-  const extra = tired(ch, "done", seed);
+export function doneMessage(title: string, ch: Character = "neutral", seed = 0, line: string | null = null): MessageBody {
+  const extra = line ?? tired(ch, "done", seed); // реплика настроения главнее прежнего «характера»
   return { content: `Готово: ${title}${extra ? `\n-# ${extra}` : ""}`, components: [], allowed_mentions: { parse: [] } };
 }
 
@@ -299,6 +309,7 @@ export function settingsMessage(s: AppSettings, now: number, dmOn: boolean): Mes
     `Приём обычного текста: канал «бот»${s.chBot ? "" : " (не создан: /setup)"}; личка: ${dmOn ? "вкл" : "выкл"}`,
     `График света (Днепр): ${s.lightGroup ? `группа ${s.lightGroup}` : "выкл"}`,
     `Характер: ${CHARACTER_LABELS[s.character]}`,
+    `Настроение горничной: ${s.moodOn ? "вкл (меняется от того, как вы выполняете дела; /mood)" : "выкл"}`,
   ];
   const preset = "preset" in s.defaultLadder ? s.defaultLadder.preset : "";
   return {
@@ -322,7 +333,7 @@ export function settingsMessage(s: AppSettings, now: number, dmOn: boolean): Mes
         btn("Я в отъезде…", "s_away"),
       ),
       row(btn("Сводки и пояс…", "s_summ"), btn("Свои числа лестницы…", "s_ladn"), btn(dmOn ? "Личка: выключить" : "Личка: включить", "s_dm")),
-      row(btn("Свет: группа…", "s_light"), btn(s.character === "maid" ? "Характер: нейтральный" : "Характер: уставшая горничная", "s_char")),
+      row(btn("Свет: группа…", "s_light"), btn(s.character === "maid" ? "Характер: нейтральный" : "Характер: уставшая горничная", "s_char"), btn(s.moodOn ? "Настроение: выключить" : "Настроение: включить", "s_mood")),
     ],
   };
 }

@@ -29,11 +29,13 @@ export interface AppSettings {
   lightGroup: string | null;
   /** характер бота: нейтральный (по умолчанию) или «уставшая горничная» */
   character: Character;
+  /** настроение горничной («Характер 2»): выкл по умолчанию — тон нейтральный, как раньше */
+  moodOn: boolean;
 }
 
 export const SETTING_KEYS = [
   "tz", "default_ladder", "default_time", "quiet_enabled", "quiet_from", "quiet_to", "away_until",
-  "summary_morning", "summary_evening", "weekly", "ch_remind", "ch_bot", "ch_today", "ch_forum", "ch_archive", "intake", "light", "character",
+  "summary_morning", "summary_evening", "weekly", "ch_remind", "ch_bot", "ch_today", "ch_forum", "ch_archive", "intake", "light", "character", "mood_on",
 ] as const;
 
 function minutes(v: string | undefined, fallback: number | null): number | null {
@@ -78,6 +80,7 @@ export function readSettings(rows: { key: string; value: string }[]): AppSetting
     intake,
     lightGroup: m.get("light") && m.get("light") !== "off" ? (m.get("light") as string) : null,
     character: parseCharacter(m.get("character")),
+    moodOn: m.get("mood_on") === "1",
   };
 }
 

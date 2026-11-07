@@ -5,6 +5,7 @@ import { OPEN_STATES, type OccView, type Op } from "./db/types.ts";
 import type { DiscordApi, IncomingMessage, MessageBody } from "./discord/types.ts";
 import { messageTime } from "./intake.ts";
 import { doneMessage, snoozedMessage } from "./discord/ui.ts";
+import { type MoodSession, recordDone } from "./personality/director.ts";
 import { doneOps, rescheduleOps, snoozeOps } from "./service.ts";
 import type { AppSettings } from "./settings.ts";
 import { formatWhen } from "./time/format.ts";
@@ -44,11 +45,11 @@ export interface ReplyResult {
   text: string;
 }
 
-export function applyReply(occ: OccView, action: ReplyAction, s: AppSettings, now: number): ReplyResult {
+export function applyReply(occ: OccView, action: ReplyAction, s: AppSettings, now: number, doneLine: string | null = null): ReplyResult {
   if (!OPEN_STATES.includes(occ.state)) return { ops: [], edit: null, text: REPLY_CLOSED };
   switch (action.kind) {
     case "done":
-      return { ops: doneOps(occ, now), edit: doneMessage(occ.title, s.character, occ.id), text: `Готово: **${occ.title}**.` };
+      return { ops: doneOps(occ, now), edit: doneMessage(occ.title, s.character, occ.id, doneLine), text: `Готово: **${occ.title}**.` };
     case "snooze": {
       const whenText = formatWhen(action.due, now, s.tz);
       const draft = occ.state === "draft";
@@ -70,7 +71,7 @@ export function applyReply(occ: OccView, action: ReplyAction, s: AppSettings, no
  * на сообщение, которое не от дела) — молча пропускаем. Тратит до 4 подзапросов.
  */
 export async function handleReply(
-  d: { repo: Repo; api: DiscordApi; s: AppSettings; now: number },
+  d: { repo: Repo; api: DiscordApi; s: AppSettings; now: number; mood?: MoodSession | null },
   m: IncomingMessage,
   channelId: string,
 ): Promise<"handled" | "ignored"> {
@@ -79,7 +80,14 @@ export async function handleReply(
   const occ = await d.repo.occByMessageId(refId);
   if (!occ) return "ignored";
   const action = parseReply(m.content, { at: messageTime(m, d.now), tz: d.s.tz, defaultTime: d.s.defaultTime });
-  const res = applyReply(occ, action, d.s, d.now);
+  // настроение: любой ответ — активность; «готово» — выполнено (вовремя или с опозданием)
+  let doneLine: string | null = null;
+  if (d.mood && OPEN_STATES.includes(occ.state)) {
+    await d.mood.load();
+    if (action.kind === "done") doneLine = recordDone(d.mood, occ);
+    else d.mood.apply({ type: "activity" });
+  }
+  const res = applyReply(occ, action, d.s, d.now, doneLine);
   if (res.ops.length) await d.repo.exec(res.ops);
   if (res.edit && occ.last_message_id && occ.last_channel_id) {
     try {
