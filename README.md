@@ -67,6 +67,7 @@ Cloudflare Time Travel хранит и откатывает базу на люб
 | Что видно | Что делать |
 |---|---|
 | Вкладка Bot: «Private application cannot have a default authorization link» | Installation → **Install Link** → **None** → Save |
+| `/remind` в личном чате: «You must share a guild with DMs enabled or add this application to your account» | Бот не установлен на ваш аккаунт. Откройте ссылку «на аккаунт» (её печатает `setup.cmd`) → **Authorize**. Потеряли: `https://discord.com/oauth2/authorize?client_id=<Application ID со вкладки General Information>&scope=applications.commands&integration_type=1`. Если Discord пишет ошибку: Installation → Installation Contexts → обе галочки (Guild Install и User Install) → Save |
 | Discord не принимает Interactions Endpoint URL | Неверный Public Key или бот не выложен: `setup.cmd` ещё раз |
 | Команд `/remind` нет в списке | Подождите минуту, перезапустите Discord (Ctrl+R); `npm run register` |
 | `/setup`: «не получилось создать каналы» | У бота нет права «Управлять каналами»: добавьте бота по ссылке из установки ещё раз |
