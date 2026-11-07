@@ -11,10 +11,11 @@ import {
   weeklyText,
 } from "./discord/ui.ts";
 import { createFromText, EMPTY_REPLY, EMPTY_SERIES_REPLY, SECRET_REPLY } from "./intake.ts";
+import { fetchYasno, lightLines, type LightData } from "./light.ts";
 import { planFire } from "./ladder.ts";
 import { ladderFor, nextSeriesOps, scrubOps } from "./service.ts";
 import { type AppSettings, inQuietHours } from "./settings.ts";
-import { MINUTE, nextTimeOfDay, wallOf } from "./time/tz.ts";
+import { MINUTE, addDaysWall, nextTimeOfDay, wallOf } from "./time/tz.ts";
 
 export const RESERVE = 3;
 export const MAX_SENDS = 35;
@@ -33,6 +34,8 @@ export interface CronDeps {
   ping?: (url: string) => Promise<void>;
   token?: string;
   maxSends?: number;
+  /** для запроса графика света; по умолчанию fetch */
+  fetchFn?: typeof fetch;
 }
 
 export interface CronReport {
@@ -241,6 +244,7 @@ export async function runCron(d: CronDeps): Promise<CronReport> {
         if (s.weekly && wallOf(now, s.tz).wd === s.weekly.dow && minuteOfDay >= s.weekly.at && minuteOfDay < s.weekly.at + 240 && meta.get("last_weekly") !== today) summaries.push("weekly");
       }
     }
+    let light: LightData | null | undefined;
     for (const kind of summaries) {
       if (!room2(3)) break;
       const list = await getItems();
@@ -252,7 +256,17 @@ export async function runCron(d: CronDeps): Promise<CronReport> {
         );
         content = weeklyText({ doneCount: row?.n ?? 0, items: list, now, tz: s.tz, ownerId: owner as string });
       } else {
-        content = summaryText(kind, { items: list, now, tz: s.tz, ownerId: owner as string });
+        let extra: string[] = [];
+        if (s.lightGroup && room2(3)) {
+          if (light === undefined) {
+            repo.counter.spend(1);
+            light = await fetchYasno(d.fetchFn ?? fetch);
+          }
+          extra = light
+            ? lightLines(kind === "evening" ? "tomorrow" : "today", s.lightGroup, light, localDate(kind === "evening" ? addDaysWall(now, 1, s.tz) : now, s.tz))
+            : ["График света: не удалось получить данные (Yasno не отвечает)."];
+        }
+        content = summaryText(kind, { items: list, now, tz: s.tz, ownerId: owner as string, extra });
       }
       try {
         await api.postMessage(s.chRemind as string, { content, allowed_mentions: { users: [owner as string] } });

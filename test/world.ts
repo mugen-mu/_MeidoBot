@@ -17,6 +17,9 @@ export class World {
   d1 = new FakeD1();
   discord = new FakeDiscord();
   pings: string[] = [];
+  /** что вернёт «Yasno»; null — сервис не отвечает */
+  light: unknown = null;
+  lightFetches = 0;
 
   /** Репозиторий с новым счётчиком (как новый запуск Worker). */
   repo(limit = 50): Repo {
@@ -47,7 +50,11 @@ export class World {
   async run(now: number, env: CronEnv = {}, limit = 50): Promise<CronReport> {
     const repo = this.repo(limit);
     const api = countedApi(this.discord, repo.counter);
-    return runCron({ repo, api, now, env, ping: async (u) => void this.pings.push(u) });
+    const fetchFn = (async () => {
+      this.lightFetches++;
+      return this.light === null ? new Response("down", { status: 503 }) : Response.json(this.light);
+    }) as unknown as typeof fetch;
+    return runCron({ repo, api, now, env, fetchFn, ping: async (u) => void this.pings.push(u) });
   }
 
   occ(id: number) {

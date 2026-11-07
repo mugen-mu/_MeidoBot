@@ -24,11 +24,13 @@ export interface AppSettings {
   chArchive: string | null;
   /** каналы, откуда бот читает обычный текст (канал «бот», при необходимости личка) */
   intake: string[];
+  /** группа отключений света для сводок («3» или «3.1») или null — не показывать */
+  lightGroup: string | null;
 }
 
 export const SETTING_KEYS = [
   "tz", "default_ladder", "default_time", "quiet_enabled", "quiet_from", "quiet_to", "away_until",
-  "summary_morning", "summary_evening", "weekly", "ch_remind", "ch_bot", "ch_today", "ch_forum", "ch_archive", "intake",
+  "summary_morning", "summary_evening", "weekly", "ch_remind", "ch_bot", "ch_today", "ch_forum", "ch_archive", "intake", "light",
 ] as const;
 
 function minutes(v: string | undefined, fallback: number | null): number | null {
@@ -71,6 +73,7 @@ export function readSettings(rows: { key: string; value: string }[]): AppSetting
     chForum: m.get("ch_forum") || null,
     chArchive: m.get("ch_archive") || null,
     intake,
+    lightGroup: m.get("light") && m.get("light") !== "off" ? (m.get("light") as string) : null,
   };
 }
 

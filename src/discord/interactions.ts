@@ -4,6 +4,7 @@ import { type Repo, setMeta, setSetting, updateOcc } from "../db/repo.ts";
 import type { OccView, Op } from "../db/types.ts";
 import { EMPTY_REPLY, EMPTY_SERIES_REPLY, NOT_RECURRING_REPLY, SECRET_REPLY, createFromText } from "../intake.ts";
 import { describeSpec, needsSnoozeQuestion, parseCustomSteps, parseSpec, type LadderSpec } from "../ladder.ts";
+import { normalizeGroup } from "../light.ts";
 import { detectSecret } from "../secrets.ts";
 import {
   cancelItemOps,
@@ -29,6 +30,7 @@ import {
   doneMessage,
   editModal,
   ladderNumsModal,
+  lightModal,
   listText,
   plainMessage,
   quietModal,
@@ -399,6 +401,8 @@ async function onSettingsComponent(c: C, kind: string, values: string[]): Promis
       return { type: 9, data: summModal(c.s).data };
     case "s_ladn":
       return { type: 9, data: ladderNumsModal().data };
+    case "s_light":
+      return { type: 9, data: lightModal(c.s).data };
     case "s_dm": {
       const on = await dmOn(c);
       let dm = c.meta.get("dm_channel_id");
@@ -486,6 +490,13 @@ async function onModal(c: C): Promise<Reply> {
       if (!Number.isInteger(days) || days < 0 || days > 90) return eph("Нужно число дней от 0 до 90.");
       await setAway(c, days);
       return settingsUpdate(c, []);
+    }
+    case "m_light": {
+      const t = str(v.get("group")).toLowerCase();
+      if (t === "" || t === "выкл" || t === "off") return settingsUpdate(c, [setSetting("light", "off")]);
+      const g = normalizeGroup(t);
+      if (!g) return eph("Нужна группа вроде 3 или 3.1 (от 1 до 6) или слово «выкл».");
+      return settingsUpdate(c, [setSetting("light", g)]);
     }
     case "m_ladn": {
       const steps = parseCustomSteps(str(v.get("nums")));

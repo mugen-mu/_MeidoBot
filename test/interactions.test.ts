@@ -327,7 +327,7 @@ describe("настройки", () => {
     expect(r.data.content).toContain("Тихие часы: выкл (23:00–07:00)");
     expect(r.data.content).toContain("утром 08:00, вечером 20:00");
     expect(r.data.flags).toBe(64);
-    expect(flat(r)).toEqual(["s_lad", "s_q", "s_qt", "s_away", "s_summ", "s_ladn", "s_dm"]);
+    expect(flat(r)).toEqual(["s_lad", "s_q", "s_qt", "s_away", "s_summ", "s_ladn", "s_dm", "s_light"]);
   });
 
   it("переключатель тихих часов, время, сводки, отъезд, лестница по умолчанию, личка", async () => {
@@ -353,6 +353,18 @@ describe("настройки", () => {
     expect((await w.settings()).intake).toContain(`dm-${OWNER}`);
     expect((await click("s_dm")).data.content).toContain("личка: выкл");
     expect((await w.settings()).intake).not.toContain(`dm-${OWNER}`);
+  });
+
+  it("график света: окно, группа, «выкл», неверное значение", async () => {
+    expect((await cmd("settings")).data.content).toContain("График света (Днепр): выкл");
+    expect((await click("s_light")).type).toBe(9);
+    expect((await submit("m_light", { group: "3" })).data.content).toContain("График света (Днепр): группа 3");
+    expect((await w.settings()).lightGroup).toBe("3");
+    expect((await submit("m_light", { group: "3,1" })).data.content).toContain("группа 3.1");
+    expect((await submit("m_light", { group: "9" })).data.content).toContain("Нужна группа");
+    expect((await w.settings()).lightGroup).toBe("3.1");
+    expect((await submit("m_light", { group: "выкл" })).data.content).toContain("График света (Днепр): выкл");
+    expect((await w.settings()).lightGroup).toBeNull();
   });
 
   it("новое значение подхватывается cron: тихие часы из настроек действуют", async () => {

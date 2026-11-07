@@ -221,7 +221,7 @@ export function weekText(items: OccView[], now: number, tz: string): string {
 
 export function summaryText(
   kind: "morning" | "evening" | "return",
-  a: { items: OccView[]; now: number; tz: string; ownerId: string },
+  a: { items: OccView[]; now: number; tz: string; ownerId: string; extra?: string[] },
 ): string {
   const { items, now, tz } = a;
   const today = startOfDay(now, tz);
@@ -250,6 +250,7 @@ export function summaryText(
     if (t.length) lines.push("**Скоро:**", ...t.map((o) => `• ${formatWhen(at(o) as number, now, tz)} ${clip(o.title, 80)} (#${o.item_id})`));
   }
   if (drafts) lines.push(`Без срока: ${drafts}. Список — /list.`);
+  if (a.extra?.length) lines.push(...a.extra);
   if (kind === "morning") lines.push("Бот на месте.");
   return joinLines(`<@${a.ownerId}> ${head}`, lines);
 }
@@ -283,6 +284,7 @@ export function settingsMessage(s: AppSettings, now: number, dmOn: boolean): Mes
     `Я в отъезде: ${away}`,
     `Сводки: утром ${s.morning === null ? "выкл" : fmtHHMM(s.morning)}, вечером ${s.evening === null ? "выкл" : fmtHHMM(s.evening)}; итоги недели: ${describeWeekly(s)}`,
     `Приём обычного текста: канал «бот»${s.chBot ? "" : " (не создан: /setup)"}; личка: ${dmOn ? "вкл" : "выкл"}`,
+    `График света (Днепр): ${s.lightGroup ? `группа ${s.lightGroup}` : "выкл"}`,
   ];
   const preset = "preset" in s.defaultLadder ? s.defaultLadder.preset : "";
   return {
@@ -306,6 +308,7 @@ export function settingsMessage(s: AppSettings, now: number, dmOn: boolean): Mes
         btn("Я в отъезде…", "s_away"),
       ),
       row(btn("Сводки и пояс…", "s_summ"), btn("Свои числа лестницы…", "s_ladn"), btn(dmOn ? "Личка: выключить" : "Личка: включить", "s_dm")),
+      row(btn("Свет: группа…", "s_light")),
     ],
   };
 }
@@ -397,6 +400,11 @@ export const summModal = (s: AppSettings) =>
     textLabel("Вечерняя сводка (ЧЧ:ММ или «выкл»)", "evening", { value: s.evening === null ? "выкл" : fmtHHMM(s.evening), max: 10 }),
     textLabel("Итоги недели («воскресенье 19:00» или «выкл»)", "weekly", { value: describeWeekly(s), max: 30 }),
     textLabel("Часовой пояс", "tz", { value: s.tz, max: 40 }),
+  ]);
+
+export const lightModal = (s: AppSettings) =>
+  modal("m_light", "График света", [
+    textLabel("Группа (3 или 3.1; «выкл» — не показывать)", "group", { value: s.lightGroup ?? "выкл", max: 10 }),
   ]);
 
 export const awayModal = () =>
