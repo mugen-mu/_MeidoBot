@@ -12,7 +12,9 @@ import {
   isBotToken,
   isPublicKey,
   isWatchdogUrl,
+  isWorkEmail,
   parseDevVars,
+  parseWhoami,
   setDatabaseId,
   upsertDevVars,
 } from "./helpers.ts";
@@ -52,6 +54,19 @@ export async function runSetup(d: SetupDeps): Promise<SetupResult> {
     const l = await runner.wrangler(["login"], { interactive: true });
     who = await runner.wrangler(["whoami", "--json"], { quiet: true });
     if (l.code !== 0 || who.code !== 0) return stop("вход в Cloudflare не выполнен.");
+  }
+  // Бот — только на личном аккаунте. Вход здесь отдельный (см. wranglerEnv), но проверяем, кто именно вошёл.
+  const email = parseWhoami(who.out).email;
+  if (isWorkEmail(email)) {
+    await runner.wrangler(["logout"], { quiet: true });
+    log(`Вы вошли как ${email}: это рабочий аккаунт. Бот должен жить на личном аккаунте Cloudflare.`);
+    return stop("вход выполнен рабочим аккаунтом (я его отключил). В браузере откройте личный аккаунт Cloudflare и запустите установку снова.");
+  }
+  log(`Вы вошли как ${email ?? "(почта не определена)"}.`);
+  const mine = await asker.ask("Это ваш ЛИЧНЫЙ аккаунт Cloudflare? Enter — да, n — войти другим аккаунтом: ");
+  if (/^\s*(n|no|н|нет)/i.test(mine)) {
+    await runner.wrangler(["logout"], { quiet: true });
+    return stop("вы вышли из этого аккаунта. Откройте в браузере нужный (личный) аккаунт Cloudflare и запустите установку снова.");
   }
   log("Вход выполнен.");
 

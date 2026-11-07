@@ -13,7 +13,7 @@ const sql = [
 
 const r = await realRunner().wrangler(["d1", "execute", "meido", "--remote", "--json", "--command", sql], { quiet: true });
 if (r.code !== 0) {
-  console.error("Не удалось прочитать базу. Выполнен ли вход (wrangler login) и выложен ли бот (setup.cmd)?\n" + r.out.slice(-400));
+  console.error("Не удалось прочитать базу. Выполнена ли установка (setup.cmd: вход в Cloudflare и выкладка)?\n" + r.out.slice(-400));
   process.exit(1);
 }
 const [meta, settings, open, problems] = parseExecuteJson(r.out).map((x) => x.results);

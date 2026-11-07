@@ -1,5 +1,6 @@
 // Запуск wrangler и ввод в консоли. Секреты передаём только через stdin процесса, никогда в командной строке.
 import { type ChildProcess, spawn } from "node:child_process";
+import { mkdirSync } from "node:fs";
 import { createInterface } from "node:readline/promises";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -30,16 +31,29 @@ export interface Asker {
   askHidden(prompt: string): Promise<string>;
 }
 
-const root = join(dirname(fileURLToPath(import.meta.url)), "..", "..");
+export const root = join(dirname(fileURLToPath(import.meta.url)), "..", "..");
+
+/**
+ * Окружение для wrangler этого проекта. Свой каталог входа (`.cf-home` в папке проекта, в git не попадает):
+ * вход в Cloudflare здесь отдельный и не смешивается с общим входом на ПК (там может быть рабочий аккаунт).
+ * Токены Cloudflare из окружения сбрасываем: иначе они перебили бы вход.
+ */
+export function wranglerEnv(projectRoot: string, base: NodeJS.ProcessEnv = process.env): NodeJS.ProcessEnv {
+  const env: NodeJS.ProcessEnv = { ...base, FORCE_COLOR: "0", NO_COLOR: "1" };
+  for (const k of ["CLOUDFLARE_API_TOKEN", "CLOUDFLARE_ACCOUNT_ID", "CLOUDFLARE_API_KEY", "CLOUDFLARE_EMAIL", "CF_API_TOKEN", "CF_ACCOUNT_ID"]) delete env[k];
+  env.XDG_CONFIG_HOME = join(projectRoot, ".cf-home");
+  return env;
+}
 
 function exec(file: string, args: string[], opts: RunOpts): Promise<RunResult> {
   return new Promise((resolve) => {
     const stdin = opts.interactive ? "inherit" : opts.input !== undefined ? "pipe" : "ignore";
     const outMode = opts.interactive && !opts.capture ? "inherit" : "pipe";
+    mkdirSync(join(root, ".cf-home"), { recursive: true });
     const child: ChildProcess = spawn(process.execPath, [file, ...args], {
       cwd: root,
       stdio: [stdin, outMode, outMode],
-      env: { ...process.env, FORCE_COLOR: "0", NO_COLOR: "1" },
+      env: wranglerEnv(root),
     });
     let out = "";
     const take = (b: Buffer) => {

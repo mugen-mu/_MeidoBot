@@ -12,13 +12,15 @@ import {
   isAppId,
   isBotToken,
   isPublicKey,
+  isWorkEmail,
   parseDevVars,
   parseExecuteJson,
+  parseWhoami,
   setDatabaseId,
   summarizeStatus,
   upsertDevVars,
 } from "../scripts/lib/helpers.ts";
-import type { Asker, RunOpts, Runner } from "../scripts/lib/runner.ts";
+import { type Asker, type RunOpts, type Runner, wranglerEnv } from "../scripts/lib/runner.ts";
 import { runSetup } from "../scripts/lib/setup.ts";
 
 const DB = "4f1c2b7e-9a3d-4c55-8e21-0b6f5a7d1c33";
@@ -94,6 +96,30 @@ describe("помощники установки", () => {
     expect(summarizeStatus({ meta: [], settings: [], open: [], problems: [] }, now)[0]).toContain("ни разу");
   });
 
+  it("кто вошёл в Cloudflare: почта из whoami --json (с шапкой wrangler перед JSON) и признак рабочей почты", () => {
+    expect(parseWhoami(' ⛅️ wrangler 4.158.0\n{"loggedIn":true,"email":"me@example.com","accounts":[]}')).toEqual({ loggedIn: true, email: "me@example.com" });
+    expect(parseWhoami('{"loggedIn":false}')).toEqual({ loggedIn: false, email: null });
+    expect(parseWhoami("не json")).toEqual({ loggedIn: false, email: null });
+    expect(parseWhoami('{"loggedIn":true,"authType":"API Token"}')).toEqual({ loggedIn: true, email: null });
+    expect(isWorkEmail("Ihor.L@B-Eng-S.com")).toBe(true);
+    expect(isWorkEmail("someone@gmail.com")).toBe(false);
+    expect(isWorkEmail(null)).toBe(false);
+  });
+
+  it("wrangler этого проекта идёт со своим каталогом входа внутри папки проекта и без чужих токенов из окружения", () => {
+    const env = wranglerEnv("proj-root", {
+      PATH: "p",
+      XDG_CONFIG_HOME: "work-config",
+      CLOUDFLARE_API_TOKEN: "рабочий",
+      CLOUDFLARE_ACCOUNT_ID: "рабочий",
+      CLOUDFLARE_API_KEY: "k",
+      CLOUDFLARE_EMAIL: "e",
+    });
+    expect(env.XDG_CONFIG_HOME).toBe(join("proj-root", ".cf-home"));
+    expect(env.PATH).toBe("p");
+    for (const k of ["CLOUDFLARE_API_TOKEN", "CLOUDFLARE_ACCOUNT_ID", "CLOUDFLARE_API_KEY", "CLOUDFLARE_EMAIL"]) expect(env[k]).toBeUndefined();
+  });
+
   it("разбор JSON от wrangler d1 execute (с мусором перед ним)", () => {
     const r = parseExecuteJson(' ⛅️ wrangler\n[{"results":[{"a":1}],"success":true},{"results":[],"success":true}]');
     expect(r[0].results).toEqual([{ a: 1 }]);
@@ -108,7 +134,12 @@ interface Call {
   opts: RunOpts;
 }
 
-function setupWorld(overrides: { whoami?: (n: number) => number; dbOut?: string; deployOut?: string; secretFail?: string } = {}) {
+const PERSONAL = JSON.stringify({ loggedIn: true, email: "me@example.com" });
+const WORK = JSON.stringify({ loggedIn: true, email: "ihor.l@b-eng-s.com" });
+
+function setupWorld(
+  overrides: { whoami?: (n: number) => number; whoamiOut?: string; dbOut?: string; deployOut?: string; secretFail?: string } = {},
+) {
   const dir = mkdtempSync(join(tmpdir(), "meido-setup-"));
   writeFileSync(join(dir, "wrangler.toml"), readFileSync("wrangler.toml", "utf8"), "utf8");
   const calls: Call[] = [];
@@ -117,8 +148,8 @@ function setupWorld(overrides: { whoami?: (n: number) => number; dbOut?: string;
     async wrangler(args, opts = {}) {
       calls.push({ args, opts });
       const key = args.slice(0, 2).join(" ");
-      if (args[0] === "whoami") return { code: (overrides.whoami ?? (() => 0))(whoamis++), out: "{}" };
-      if (args[0] === "login") return { code: 0, out: "" };
+      if (args[0] === "whoami") return { code: (overrides.whoami ?? (() => 0))(whoamis++), out: overrides.whoamiOut ?? PERSONAL };
+      if (args[0] === "login" || args[0] === "logout") return { code: 0, out: "" };
       if (key === "d1 create") return { code: 0, out: overrides.dbOut ?? `database_id = "${DB}"` };
       if (key === "d1 list") return { code: 0, out: "[]" };
       if (key === "d1 migrations") return { code: 0, out: "ok" };
@@ -132,10 +163,12 @@ function setupWorld(overrides: { whoami?: (n: number) => number; dbOut?: string;
     },
   };
   const answers: string[] = [];
+  const confirms: string[] = []; // ответы на вопрос «личный ли это аккаунт» (по умолчанию Enter = да)
   const prompts: string[] = [];
   const asker: Asker = {
     async ask(p) {
       prompts.push(p);
+      if (p.includes("ЛИЧНЫЙ аккаунт")) return confirms.shift() ?? "";
       return answers.shift() ?? "";
     },
     async askHidden(p) {
@@ -145,7 +178,7 @@ function setupWorld(overrides: { whoami?: (n: number) => number; dbOut?: string;
   };
   const logs: string[] = [];
   const run = () => runSetup({ root: dir, runner, asker, log: (l) => logs.push(l) });
-  return { dir, calls, answers, prompts, logs, run };
+  return { dir, calls, answers, confirms, prompts, logs, run };
 }
 
 describe("установка (поддельный wrangler)", () => {
@@ -234,5 +267,32 @@ describe("установка (поддельный wrangler)", () => {
     expect(r.ok).toBe(false);
     expect(w6.logs.join("\n")).toContain("не удалось сохранить секрет DISCORD_BOT_TOKEN");
     expect(w6.calls.some((c) => c.args[0] === "node")).toBe(false);
+  });
+
+  it("рабочий аккаунт (почта b-eng-s.com): установка останавливается до создания чего-либо и выходит из этого входа", async () => {
+    const wk = setupWorld({ whoamiOut: WORK });
+    wk.answers.push(APP, PUB, TOKEN, "");
+    const r = await wk.run();
+    expect(r.ok).toBe(false);
+    expect(wk.logs.join("\n")).toContain("рабочий");
+    expect(wk.calls.map((c) => c.args[0])).toEqual(["whoami", "logout"]);
+    expect(wk.prompts).toEqual([]); // ключи даже не спрашивали
+  });
+
+  it("личный аккаунт: показывает почту и спрашивает подтверждение; «n» — выход и остановка, чтобы войти другим", async () => {
+    const wn = setupWorld();
+    wn.confirms.push("n");
+    const r = await wn.run();
+    expect(r.ok).toBe(false);
+    expect(wn.logs.join("\n")).toContain("me@example.com");
+    expect(wn.prompts.some((p) => p.includes("ЛИЧНЫЙ аккаунт"))).toBe(true);
+    expect(wn.calls.map((c) => c.args[0])).toEqual(["whoami", "logout"]);
+  });
+
+  it("личный аккаунт: Enter — идём дальше, выхода нет", async () => {
+    const r = await w.run();
+    expect(r.ok).toBe(true);
+    expect(w.calls.some((c) => c.args[0] === "logout")).toBe(false);
+    expect(w.logs.join("\n")).toContain("me@example.com");
   });
 });

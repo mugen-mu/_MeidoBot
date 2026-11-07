@@ -32,6 +32,28 @@ export function setDatabaseId(toml: string, id: string): string {
   return toml.replace(/^(\s*database_id\s*=\s*)"[^"]*"/m, `$1"${id}"`);
 }
 
+/** Рабочие почтовые домены: Cloudflare/Discord этого бота — только личные (правило проекта). */
+export const WORK_EMAIL_DOMAINS = ["b-eng-s.com"];
+
+export function isWorkEmail(email: string | null | undefined): boolean {
+  if (!email) return false;
+  const domain = email.trim().toLowerCase().split("@").pop() ?? "";
+  return WORK_EMAIL_DOMAINS.some((d) => domain === d || domain.endsWith(`.${d}`));
+}
+
+/** Кто вошёл в Cloudflare: из вывода `wrangler whoami --json` (перед JSON может быть шапка wrangler). */
+export function parseWhoami(text: string): { loggedIn: boolean; email: string | null } {
+  const a = text.indexOf("{");
+  const b = text.lastIndexOf("}");
+  if (a < 0 || b < a) return { loggedIn: false, email: null };
+  try {
+    const j = JSON.parse(text.slice(a, b + 1)) as { loggedIn?: boolean; email?: unknown };
+    return { loggedIn: j.loggedIn === true, email: typeof j.email === "string" && j.email ? j.email : null };
+  } catch {
+    return { loggedIn: false, email: null };
+  }
+}
+
 export function extractWorkerUrl(text: string): string | null {
   const m = /https:\/\/[a-z0-9][a-z0-9-]*(?:\.[a-z0-9-]+)*\.workers\.dev/i.exec(text);
   return m ? m[0] : null;

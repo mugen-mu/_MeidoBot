@@ -8,13 +8,14 @@
     "test": "vitest run",
     "typecheck": "tsc --noEmit",
     "check": "tsc --noEmit && vitest run",
-    "dev": "wrangler dev",
-    "deploy": "wrangler deploy",
+    "dev": "node scripts/wrangler.ts dev",
+    "deploy": "node scripts/wrangler.ts deploy",
     "register": "node scripts/register-commands.ts",
     "dry-run": "node scripts/dry-run.ts",
     "setup": "node scripts/setup.ts",
     "status": "node scripts/status.ts",
-    "export": "node scripts/export.ts"
+    "export": "node scripts/export.ts",
+    "wrangler": "node scripts/wrangler.ts"
   },
   "dependencies": {
     "chrono-node": "^2.10.3"

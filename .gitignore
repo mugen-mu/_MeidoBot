@@ -11,3 +11,6 @@ backups/
 
 # Сгенерированное: страница решений собирается из design/build.py
 design/page.html
+
+# Отдельный вход в Cloudflare для бота (токены): никогда в git
+.cf-home/
