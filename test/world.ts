@@ -1,0 +1,56 @@
+// Общий «мир» для тестов cron и обработчика: база, поддельный Discord, запуск с честным счётчиком подзапросов.
+import { type CronEnv, type CronReport, runCron } from "../src/cron.ts";
+import { Counter, Repo, setMeta, setSetting } from "../src/db/repo.ts";
+import { countedApi } from "../src/discord/api.ts";
+import { createFromText } from "../src/intake.ts";
+import { type AppSettings, readSettings } from "../src/settings.ts";
+import { FakeD1 } from "./d1shim.ts";
+import { FakeDiscord } from "./fakeDiscord.ts";
+import { NOW } from "./helpers.ts";
+
+export const OWNER = "999";
+export const CH_REMIND = "100";
+export const CH_TODAY = "101";
+export const CH_BOT = "102";
+
+export class World {
+  d1 = new FakeD1();
+  discord = new FakeDiscord();
+  pings: string[] = [];
+
+  /** Репозиторий с новым счётчиком (как новый запуск Worker). */
+  repo(limit = 50): Repo {
+    return new Repo(this.d1.asD1, new Counter(limit));
+  }
+
+  async seed(opts: { remind?: boolean; today?: boolean; intake?: boolean; settings?: Record<string, string> } = {}): Promise<void> {
+    const ops = [setMeta("owner_id", OWNER)];
+    if (opts.remind !== false) ops.push(setSetting("ch_remind", CH_REMIND));
+    if (opts.today) ops.push(setSetting("ch_today", CH_TODAY));
+    if (opts.intake) ops.push(setSetting("ch_bot", CH_BOT), setSetting("intake", JSON.stringify([CH_BOT])));
+    for (const [k, v] of Object.entries(opts.settings ?? {})) ops.push(setSetting(k, v));
+    await this.repo().exec(ops);
+  }
+
+  async settings(): Promise<AppSettings> {
+    return (await this.repo().loadConfig()).settings;
+  }
+
+  /** Создать дело текстом, как это сделает пользователь. */
+  async create(text: string, now = NOW) {
+    const repo = this.repo();
+    const r = await createFromText({ repo, settings: await this.settings(), now }, text, "slash");
+    if (r.kind !== "created") throw new Error(`не создано: ${r.kind}`);
+    return r;
+  }
+
+  async run(now: number, env: CronEnv = {}, limit = 50): Promise<CronReport> {
+    const repo = this.repo(limit);
+    const api = countedApi(this.discord, repo.counter);
+    return runCron({ repo, api, now, env, ping: async (u) => void this.pings.push(u) });
+  }
+
+  occ(id: number) {
+    return this.d1.q<Record<string, unknown>>("SELECT * FROM occurrences WHERE id = ?", id)[0];
+  }
+}

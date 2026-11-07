@@ -1,0 +1,26 @@
+{
+  "name": "meido-discord-bot",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Meido: личный Discord-бот (напоминания, повторяющиеся дела). Cloudflare Workers + D1.",
+  "type": "module",
+  "scripts": {
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit",
+    "check": "tsc --noEmit && vitest run",
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy",
+    "register": "node scripts/register-commands.ts",
+    "dry-run": "node scripts/dry-run.ts"
+  },
+  "dependencies": {
+    "chrono-node": "^2.10.3"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^5.20261107.1",
+    "@types/node": "^24.0.0",
+    "typescript": "^5.9.0",
+    "vitest": "^3.2.0",
+    "wrangler": "^4.158.0"
+  }
+}

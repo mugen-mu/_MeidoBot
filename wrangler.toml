@@ -1,0 +1,21 @@
+# Meido: один Worker, один cron раз в минуту, одна база D1.
+# database_id пишет скрипт установки (этап 2) после `wrangler d1 create meido`.
+name = "meido"
+main = "src/worker.ts"
+compatibility_date = "2026-11-01"
+
+[triggers]
+crons = ["* * * * *"]
+
+[[d1_databases]]
+binding = "DB"
+database_name = "meido"
+database_id = "REPLACE_WITH_D1_DATABASE_ID"
+migrations_dir = "migrations"
+
+# Секреты (wrangler secret put ...), в файл не пишем:
+#   DISCORD_PUBLIC_KEY  - публичный ключ приложения (проверка подписи Ed25519)
+#   DISCORD_BOT_TOKEN   - токен бота
+#   DISCORD_APP_ID      - id приложения (нужен для правки ответов)
+#   WATCHDOG_URL        - адрес пинга healthchecks.io (необязательно)
+#   OWNER_ID            - id пользователя-хозяина (необязательно: иначе хозяин - тот, кто первым выполнит /setup)
