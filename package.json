@@ -11,7 +11,10 @@
     "dev": "wrangler dev",
     "deploy": "wrangler deploy",
     "register": "node scripts/register-commands.ts",
-    "dry-run": "node scripts/dry-run.ts"
+    "dry-run": "node scripts/dry-run.ts",
+    "setup": "node scripts/setup.ts",
+    "status": "node scripts/status.ts",
+    "export": "node scripts/export.ts"
   },
   "dependencies": {
     "chrono-node": "^2.10.3"

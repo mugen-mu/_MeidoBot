@@ -6,5 +6,8 @@ node_modules/
 dist/
 *.local.*
 
+# Копии базы (npm run export): в них дела пользователя
+backups/
+
 # Сгенерированное: страница решений собирается из design/build.py
 design/page.html

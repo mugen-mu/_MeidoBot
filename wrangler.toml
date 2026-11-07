@@ -4,6 +4,10 @@ name = "meido"
 main = "src/worker.ts"
 compatibility_date = "2026-11-01"
 
+# Журнал запусков в панели Cloudflare (видно ошибки и «Exceeded CPU»)
+[observability]
+enabled = true
+
 [triggers]
 crons = ["* * * * *"]
 
