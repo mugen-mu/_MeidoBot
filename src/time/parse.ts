@@ -214,13 +214,24 @@ function extractDate(w: Work, now: number, tz: string, allowWeekday = true): Dat
 
   // «20 ноября», «15 марта 2027» — через chrono (ru)
   const ref = new Date(nw.y, nw.mo - 1, nw.d, nw.h, nw.mi);
-  const found = chrono.ru.parse(w.s, ref, { forwardDate: true });
+  // chrono теряет число, если рядом длинные пробелы (на месте «стёртых» кусков, например времени): сжимаем пробелы и помним позиции
+  let flat = "";
+  const at: number[] = [];
+  for (let i = 0; i < w.s.length; i++) {
+    const space = /\s/.test(w.s[i]);
+    if (space && flat.endsWith(" ")) continue;
+    flat += space ? " " : w.s[i];
+    at.push(i);
+  }
+  const found = chrono.ru.parse(flat, ref, { forwardDate: true });
   for (const r of found) {
     if (r.start.isCertain("month") && r.start.isCertain("day")) {
       const y = r.start.get("year") ?? nw.y;
       const mo = r.start.get("month") ?? 1;
       const d = r.start.get("day") ?? 1;
-      w.s = w.s.slice(0, r.index) + " ".repeat(r.text.length) + w.s.slice(r.index + r.text.length);
+      const from = at[r.index];
+      const to = at[Math.min(r.index + r.text.length, at.length) - 1] + 1;
+      w.s = w.s.slice(0, from) + " ".repeat(to - from) + w.s.slice(to);
       return { kind: "day", y, mo, d };
     }
   }
