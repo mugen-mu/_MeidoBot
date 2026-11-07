@@ -6,6 +6,7 @@
 import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
+import { cleanupPool } from "../src/personality/poolCleanup.ts";
 import { type Issue, type MoodData, POOL_SITUATIONS, checkMood } from "../src/personality/poolCheck.ts";
 
 const MOODS = ["tired", "tsundere", "yandere", "sulking", "proud", "sleepy"];
@@ -113,11 +114,15 @@ function main() {
   for (const r of report) console.log(r);
 
   if (!write) return;
+  // чистка поверх проверки: обращение → {user}, ручные замены (poolCleanup.ts); так повторная загрузка не откатывает правки
+  const cleaned = cleanupPool(generated);
+  console.log(`Чистка: обращений заменено ${cleaned.report.addressReplaced}, ручных замен ${cleaned.report.fixesApplied}`);
+  for (const f of cleaned.report.fixesStale) console.log(`  правка не нашла фразу (пул изменился): ${f.mood}/${f.situation} «${f.from}»`);
   const body =
-    `// Пул фраз из Gemini после проверки (scripts/import-phrases.ts). Файл создаётся скриптом — руками не править:\n` +
+    `// Пул фраз из Gemini после проверки (scripts/import-phrases.ts) и чистки (poolCleanup.ts). Файл создаётся скриптом — руками не править:\n` +
     `// пополнять набор лучше в phrases.base.ts, а новый пул загружать скриптом заново.\n` +
     `import type { Phrases } from "./phrases.ts";\n\n` +
-    `export const GENERATED: Phrases = ${JSON.stringify(generated, null, 2)};\n`;
+    `export const GENERATED: Phrases = ${JSON.stringify(cleaned.pool, null, 2)};\n`;
   writeFileSync(join(root, "src/personality/phrases.generated.ts"), body, "utf8");
 
   const lines = ["# Отчёт загрузки пула фраз (автоматически, scripts/import-phrases.ts)", "", "```", ...table, "```", ""];
