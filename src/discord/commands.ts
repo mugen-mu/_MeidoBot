@@ -81,6 +81,13 @@ export const COMMANDS = [
           { name: "сонная (sleepy)", value: "sleepy" },
         ],
       },
+      {
+        type: 3,
+        name: "show",
+        description: "Показать пример редкой сцены («кино-момент»)",
+        required: false,
+        choices: [{ name: "кино-момент", value: "cinema" }],
+      },
     ],
   },
   { name: "reset_mood", description: "Сбросить настроение, отношение, серии и выученные слова к начальным", type: 1, integration_types: BOTH, contexts: EVERYWHERE },

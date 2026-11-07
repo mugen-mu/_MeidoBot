@@ -9,6 +9,8 @@ import { CH_BOT, CH_REMIND, OWNER, World } from "./world.ts";
 
 const min = (n: number) => NOW + n * MINUTE;
 const STYLE = /\n-# /;
+/** реплика горничной: с этапа Х3 лежит в карточке (embed), а не в тексте сообщения */
+const card = (b: { embeds?: { description?: string; color?: number }[] }): string => b.embeds?.[0]?.description ?? "";
 
 let w: World;
 let pending: Promise<unknown>[];
@@ -72,18 +74,21 @@ describe("настроение: cron", () => {
   it("реплика под напоминанием; суть (название, срок) без изменений и читаема", async () => {
     await w.create("через 5 минут оплатить счёт");
     await run(min(5));
-    const c = w.discord.live(CH_REMIND)[0].body.content as string;
+    const body = w.discord.live(CH_REMIND)[0].body;
+    const c = body.content as string;
     expect(c).toContain("**Оплатить счёт**");
     expect(c).toContain("Срок:");
-    expect(c).toMatch(STYLE);
-    const line = c.split("\n-# ")[1];
-    expect(line.length).toBeGreaterThan(3);
+    expect(c).not.toMatch(STYLE); // реплика не под текстом, а в цветной карточке
+    expect(body.embeds).toHaveLength(1);
+    expect(typeof body.embeds![0].color).toBe("number");
+    expect(card(body).length).toBeGreaterThan(3);
+    expect(body.components).toHaveLength(1); // кнопки как были
   });
 
   it("серьёзная тема и критичное дело — без реплики, но серия считается", async () => {
     await w.create("через 5 минут записаться к врачу");
     await run(min(5));
-    expect(w.discord.live(CH_REMIND)[0].body.content).not.toMatch(STYLE);
+    expect(w.discord.live(CH_REMIND)[0].body.embeds).toBeUndefined();
   });
 
   it("дело стало «просрочено» = пропуск: tsundere, серия 1; повтор «просрочено» второй пропуск не создаёт", async () => {
@@ -92,9 +97,9 @@ describe("настроение: cron", () => {
     expect(w.occ(occId).state).toBe("overdue");
     expect(mood().miss_streak).toBe(1);
     expect(mood().current_mood).toBe("tsundere");
-    const last = w.discord.live(CH_REMIND)[0].body.content as string;
-    expect(last).toContain("просрочено");
-    expect(last).toMatch(STYLE);
+    const lastBody = w.discord.live(CH_REMIND)[0].body;
+    expect(lastBody.content as string).toContain("просрочено");
+    expect(card(lastBody).length).toBeGreaterThan(3);
     await run(min(5 + 240)); // повтор «просрочено» — тот же пропуск
     expect(mood().miss_streak).toBe(1);
   });
@@ -113,7 +118,7 @@ describe("настроение: cron", () => {
     await run(min(5));
     const r = await click(`done:${a.occId}`, min(6));
     expect(String(r.data.content).startsWith("Готово: Оплатить счёт")).toBe(true);
-    expect(r.data.content).toMatch(STYLE);
+    expect(card(r.data).length).toBeGreaterThan(3);
     expect(mood().done_streak).toBe(1);
 
     const b = await w.create("через 5 минут позвонить", min(10));
@@ -149,7 +154,7 @@ describe("настроение: cron", () => {
 describe("настроение: команды", () => {
   it("/mood показывает имя, настроение и серии; работает и при выключенном настроении", async () => {
     const r = await cmd("mood");
-    const c = r.data.content as string;
+    const c = card(r.data);
     expect(c).toContain("Хару");
     expect(c).toContain("Подряд выполнено: 0, пропущено: 0");
     expect(c).toContain("Настроение выключено");
@@ -159,11 +164,11 @@ describe("настроение: команды", () => {
   it("/mood set задаёт настроение, /reset_mood сбрасывает всё", async () => {
     await cmd("mood", [{ name: "set", value: "yandere" }]);
     expect(mood().current_mood).toBe("yandere");
-    expect((await cmd("mood")).data.content).toContain("яндере");
+    expect(card((await cmd("mood")).data)).toContain("яндере");
     const r = await cmd("reset_mood");
     expect(r.data.content).toContain("сброшены");
     expect(mood()).toBeUndefined();
-    expect((await cmd("mood")).data.content).toContain("устала");
+    expect(card((await cmd("mood")).data)).toContain("устала");
   });
 
   it("/quiet: по умолчанию 4 часа «на выходном» (как отъезд), hours:0 возвращает", async () => {

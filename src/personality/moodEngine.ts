@@ -39,7 +39,7 @@ export interface MoodCtx {
 export type MoodEvent =
   | { type: "done"; onTime: boolean }
   | { type: "miss" }
-  | { type: "activity"; polite?: boolean }
+  | { type: "activity"; polite?: boolean; /** прибавка симпатии за аниме-слово хозяина (решает вызывающий: раз в час) */ bonus?: number }
   | { type: "tick" };
 
 export interface MoodChange {
@@ -188,6 +188,7 @@ export function step(prev: MoodState, ev: MoodEvent, ctx: MoodCtx, cfg: MoodConf
     case "activity":
       touch();
       if (ev.polite) bump(cfg.events.polite);
+      if (ev.bonus) bump({ affection: ev.bonus });
       break;
     case "tick":
       break;

@@ -6,6 +6,8 @@ import { describeRecipe, formatDate, formatWhen } from "../time/format.ts";
 import { QUICK_OPTIONS } from "../time/quick.ts";
 import { MINUTE, civilDay, fmtHHMM, startOfDay, wallOf } from "../time/tz.ts";
 import type { OccView } from "../db/types.ts";
+import { type Mood } from "../personality/moodEngine.ts";
+import { maidEmbed } from "../personality/look.ts";
 import { styleSummary } from "../personality/styleReport.ts";
 import { parseRecipe } from "../service.ts";
 import type { ActionRow, Button, MessageBody } from "./types.ts";
@@ -21,6 +23,14 @@ export function fmtDuration(min: number): string {
 const btn = (label: string, id: string, style: Button["style"] = 2): Button => ({ type: 2, style, label, custom_id: id });
 const row = (...components: ActionRow["components"]): ActionRow => ({ type: 1, components });
 
+/** Как показать реплику горничной карточкой (этап Х3): цвет по настроению и, редко, спрайт; без этого — мелкий текст под сообщением. */
+export interface Look {
+  mood: Mood;
+  /** адрес Worker, где лежат спрайты; без него картинки нет, цвет остаётся */
+  origin?: string | null;
+  sprite?: boolean;
+}
+
 const clip = (s: string, n: number) => (s.length > n ? `${s.slice(0, n - 1)}…` : s);
 
 // ---------- напоминание ----------
@@ -33,6 +43,8 @@ export function reminderMessage(a: {
   now: number;
   /** реплика горничной под сообщением (настроение); суть напоминания остаётся без изменений */
   flavor?: string | null;
+  /** оформление реплики карточкой; суть (время, дело) остаётся обычным текстом, карточка — только реплика */
+  look?: Look | null;
 }): MessageBody {
   const { occ, plan, ownerId, tz, now } = a;
   const due = occ.due_at ?? now;
@@ -69,9 +81,11 @@ export function reminderMessage(a: {
       btn("Изменить", cid("edit", occ.id)),
     );
   }
-  if (a.flavor) content += `
+  const body: MessageBody = { content, components: [row(...buttons)], allowed_mentions: { users: [ownerId] } };
+  if (a.flavor && a.look) body.embeds = [maidEmbed({ mood: a.look.mood, text: a.flavor, origin: a.look.origin, sprite: a.look.sprite })];
+  else if (a.flavor) body.content += `
 ${subtext(a.flavor)}`;
-  return { content, components: [row(...buttons)], allowed_mentions: { users: [ownerId] } };
+  return body;
 }
 
 /** Мелкий серый текст Discord («-# …»): каждая строка отдельно, чтобы манга-звук второй строкой тоже был мелким. */
@@ -82,7 +96,10 @@ export const subtext = (text: string): string =>
     .join("\n");
 
 /** После закрытия кнопкой «Готово» сообщение остаётся записью, без кнопок. */
-export function doneMessage(title: string, ch: Character = "neutral", seed = 0, line: string | null = null): MessageBody {
+export function doneMessage(title: string, ch: Character = "neutral", seed = 0, line: string | null = null, look: Look | null = null): MessageBody {
+  if (line && look) {
+    return { content: `Готово: ${title}`, embeds: [maidEmbed({ mood: look.mood, text: line, origin: look.origin, sprite: look.sprite })], components: [], allowed_mentions: { parse: [] } };
+  }
   const extra = line ?? tired(ch, "done", seed); // реплика настроения главнее прежнего «характера»
   return { content: `Готово: ${title}${extra ? `\n${subtext(extra)}` : ""}`, components: [], allowed_mentions: { parse: [] } };
 }

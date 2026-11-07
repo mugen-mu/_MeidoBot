@@ -8,6 +8,7 @@ import { MoodSession, makeCtx, recordDone, resetOps } from "../personality/direc
 import { MOODS, type Mood, isMood } from "../personality/moodEngine.ts";
 import { MOOD_CONFIG } from "../personality/config.ts";
 import { moodReport } from "../personality/report.ts";
+import { maidEmbed, wantSprite } from "../personality/look.ts";
 import { parseStyle, styleToSettings } from "../personality/animeStyle.ts";
 import { glossaryReport, styleReport } from "../personality/styleReport.ts";
 import { describeSpec, needsSnoozeQuestion, parseCustomSteps, parseSpec, type LadderSpec } from "../ladder.ts";
@@ -82,7 +83,8 @@ export interface HandlerCtx {
 type Reply = Record<string, unknown>;
 const msg = (body: MessageBody): Reply => ({ type: 4, data: body });
 const eph = (text: string): Reply => msg({ ...plainMessage(text, true) });
-const update = (body: MessageBody): Reply => ({ type: 7, data: body });
+/** Ответ-обновление сообщения: прежняя карточка горничной (embed) убирается, если новый текст её не задаёт. */
+const update = (body: MessageBody): Reply => ({ type: 7, data: { embeds: [], ...body } });
 
 const WD_BY_NAME: Record<string, number> = { понедельник: 1, вторник: 2, среда: 3, четверг: 4, пятница: 5, суббота: 6, воскресенье: 7 };
 
@@ -98,6 +100,10 @@ export async function handleInteraction(i: Interaction, ctx: HandlerCtx): Promis
   }
   if (owner === null) return i.type === 4 ? { type: 8, data: { choices: [] } } : eph("Бот ещё не настроен. Выполните /setup на своём сервере.");
   if (userId !== owner) return i.type === 4 ? { type: 8, data: { choices: [] } } : eph("Этот бот личный.");
+  if (ctx.env.origin && meta.get("public_origin") !== ctx.env.origin) {
+    await ctx.repo.exec([setMeta("public_origin", ctx.env.origin)]);
+    meta.set("public_origin", ctx.env.origin);
+  }
 
   // настроение: любое действие хозяина (команда, кнопка, окно) — активность; состояние читаем, только если включено
   const mood = new MoodSession({ repo: ctx.repo, userId: owner, ctx: makeCtx(ctx.now, s), rand: ctx.rand, style: s.style });
@@ -346,17 +352,31 @@ async function setAway(c: C, days: number): Promise<string> {
 
 // ---------- настроение горничной (Характер 2, этап Х1) ----------
 
+/** Ответ командой /mood: карточка цвета настроения со спрайтом (видна только хозяину). */
+function moodCard(c: C, text: string, header?: string): Reply {
+  const body: MessageBody = {
+    ...(header ? { content: header } : {}),
+    embeds: [maidEmbed({ mood: c.mood.state!.mood, text, origin: spriteOrigin(c), sprite: true })],
+    components: [],
+    allowed_mentions: { parse: [] },
+    flags: 64,
+  };
+  return msg(body);
+}
+
 async function moodCommand(c: C): Promise<Reply> {
   const set = opt(c, "set");
   await c.mood.load();
+  if (opt(c, "show") === "cinema") {
+    const text = c.mood.forceCinema("reminder", { task: "позвонить маме" });
+    return moodCard(c, text, "Пример «кино-момента». Настоящие бывают редко: на уровне 3 примерно в каждом 60-м напоминании и не чаще раза в сутки.");
+  }
   if (set !== undefined) {
     if (!isMood(set)) return eph(`Такого настроения нет. Бывают: ${MOODS.join(", ")}.`);
     c.mood.force(set as Mood);
-    return eph(`Настроение задано вручную: ${set}. Оно сменится само, когда числа и время скажут иначе.
-
-${moodReport({ state: c.mood.state!, enabled: c.s.moodOn })}`);
+    return moodCard(c, moodReport({ state: c.mood.state!, enabled: c.s.moodOn }), `Настроение задано вручную: ${set}. Оно сменится само, когда числа и время скажут иначе.`);
   }
-  return eph(moodReport({ state: c.mood.state!, enabled: c.s.moodOn, greeting: c.mood.say("greeting") }));
+  return moodCard(c, moodReport({ state: c.mood.state!, enabled: c.s.moodOn, greeting: c.mood.say("greeting") }));
 }
 
 /** /style: показать стиль речи или изменить (уровень, письмо, манга-звуки, обращения, каомодзи); в ответе — живые примеры. */
@@ -452,6 +472,9 @@ function todayTarget(now: number, tz: string): number {
 }
 
 const asOcc = async (c: C, id: string): Promise<OccView | null> => c.repo.getOcc(Number(id));
+/** Адрес Worker для спрайтов: из запроса или из записанного прежде. */
+const spriteOrigin = (c: C): string | null => c.env.origin ?? c.meta.get("public_origin") ?? null;
+
 const gone = (): Reply => update(plainMessage("Это дело уже закрыто или удалено."));
 
 async function onComponent(c: C): Promise<Reply> {
@@ -464,7 +487,8 @@ async function onComponent(c: C): Promise<Reply> {
       let line: string | null = null;
       if (c.s.moodOn) line = recordDone(c.mood, occ);
       await c.repo.exec(doneOps(occ, c.now));
-      return update(doneMessage(occ.title, c.s.character, occ.id, line));
+      const look = line && c.mood.state ? { mood: c.mood.state.mood, origin: spriteOrigin(c), sprite: wantSprite(c.mood.rand, c.mood.cinema) } : null;
+      return update(doneMessage(occ.title, c.s.character, occ.id, line, look));
     }
     case "snz": {
       const occ = await asOcc(c, a);

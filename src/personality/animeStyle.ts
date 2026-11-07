@@ -83,6 +83,10 @@ export type StyleLimits = typeof STYLE_LIMITS;
 export interface StyleState {
   n: number;
   words: Record<string, { u: number; l: number }>;
+  /** когда в последний раз был «кино-момент», мс (пауза между ними) */
+  cin?: number;
+  /** когда в последний раз засчитана симпатия за «ара-ара»/«ганбатте» хозяина, мс (раз в час) */
+  bon?: number;
 }
 export const emptyStyleState = (): StyleState => ({ n: 0, words: {} });
 
@@ -93,7 +97,10 @@ export function parseStyleState(json: string | null | undefined): StyleState {
     for (const [id, e] of Object.entries((v?.words ?? {}) as Record<string, { u?: unknown; l?: unknown }>)) {
       if (WORD_BY_ID.has(id) && Number.isFinite(Number(e?.u)) && Number.isFinite(Number(e?.l))) words[id] = { u: Number(e.u), l: Number(e.l) };
     }
-    return { n: Number.isFinite(Number(v?.n)) ? Number(v.n) : 0, words };
+    const out: StyleState = { n: Number.isFinite(Number(v?.n)) ? Number(v.n) : 0, words };
+    if (Number(v?.cin) > 0) out.cin = Number(v.cin);
+    if (Number(v?.bon) > 0) out.bon = Number(v.bon);
+    return out;
   } catch {
     return emptyStyleState();
   }
@@ -206,7 +213,8 @@ export function renderStyled(a: RenderArgs): RenderResult {
   });
   if (tokenTouched) text = text.replace(/\s{2,}/g, " ").replace(/\s+([,.!?…~])/g, "$1").replace(/^\s*[,.]\s*/, "").trim();
 
-  if (lvl === 0) return { text: fill(text, { ...a.vars, user: a.vars?.user ?? cfg.address }, cfg), state: { n, words }, used };
+  const next: StyleState = { ...a.state, n, words };
+  if (lvl === 0) return { text: fill(text, { ...a.vars, user: a.vars?.user ?? cfg.address }, cfg), state: next, used };
 
   // 3. Междометие в начало (уровень 1+), слово в конец (уровень 2+); лимиты: на сообщение и паузы между повторами
   const free = (slot: Word["slot"]): Word[] =>
@@ -264,7 +272,7 @@ export function renderStyled(a: RenderArgs): RenderResult {
     }
     if (id) out += `\n${SFX[id][st.sfx]}`;
   }
-  return { text: out, state: { n, words }, used };
+  return { text: out, state: next, used };
 }
 
 /** Мягкие правки манеры речи (ТЗ, 5Б) для текста без затрагивания подстановок. */

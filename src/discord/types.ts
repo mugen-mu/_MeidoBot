@@ -29,8 +29,17 @@ export interface ActionRow {
   components: (Button | StringSelect)[];
 }
 
+/** Карточка (embed): цветная полоска, текст и миниатюра. Горничная показывает в ней свою реплику (этап Х3). */
+export interface Embed {
+  title?: string;
+  description?: string;
+  color?: number;
+  thumbnail?: { url: string };
+}
+
 export interface MessageBody {
   content?: string;
+  embeds?: Embed[];
   components?: ActionRow[];
   allowed_mentions?: { parse?: string[]; users?: string[]; replied_user?: boolean };
   /** ответ на сообщение (Reply); без ошибки, если исходное уже удалено */
@@ -80,6 +89,8 @@ export interface DiscordApi {
   editMessage(channelId: string, messageId: string, body: MessageBody): Promise<void>;
   /** Удаление без ошибки, если сообщения уже нет. */
   deleteMessage(channelId: string, messageId: string): Promise<void>;
+  /** Поставить свою реакцию-эмодзи на сообщение. */
+  addReaction(channelId: string, messageId: string, emoji: string): Promise<void>;
   /** Новые сообщения после `after` по возрастанию id. */
   listMessages(channelId: string, after: string | null, limit: number): Promise<IncomingMessage[]>;
   listGuildChannels(guildId: string): Promise<GuildChannel[]>;

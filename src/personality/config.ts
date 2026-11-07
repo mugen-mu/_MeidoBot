@@ -13,6 +13,8 @@ export interface MoodConfig {
     miss: { affection: number; irritation: number };
     returnAfterPause: { affection: number };
     polite: { affection: number };
+    /** «ара-ара», «ганбатте» и т.п. от хозяина (ТЗ, 5Д): +симпатия, не чаще раза в cooldownHours */
+    userWord: { affection: number; cooldownHours: number };
   };
   /** молчание: за каждые idleStepHours дневных часов +idleIrritation, всего не больше idleCap */
   idleStepHours: number;
@@ -62,6 +64,7 @@ export const MOOD_CONFIG: MoodConfig = {
     miss: { affection: -2, irritation: 15 },
     returnAfterPause: { affection: 2 },
     polite: { affection: 4 },
+    userWord: { affection: 1, cooldownHours: 1 },
   },
   idleStepHours: 12,
   idleIrritation: 5,

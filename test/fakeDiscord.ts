@@ -19,6 +19,7 @@ export class FakeDiscord implements DiscordApi {
   posted: Posted[] = [];
   edits: { channel: string; id: string; body: MessageBody }[] = [];
   deletes: { channel: string; id: string }[] = [];
+  reactions: { channel: string; id: string; emoji: string }[] = [];
   /** входящие сообщения по каналам (для приёма текста) */
   inbox = new Map<string, IncomingMessage[]>();
   channels: GuildChannel[] = [];
@@ -52,6 +53,10 @@ export class FakeDiscord implements DiscordApi {
     this.deletes.push({ channel: channelId, id: messageId });
     const p = this.posted.find((x) => x.id === messageId);
     if (p) p.deleted = true;
+  }
+  async addReaction(channelId: string, messageId: string, emoji: string) {
+    this.calls++;
+    this.reactions.push({ channel: channelId, id: messageId, emoji });
   }
   async listMessages(channelId: string, after: string | null, limit: number) {
     this.calls++;

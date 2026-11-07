@@ -5,6 +5,7 @@ import { BudgetExceeded, type Repo, event, releaseLocks, rememberMessage, setMet
 import type { OccView, Op } from "./db/types.ts";
 import { type DiscordApi, DiscordError } from "./discord/types.ts";
 import {
+  type Look,
   panelText,
   reminderMessage,
   summaryText,
@@ -12,7 +13,9 @@ import {
 } from "./discord/ui.ts";
 import { createFromText, EMPTY_REPLY, EMPTY_SERIES_REPLY, messageTime, SECRET_REPLY } from "./intake.ts";
 import { MoodSession, canStyle, makeCtx } from "./personality/director.ts";
-import { isPolite } from "./personality/moodEngine.ts";
+import { maidEmbed, pickReaction, wantSprite } from "./personality/look.ts";
+import { isPolite, isSeriousTopic } from "./personality/moodEngine.ts";
+import { detectUserWord } from "./personality/userWords.ts";
 import { announceOutage } from "./power.ts";
 import { handleReply } from "./reply.ts";
 import { fetchYasno, lightLines, publishedFor, type LightData } from "./light.ts";
@@ -75,6 +78,8 @@ export async function runCron(d: CronDeps): Promise<CronReport> {
   const s = pre.settings;
   const meta = pre.meta;
   const owner = meta.get("owner_id") ?? d.env.ownerId ?? null;
+  /** адрес Worker (его записывает обработчик команд): отсюда берутся спрайты для карточек */
+  const origin = meta.get("public_origin") ?? null;
   report.claimed = pre.claimed.length;
   let healthy = true;
 
@@ -123,6 +128,7 @@ export async function runCron(d: CronDeps): Promise<CronReport> {
         // настроение: пропуск (дело стало «просрочено») и реплика под напоминанием; при сбое отправки откатываем
         const snap = mood?.snapshot();
         let flavor: string | null = null;
+        let look: Look | null = null;
         if (mood && occ.kind === "main" && occ.item_kind === "reminder" && room(3)) {
           await mood.load();
           const becameOverdue = plan.phase === "overdue" && occ.state !== "overdue";
@@ -133,9 +139,11 @@ export async function runCron(d: CronDeps): Promise<CronReport> {
               : plan.phase === "overdue" ? "missed" : occ.fire_count === 0 && occ.state === "planned" ? "reminder" : "reminder_repeat";
             // повторное «просрочено» не должно каждый раз грозить: драма — с паузой, внутри say()
             flavor = mood.say(situation, { task: occ.title });
+            // карточка с цветом настроения; спрайт — редко, а в «кино-моменте» и при затяжных пропусках — всегда
+            if (flavor) look = { mood: mood.state!.mood, origin, sprite: wantSprite(mood.rand, mood.cinema || (situation === "missed" && mood.state!.missStreak >= 3)) };
           }
         }
-        const body = reminderMessage({ occ, plan, ownerId: owner as string, tz: s.tz, now, flavor });
+        const body = reminderMessage({ occ, plan, ownerId: owner as string, tz: s.tz, now, flavor, look });
         let sent;
         try {
           sent = await api.postMessage(s.chRemind as string, body);
@@ -198,6 +206,17 @@ export async function runCron(d: CronDeps): Promise<CronReport> {
   // ---------- 2. остальное: приём текста, сводки, панель, сторож ----------
   const ops2: Op[] = [];
   const room2 = (n = 1) => repo.counter.can(n + 2); // ещё нужны: запись ops2 и пинг сторожу
+  /** Реакция-эмодзи по настроению на сообщение хозяина (этап Х3): редко, на серьёзные темы — никогда; сбой реакции не страшен. */
+  const react = async (ch: string, messageId: string, always: boolean, text = ""): Promise<void> => {
+    if (!mood?.loaded || !room2(1) || isSeriousTopic(text)) return;
+    const e = pickReaction(mood.state!.mood, mood.rand, always);
+    if (!e) return;
+    try {
+      await api.addReaction(ch, messageId, e);
+    } catch {
+      /* нет права или сообщения уже нет: не страшно */
+    }
+  };
   try {
     let items: OccView[] | null = null;
     const getItems = async () => (items ??= await repo.openMain(100));
@@ -235,15 +254,38 @@ export async function runCron(d: CronDeps): Promise<CronReport> {
           // настроение: любое сообщение хозяина — активность; «спасибо» горничной — вежливость, дело из этого не создаём
           if (mood && room2(3)) {
             await mood.load();
+            // «ара-ара», «ганбатте» и т.п. от хозяина: ответ в тон, симпатия +1 (раз в час); делом это не записываем
+            const word = s.style.level >= 1 ? detectUserWord(m.content) : null;
+            if (word) {
+              const line = mood.hearWord(word);
+              report.intake++;
+              try {
+                await api.postMessage(ch, {
+                  embeds: [maidEmbed({ mood: mood.state!.mood, text: line, origin, sprite: wantSprite(mood.rand) })],
+                  allowed_mentions: { parse: [] },
+                });
+              } catch (e) {
+                if (e instanceof BudgetExceeded) break;
+              }
+              await react(ch, m.id, true);
+              continue;
+            }
             const polite = isPolite(m.content);
             mood.apply({ type: "activity", polite });
             if (polite) {
               report.intake++;
+              const line = mood.say("thanks");
               try {
-                await api.postMessage(ch, { content: mood.say("thanks") ?? "Пожалуйста.", allowed_mentions: { parse: [] } });
+                await api.postMessage(
+                  ch,
+                  line
+                    ? { embeds: [maidEmbed({ mood: mood.state!.mood, text: line, origin, sprite: wantSprite(mood.rand) })], allowed_mentions: { parse: [] } }
+                    : { content: "Пожалуйста.", allowed_mentions: { parse: [] } },
+                );
               } catch (e) {
                 if (e instanceof BudgetExceeded) break;
               }
+              await react(ch, m.id, true);
               continue;
             }
           }
@@ -260,6 +302,7 @@ export async function runCron(d: CronDeps): Promise<CronReport> {
             if (e instanceof BudgetExceeded) break;
             report.notes.push("не удалось ответить на сообщение в канале приёма");
           }
+          if (r.kind === "created") await react(ch, m.id, false, m.content);
         }
         if (lastId !== last) ops2.push(setMeta(lastKey, lastId));
         if (blind > 0) {

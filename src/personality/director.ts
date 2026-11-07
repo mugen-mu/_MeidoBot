@@ -13,6 +13,7 @@ import {
   parseStyleState,
   renderStyled,
 } from "./animeStyle.ts";
+import { cinemaMoment } from "./cinema.ts";
 import { MOOD_CONFIG, type MoodConfig } from "./config.ts";
 import {
   type Mood,
@@ -27,7 +28,8 @@ import {
   step,
 } from "./moodEngine.ts";
 import type { Situation } from "./phrases.ts";
-import { type PhraseVars, pickPhrase, remember } from "./speech.ts";
+import { type PhraseVars, fill, pickPhrase, remember } from "./speech.ts";
+import { type UserWordId, wordReply } from "./userWords.ts";
 
 const MINUTE = 60_000;
 
@@ -118,6 +120,8 @@ export class MoodSession {
   state: MoodState | null = null;
   /** какие слова словаря использованы (подсказки перевода, паузы, /glossary); живёт в строке настроения */
   styleState: StyleState = emptyStyleState();
+  /** последняя реплика say() оказалась «кино-моментом» (тогда показываем спрайт) */
+  cinema = false;
   private pending: Op[] = [];
   private dirty = false;
 
@@ -170,6 +174,7 @@ export class MoodSession {
   /** Фраза для ситуации в текущем настроении или null (пула нет, или пауза «драмы»). Запоминает её, чтобы не повторять. */
   say(situation: Situation, vars: PhraseVars = {}, mood?: Mood): string | null {
     if (!this.state) throw new Error("MoodSession: сначала load()");
+    this.cinema = false;
     const st = this.state;
     const dramatic = situation === "missed" && st.missStreak >= this.cfg.thresholds.yandereMiss + 1;
     if (dramatic && st.lastDramaAt !== null && this.ctx.now - st.lastDramaAt < this.cfg.dramaCooldownMinutes * MINUTE) return null;
@@ -184,6 +189,13 @@ export class MoodSession {
     if (!p) return null;
     this.state = { ...st, recent: remember(st.recent, p.key, this.cfg), lastDramaAt: dramatic ? this.ctx.now : st.lastDramaAt };
     this.dirty = true;
+    // «кино-момент» (Х3): редкий длинный монолог вместо обычной фразы, только на уровне 3 и с паузой
+    const cin = cinemaMoment({ mood: mood ?? st.mood, situation, style: this.style, state: this.styleState, now: this.ctx.now, rand: this.rand, vars, cfg: this.cfg });
+    if (cin) {
+      this.styleState = cin.state;
+      this.cinema = true;
+      return cin.text;
+    }
     // аниме-слой (Х2): поверх выбранной фразы; на уровне 0 это обычная подстановка без вставок
     const r = renderStyled({
       template: p.raw,
@@ -197,6 +209,28 @@ export class MoodSession {
     });
     this.styleState = r.state;
     return r.text;
+  }
+
+  /** Кино-момент по требованию (/mood show:cinema): обходит шанс, паузу и уровень; паузу при этом не заводит. */
+  forceCinema(situation: Situation = "reminder", vars: PhraseVars = {}): string {
+    if (!this.state) throw new Error("MoodSession: сначала load()");
+    const r = cinemaMoment({ mood: this.state.mood, situation, style: this.style, state: this.styleState, now: this.ctx.now, rand: this.rand, vars, cfg: this.cfg, force: true });
+    return r!.text;
+  }
+
+  /** Можно ли засчитать симпатию за аниме-слово хозяина: раз в cooldownHours (ТЗ, 5Д). */
+  wordBonusReady(): boolean {
+    return this.ctx.now - (this.styleState.bon ?? 0) >= this.cfg.events.userWord.cooldownHours * 3_600_000;
+  }
+
+  /** Событие «хозяин сказал аниме-слово»: активность (+симпатия, если пауза прошла) и ответ в тон настроению. */
+  hearWord(id: UserWordId): string {
+    if (!this.state) throw new Error("MoodSession: сначала load()");
+    const bonus = this.wordBonusReady() ? this.cfg.events.userWord.affection : 0;
+    this.apply({ type: "activity", bonus });
+    if (bonus) this.styleState = { ...this.styleState, bon: this.ctx.now };
+    this.dirty = true;
+    return fill(wordReply(id, this.state.mood, this.rand), { user: this.cfg.address }, this.cfg);
   }
 
   /** Снимок на случай неудачной отправки: откатить изменения этой сессии, чтобы не посчитать событие дважды. */

@@ -8,6 +8,11 @@ compatibility_date = "2026-11-01"
 [observability]
 enabled = true
 
+# Спрайты настроений (public/sprites/*.jpg) раздаёт сам Worker: бесплатно, без новых аккаунтов.
+# Картинки подключаются к карточкам горничной по адресу <адрес бота>/sprites/<настроение>.jpg.
+[assets]
+directory = "./public"
+
 [triggers]
 crons = ["* * * * *"]
 

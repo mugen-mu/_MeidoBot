@@ -119,28 +119,29 @@ describe("слой в работе: cron и словарь", () => {
   it("манга-звук идёт отдельной мелкой строкой (каждая строка с «-# »)", async () => {
     await w.create("через 5 минут оплатить счёт");
     await run(min(5));
-    const c = w.discord.live(CH_REMIND)[0].body.content as string;
-    const tail = c.split("\n").filter((l) => l.startsWith("-# "));
-    expect(tail.length).toBe(2); // фраза и манга-звук (rand=0: звук выпал)
-    expect(tail[1]).toBe("-# ハァ…");
-    for (const l of c.split("\n").slice(c.split("\n").findIndex((x) => x.startsWith("-# ")))) expect(l.startsWith("-# ")).toBe(true);
+    const lines = (w.discord.live(CH_REMIND)[0].body.embeds![0].description as string).split("\n");
+    expect(lines.length).toBe(2); // фраза и манга-звук (rand=0: звук выпал)
+    expect(lines[1]).toBe("*ハァ…*"); // в карточке звук отдельной строкой курсивом
   });
 
   it("уровень 0: в напоминании ни японских слов, ни манга-звука, слов в словаре нет", async () => {
     await cmd("style", [{ name: "level", value: 0 }]);
     await w.create("через 5 минут оплатить счёт");
     await run(min(5));
-    const c = w.discord.live(CH_REMIND)[0].body.content as string;
-    expect(c).not.toMatch(/[぀-ヿ]/u);
-    expect(c.split("\n").filter((l) => l.startsWith("-# ")).length).toBe(1);
+    const body = w.discord.live(CH_REMIND)[0].body;
+    expect(body.content as string).not.toMatch(/[぀-ヿ]/u);
+    const d = body.embeds![0].description as string;
+    expect(d).not.toMatch(/[぀-ヿ]/u);
+    expect(d.split("\n").length).toBe(1);
     expect(JSON.parse(row().style_data).words).toEqual({});
   });
 
   it("серьёзная тема: стиль не применяется вовсе", async () => {
     await w.create("через 5 минут записаться к врачу");
     await run(min(5));
-    const c = w.discord.live(CH_REMIND)[0].body.content as string;
-    expect(c).not.toMatch(/\n-# /);
+    const body = w.discord.live(CH_REMIND)[0].body;
+    expect(body.content as string).not.toMatch(/\n-# /);
+    expect(body.embeds).toBeUndefined();
     expect(row()?.style_data ?? "{}").not.toContain("u");
   });
 
