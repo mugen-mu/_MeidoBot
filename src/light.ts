@@ -1,7 +1,7 @@
 // График отключений света для сводок. Источник — открытые данные Yasno (ДТЕК Дніпровські електромережі, Днепр):
 // регион 3, оператор 301. Данные: по группам («3.1», «3.2» …) на сегодня и завтра, слоты в минутах от полуночи.
 // Адрес дома бот не хранит и не знает — только номер группы, который пользователь задаёт в /settings.
-import { fmtHHMM } from "./time/tz.ts";
+import { fmtHHMM, wallOf } from "./time/tz.ts";
 
 export const YASNO_URL = "https://app.yasno.ua/api/blackout-service/public/shutdowns/regions/3/dsos/301/planned-outages";
 
@@ -89,4 +89,37 @@ export function lightLines(which: "today" | "tomorrow", group: string, data: Lig
 export function normalizeGroup(text: string): string | null {
   const t = text.trim().replace(",", ".");
   return /^[1-6](\.[12])?$/.test(t) ? t : null;
+}
+
+export interface ScheduleCheck {
+  verdict: "yes" | "no" | "mixed" | "unknown";
+  /** интервал «света не будет», в который попал момент, например «17:30–20:30» */
+  range?: string;
+}
+
+/** Допуск: сеть может отключиться чуть раньше начала слота. */
+export const SCHEDULE_SLACK_MIN = 15;
+
+/**
+ * Попал ли момент `at` в график отключений группы («по графику» или нет).
+ * Если у группы подгруппы (3.1, 3.2) и ответы разные — «mixed». Нет данных на эту дату — «unknown».
+ */
+export function checkSchedule(at: number, group: string, data: LightData, tz: string): ScheduleCheck {
+  const w = wallOf(at, tz);
+  const date = `${w.y}-${String(w.mo).padStart(2, "0")}-${String(w.d).padStart(2, "0")}`;
+  const minute = w.h * 60 + w.mi;
+  const results: ScheduleCheck[] = [];
+  for (const k of groupsFor(group, data)) {
+    const day = [data[k].today, data[k].tomorrow].find((d) => d.date === date);
+    if (!day || day.status !== "ScheduleApplies") {
+      results.push({ verdict: "unknown" });
+      continue;
+    }
+    const hit = day.off.find((s) => minute >= s.start - SCHEDULE_SLACK_MIN && minute < s.end);
+    results.push(hit ? { verdict: "yes", range: range(hit) } : { verdict: "no" });
+  }
+  if (results.length === 0 || results.every((r) => r.verdict === "unknown")) return { verdict: "unknown" };
+  const first = results[0];
+  if (results.every((r) => r.verdict === first.verdict && r.range === first.range)) return first;
+  return { verdict: "mixed" };
 }

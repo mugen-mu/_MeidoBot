@@ -52,6 +52,14 @@ export const COMMANDS = [
     contexts: EVERYWHERE,
     options: [{ type: 4, name: "days", description: "Сколько дней (0 — вернуться сейчас)", required: false, min_value: 0, max_value: 90 }],
   },
+  {
+    name: "power",
+    description: "Ссылки для телефона: «свет пропал / появился» (видны только вам)",
+    type: 1,
+    integration_types: BOTH,
+    contexts: EVERYWHERE,
+    options: [{ type: 5, name: "reset", description: "Выдать новый ключ (старые ссылки перестанут работать)", required: false }],
+  },
   { name: "setup", description: "Завести каналы бота на этом сервере (один раз)", type: 1, integration_types: [0], contexts: [0] },
   // Команда из меню сообщения (долгое нажатие -> Приложения). Описание у такой команды не указывается.
   { name: "Напомнить об этом", type: 3, integration_types: BOTH, contexts: EVERYWHERE },

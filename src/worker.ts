@@ -4,6 +4,7 @@ import { Counter, Repo } from "./db/repo.ts";
 import { countedApi, createDiscordApi } from "./discord/api.ts";
 import { type Interaction, handleInteraction } from "./discord/interactions.ts";
 import { verifySignature } from "./discord/verify.ts";
+import { handlePower } from "./power.ts";
 
 export interface Env {
   DB: D1Database;
@@ -22,6 +23,19 @@ const FAIL_REPLY = {
 export default {
   async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
     const url = new URL(request.url);
+    // Сигнал «свет пропал / появился» от телефона: /power/<ключ>/off и /power/<ключ>/on.
+    if (url.pathname.startsWith("/power/")) {
+      try {
+        return await handlePower(request, {
+          repo: new Repo(env.DB, new Counter(1000)),
+          api: createDiscordApi(env.DISCORD_BOT_TOKEN),
+          now: Date.now(),
+          ownerId: env.OWNER_ID ?? null,
+        });
+      } catch {
+        return new Response("error", { status: 500 });
+      }
+    }
     // Снаружи ничего лишнего не показываем.
     if (request.method !== "POST" || url.pathname !== "/interactions") return new Response("ok", { status: url.pathname === "/" ? 200 : 404 });
 
@@ -47,7 +61,7 @@ export default {
         repo,
         api,
         now: Date.now(),
-        env: { ownerId: env.OWNER_ID },
+        env: { ownerId: env.OWNER_ID, origin: url.origin },
         defer: (p) => ctx.waitUntil(p),
       });
       return Response.json(reply);

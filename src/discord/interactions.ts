@@ -6,6 +6,7 @@ import { EMPTY_REPLY, EMPTY_SERIES_REPLY, NOT_RECURRING_REPLY, SECRET_REPLY, cre
 import { tired } from "../flavor.ts";
 import { describeSpec, needsSnoozeQuestion, parseCustomSteps, parseSpec, type LadderSpec } from "../ladder.ts";
 import { normalizeGroup } from "../light.ts";
+import { newPowerKey, readPower } from "../power.ts";
 import { detectSecret } from "../secrets.ts";
 import {
   cancelItemOps,
@@ -62,7 +63,7 @@ export interface HandlerCtx {
   repo: Repo;
   api: DiscordApi;
   now: number;
-  env: { ownerId?: string };
+  env: { ownerId?: string; origin?: string };
   /** фоновая работа после ответа (в Worker — ctx.waitUntil) */
   defer: (p: Promise<unknown>) => void;
 }
@@ -164,9 +165,43 @@ async function onCommand(c: C): Promise<Reply> {
     }
     case "setup":
       return setup(c);
+    case "power":
+      return powerCommand(c);
     default:
       return eph("Такой команды бот не знает.");
   }
+}
+
+/** /power: ссылки для телефона. Видны только хозяину («только вам»); ключ не попадает ни в журнал, ни в чат. */
+/** «Только вам» (64) и без предпросмотра ссылок (4): Discord не должен сам открывать ссылки с ключом. */
+const powerReply = (text: string): Reply => msg({ ...plainMessage(text, true), flags: 68 });
+
+async function powerCommand(c: C): Promise<Reply> {
+  const reset = (opt(c, "reset") as unknown) === true;
+  let key = c.meta.get("power_key");
+  if (!key || reset) {
+    key = newPowerKey();
+    await c.repo.exec([setMeta("power_key", key)]);
+  }
+  const base = c.env.origin ?? "https://<адрес бота>";
+  const p = readPower(c.meta);
+  const state =
+    p.state === "off"
+      ? `Сейчас: света нет с ${formatWhen(p.since, c.now, c.s.tz)}.`
+      : p.state === "on"
+        ? `Сейчас: свет есть (с ${formatWhen(p.since, c.now, c.s.tz)}).`
+        : "Сигналов от телефона ещё не было.";
+  return powerReply(
+    [
+      reset ? "Ключ заменён: старые ссылки больше не работают." : "Ссылки для приложения на телефоне (инструкция — docs/POWER-SENSOR.md).",
+      "Свет пропал (зарядка отключилась):",
+      `${base}/power/${key}/off`,
+      "Свет появился (зарядка подключилась):",
+      `${base}/power/${key}/on`,
+      "Ключ в ссылках — как пароль: никому не показывайте и не пересылайте. Если ссылка утекла — /power reset:True, и впишите новые в приложение.",
+      state,
+    ].join("\n"),
+  );
 }
 
 async function slashSnooze(c: C): Promise<Reply> {

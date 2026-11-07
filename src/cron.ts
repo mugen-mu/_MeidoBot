@@ -11,6 +11,7 @@ import {
   weeklyText,
 } from "./discord/ui.ts";
 import { createFromText, EMPTY_REPLY, EMPTY_SERIES_REPLY, messageTime, SECRET_REPLY } from "./intake.ts";
+import { announceOutage } from "./power.ts";
 import { handleReply } from "./reply.ts";
 import { fetchYasno, lightLines, type LightData } from "./light.ts";
 import { planFire } from "./ladder.ts";
@@ -286,6 +287,24 @@ export async function runCron(d: CronDeps): Promise<CronReport> {
         if (e instanceof BudgetExceeded) break;
         healthy = false;
         ops2.push(event(now, "summary_failed", null, kind));
+      }
+    }
+
+    // 2б2. свет пропал дольше минуты: одно сообщение с упоминанием (не зависит от тихих часов и отъезда)
+    if (room2(4)) {
+      try {
+        const o = await announceOutage({
+          repo, api, now, ownerId: owner, meta, s, fetchFn: d.fetchFn, spend: () => repo.counter.spend(1),
+        });
+        if (o) {
+          ops2.push(...o);
+          report.notes.push("свет: отправлено «света нет»");
+        }
+      } catch (e) {
+        if (!(e instanceof BudgetExceeded)) {
+          healthy = false;
+          ops2.push(event(now, "power_failed"));
+        }
       }
     }
 
