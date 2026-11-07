@@ -13,11 +13,11 @@ import {
 import { createFromText, EMPTY_REPLY, EMPTY_SERIES_REPLY, messageTime, SECRET_REPLY } from "./intake.ts";
 import { announceOutage } from "./power.ts";
 import { handleReply } from "./reply.ts";
-import { fetchYasno, lightLines, type LightData } from "./light.ts";
+import { fetchYasno, lightLines, publishedFor, type LightData } from "./light.ts";
 import { planFire } from "./ladder.ts";
 import { ladderFor, nextSeriesOps, scrubOps } from "./service.ts";
 import { type AppSettings, inQuietHours } from "./settings.ts";
-import { MINUTE, addDaysWall, nextTimeOfDay, wallOf } from "./time/tz.ts";
+import { MINUTE, addDaysWall, localDate, nextTimeOfDay, wallOf } from "./time/tz.ts";
 
 export const RESERVE = 3;
 export const MAX_SENDS = 35;
@@ -53,10 +53,7 @@ export interface CronReport {
   notes: string[];
 }
 
-export function localDate(now: number, tz: string): string {
-  const w = wallOf(now, tz);
-  return `${w.y}-${String(w.mo).padStart(2, "0")}-${String(w.d).padStart(2, "0")}`;
-}
+export { localDate };
 
 function hash(s: string): string {
   let h = 5381;
@@ -275,6 +272,9 @@ export async function runCron(d: CronDeps): Promise<CronReport> {
           extra = light
             ? lightLines(kind === "evening" ? "tomorrow" : "today", s.lightGroup, light, localDate(kind === "evening" ? addDaysWall(now, 1, s.tz) : now, s.tz))
             : ["График света: не удалось получить данные (Yasno не отвечает)."];
+          if (kind === "evening" && light && publishedFor("tomorrow", s.lightGroup, light, localDate(addDaysWall(now, 1, s.tz), s.tz))) {
+            ops2.push(setMeta("light_tmr", localDate(addDaysWall(now, 1, s.tz), s.tz)));
+          }
         }
         content = summaryText(kind, { items: list, now, tz: s.tz, ownerId: owner as string, extra, character: s.character });
       }
@@ -304,6 +304,30 @@ export async function runCron(d: CronDeps): Promise<CronReport> {
         if (!(e instanceof BudgetExceeded)) {
           healthy = false;
           ops2.push(event(now, "power_failed"));
+        }
+      }
+    }
+
+    // 2б3. вечерняя сводка была, а график на завтра тогда ещё не вышел: проверяем раз в 10 минут и пишем один раз, когда появится
+    {
+      const tmr = localDate(addDaysWall(now, 1, s.tz), s.tz);
+      if (
+        s.lightGroup && owner && s.chRemind && !away && meta.get("last_evening") === today && meta.get("light_tmr") !== tmr &&
+        Math.floor(now / MINUTE) % 10 === 0 && room2(4)
+      ) {
+        repo.counter.spend(1);
+        const data = await fetchYasno(d.fetchFn ?? fetch);
+        if (data && publishedFor("tomorrow", s.lightGroup, data, tmr)) {
+          try {
+            await api.postMessage(s.chRemind, {
+              content: `<@${owner}> График света на завтра опубликован.\n${lightLines("tomorrow", s.lightGroup, data, tmr).join("\n")}`,
+              allowed_mentions: { users: [owner] },
+            });
+            ops2.push(setMeta("light_tmr", tmr), event(now, "light_tomorrow"));
+            report.notes.push("свет: график на завтра отправлен");
+          } catch (e) {
+            if (!(e instanceof BudgetExceeded)) report.notes.push("свет: не удалось отправить график на завтра");
+          }
         }
       }
     }
