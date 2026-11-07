@@ -1,0 +1,1089 @@
+{
+ "model": "@cf/mistralai/mistral-small-3.1-24b-instruct",
+ "tasks": [
+  {
+   "input": "в субботу после обеда напомни позвонить маме",
+   "ok": true,
+   "ms": 707,
+   "text": "{\"title\":\"Позвонить Маме\",\"when_text\":\"14 ноября в 14:00\",\"repeat\":null}",
+   "usage": {
+    "prompt_tokens": 298,
+    "completion_tokens": 29,
+    "total_tokens": 327,
+    "prompt_tokens_details": {
+     "cached_tokens": 0
+    },
+    "neurons": 10.963200569152832
+   }
+  },
+  {
+   "input": "через пару дней оплатить интернет",
+   "ok": true,
+   "ms": 678,
+   "text": "{\"title\":\"Оплатить Интернет\",\"when_text\":\"9 ноября\",\"repeat\":null}",
+   "usage": {
+    "prompt_tokens": 292,
+    "completion_tokens": 21,
+    "total_tokens": 313,
+    "prompt_tokens_details": {
+     "cached_tokens": 0
+    },
+    "neurons": 10.368041038513184
+   }
+  },
+  {
+   "input": "каждый понедельник утром полить цветы",
+   "ok": true,
+   "ms": 1961,
+   "text": "{\"title\":\"Полить Цветы\",\"when_text\":\"10 ноября в 9:00\",\"repeat\":\"каждый понедельник в 9:00\"}",
+   "usage": {
+    "prompt_tokens": 294,
+    "completion_tokens": 38,
+    "total_tokens": 332,
+    "prompt_tokens_details": {
+     "cached_tokens": 0
+    },
+    "neurons": 11.290088653564453
+   }
+  },
+  {
+   "input": "завтра в 8 вынести мусор",
+   "ok": true,
+   "ms": 1825,
+   "text": "{\"title\":\"Вынести мусор\",\"when_text\":\"завтра в 8:00\",\"repeat\":null}",
+   "usage": {
+    "prompt_tokens": 294,
+    "completion_tokens": 27,
+    "total_tokens": 321,
+    "prompt_tokens_details": {
+     "cached_tokens": 0
+    },
+    "neurons": 10.734721183776855
+   }
+  },
+  {
+   "input": "надо бы записаться к стоматологу на следующей неделе",
+   "ok": true,
+   "ms": 970,
+   "text": "{\"title\":\"Записаться к стоматологу\",\"when_text\":\"14 ноября\",\"repeat\":null}",
+   "usage": {
+    "prompt_tokens": 300,
+    "completion_tokens": 26,
+    "total_tokens": 326,
+    "prompt_tokens_details": {
+     "cached_tokens": 0
+    },
+    "neurons": 10.87548828125
+   }
+  },
+  {
+   "input": "напомни через полчаса достать пирог",
+   "ok": true,
+   "ms": 650,
+   "text": "{\"title\":\"Достать пирог\",\"when_text\":\"через полчаса\",\"repeat\":null}",
+   "usage": {
+    "prompt_tokens": 296,
+    "completion_tokens": 24,
+    "total_tokens": 320,
+    "prompt_tokens_details": {
+     "cached_tokens": 0
+    },
+    "neurons": 10.647007942199707
+   }
+  },
+  {
+   "input": "15 ноября продлить страховку машины",
+   "ok": true,
+   "ms": 940,
+   "text": "{\"title\": \"Продлить Страховку Машины\", \"when_text\": \"15 ноября\", \"repeat\": null}",
+   "usage": {
+    "prompt_tokens": 292,
+    "completion_tokens": 29,
+    "total_tokens": 321,
+    "prompt_tokens_details": {
+     "cached_tokens": 0
+    },
+    "neurons": 10.771944999694824
+   }
+  },
+  {
+   "input": "раз в месяц первого числа проверить счётчики",
+   "ok": true,
+   "ms": 2102,
+   "text": "{\"title\":\"Проверить Счётчики\",\"when_text\":\"1 декабря в 9:00\",\"repeat\":\"раз в месяц 1 числа в 9:00\"}",
+   "usage": {
+    "prompt_tokens": 294,
+    "completion_tokens": 40,
+    "total_tokens": 334,
+    "prompt_tokens_details": {
+     "cached_tokens": 0
+    },
+    "neurons": 11.391064643859863
+   }
+  },
+  {
+   "input": "вечером в пятницу купить подарок Сашке",
+   "ok": true,
+   "ms": 791,
+   "text": "{\"title\":\"Купить Подарок Сашке\",\"when_text\":\"13 ноября в 19:00\",\"repeat\":null}",
+   "usage": {
+    "prompt_tokens": 296,
+    "completion_tokens": 32,
+    "total_tokens": 328,
+    "prompt_tokens_details": {
+     "cached_tokens": 0
+    },
+    "neurons": 11.050911903381348
+   }
+  },
+  {
+   "input": "не забыть послезавтра забрать посылку с почты",
+   "ok": true,
+   "ms": 2689,
+   "text": "{\"title\":\"Забрать Посылку С Почты\",\"when_text\":\"послезавтра\",\"repeat\":null}",
+   "usage": {
+    "prompt_tokens": 298,
+    "completion_tokens": 28,
+    "total_tokens": 326,
+    "prompt_tokens_details": {
+     "cached_tokens": 0
+    },
+    "neurons": 10.912712097167969
+   }
+  },
+  {
+   "input": "ежедневно в 22:30 принять витамины",
+   "ok": true,
+   "ms": 1237,
+   "text": "{\"title\":\"Принять Витамины\",\"when_text\":\"сегодня в 22:30\",\"repeat\":\"каждый день в 22:30\"}",
+   "usage": {
+    "prompt_tokens": 300,
+    "completion_tokens": 37,
+    "total_tokens": 337,
+    "prompt_tokens_details": {
+     "cached_tokens": 0
+    },
+    "neurons": 11.430856704711914
+   }
+  },
+  {
+   "input": "через три часа проверить стирку",
+   "ok": true,
+   "ms": 1798,
+   "text": "{\"title\":\"Проверить стирку\",\"when_text\":\"сегодня в 15:00\",\"repeat\":null}",
+   "usage": {
+    "prompt_tokens": 292,
+    "completion_tokens": 28,
+    "total_tokens": 320,
+    "prompt_tokens_details": {
+     "cached_tokens": 0
+    },
+    "neurons": 10.721456527709961
+   }
+  },
+  {
+   "input": "ближе к концу месяца сдать отчёт",
+   "ok": true,
+   "ms": 630,
+   "text": "{\"title\":\"Сдать Отчёт\",\"when_text\":\"30 ноября в 9:00\",\"repeat\":null}",
+   "usage": {
+    "prompt_tokens": 294,
+    "completion_tokens": 26,
+    "total_tokens": 320,
+    "prompt_tokens_details": {
+     "cached_tokens": 0
+    },
+    "neurons": 10.684232711791992
+   }
+  },
+  {
+   "input": "по средам и субботам тренировка в 19",
+   "ok": true,
+   "ms": 985,
+   "text": "{\"title\":\"Тренировка\",\"when_text\":\"12 ноября в 19:00\",\"repeat\":\"по средам и субботам в 19:00\"}",
+   "usage": {
+    "prompt_tokens": 298,
+    "completion_tokens": 41,
+    "total_tokens": 339,
+    "prompt_tokens_details": {
+     "cached_tokens": 0
+    },
+    "neurons": 11.569056510925293
+   }
+  },
+  {
+   "input": "завтра утром помыть кота",
+   "ok": true,
+   "ms": 837,
+   "text": "{\"title\":\"Помыть Кота\",\"when_text\":\"завтра в 9:00\",\"repeat\":null}",
+   "usage": {
+    "prompt_tokens": 293,
+    "completion_tokens": 28,
+    "total_tokens": 321,
+    "prompt_tokens_details": {
+     "cached_tokens": 0
+    },
+    "neurons": 10.753332138061523
+   }
+  },
+  {
+   "input": "в понедельник в обед созвон с банком",
+   "ok": true,
+   "ms": 800,
+   "text": "{\"title\":\"Созвон с банком\",\"when_text\":\"16 ноября в 13:00\",\"repeat\":null}",
+   "usage": {
+    "prompt_tokens": 296,
+    "completion_tokens": 30,
+    "total_tokens": 326,
+    "prompt_tokens_details": {
+     "cached_tokens": 0
+    },
+    "neurons": 10.949935913085938
+   }
+  },
+  {
+   "input": "двадцатого заплатить за квартиру",
+   "ok": true,
+   "ms": 1477,
+   "text": "{\"title\":\"Заплатить за квартиру\",\"when_text\":\"20 ноября в 9:00\",\"repeat\":null}",
+   "usage": {
+    "prompt_tokens": 292,
+    "completion_tokens": 28,
+    "total_tokens": 320,
+    "prompt_tokens_details": {
+     "cached_tokens": 0
+    },
+    "neurons": 10.721456527709961
+   }
+  },
+  {
+   "input": "сегодня в 18:45 забрать заказ",
+   "ok": true,
+   "ms": 979,
+   "text": "{\"title\":\"Забрать Заказ\",\"when_text\":\"сегодня в 18:45\",\"repeat\":null}",
+   "usage": {
+    "prompt_tokens": 296,
+    "completion_tokens": 27,
+    "total_tokens": 323,
+    "prompt_tokens_details": {
+     "cached_tokens": 0
+    },
+    "neurons": 10.79847240447998
+   }
+  },
+  {
+   "input": "каждые два дня менять воду в вазе",
+   "ok": true,
+   "ms": 747,
+   "text": "{\"title\":\"Менять воду в вазе\",\"when_text\":\"через 2 дня\",\"repeat\":\"каждые два дня\"}",
+   "usage": {
+    "prompt_tokens": 295,
+    "completion_tokens": 30,
+    "total_tokens": 325,
+    "prompt_tokens_details": {
+     "cached_tokens": 0
+    },
+    "neurons": 10.918060302734375
+   }
+  },
+  {
+   "input": "на выходных разобрать антресоль",
+   "ok": true,
+   "ms": 848,
+   "text": "{\"title\":\"Разобрать Антресоль\",\"when_text\":null,\"repeat\":null}",
+   "usage": {
+    "prompt_tokens": 293,
+    "completion_tokens": 22,
+    "total_tokens": 315,
+    "prompt_tokens_details": {
+     "cached_tokens": 0
+    },
+    "neurons": 10.450404167175293
+   }
+  }
+ ],
+ "replies": [
+  {
+   "mood": "tired",
+   "situation": "reminder: пришло время дела, нужно напомнить хозяину",
+   "ok": true,
+   "ms": 868,
+   "text": "Ох, опять, прямо как не спала. Простите, что пришлось потревожить. *наполняет чайник*",
+   "usage": {
+    "prompt_tokens": 181,
+    "completion_tokens": 32,
+    "total_tokens": 213,
+    "prompt_tokens_details": {
+     "cached_tokens": 0
+    },
+    "neurons": 7.385171890258789
+   }
+  },
+  {
+   "mood": "tired",
+   "situation": "reminder_repeat: хозяин не ответил на напоминание, горничная напоминает снова",
+   "ok": true,
+   "ms": 1449,
+   "text": "*вздох* Опять, вы?  Придётся ещё раз вам напомнить.",
+   "usage": {
+    "prompt_tokens": 187,
+    "completion_tokens": 22,
+    "total_tokens": 209,
+    "prompt_tokens_details": {
+     "cached_tokens": 0
+    },
+    "neurons": 7.071547985076904
+   }
+  },
+  {
+   "mood": "tired",
+   "situation": "done: хозяин нажал «Готово»",
+   "ok": true,
+   "ms": 749,
+   "text": "Вот и славно. Чайку бы сейчас. *зевнуть*",
+   "usage": {
+    "prompt_tokens": 178,
+    "completion_tokens": 18,
+    "total_tokens": 196,
+    "prompt_tokens_details": {
+     "cached_tokens": 0
+    },
+    "neurons": 6.582712173461914
+   }
+  },
+  {
+   "mood": "tired",
+   "situation": "snoozed: хозяин отложил дело на потом",
+   "ok": true,
+   "ms": 505,
+   "text": "Как же вы опять всё откладываете.",
+   "usage": {
+    "prompt_tokens": 180,
+    "completion_tokens": 13,
+    "total_tokens": 193,
+    "prompt_tokens_details": {
+     "cached_tokens": 0
+    },
+    "neurons": 6.39402437210083
+   }
+  },
+  {
+   "mood": "tired",
+   "situation": "missed: дело пропущено, прошло много времени",
+   "ok": true,
+   "ms": 1199,
+   "text": "Вздыхаю, снова всё не успели.",
+   "usage": {
+    "prompt_tokens": 176,
+    "completion_tokens": 13,
+    "total_tokens": 189,
+    "prompt_tokens_details": {
+     "cached_tokens": 0
+    },
+    "neurons": 6.266520023345947
+   }
+  },
+  {
+   "mood": "tired",
+   "situation": "morning: утренняя сводка дел на день",
+   "ok": true,
+   "ms": 848,
+   "text": "*Вытягиваю бумаги из кармана фартука.* Много всего, чёрт бы побрал.",
+   "usage": {
+    "prompt_tokens": 177,
+    "completion_tokens": 26,
+    "total_tokens": 203,
+    "prompt_tokens_details": {
+     "cached_tokens": 0
+    },
+    "neurons": 6.954740047454834
+   }
+  },
+  {
+   "mood": "tired",
+   "situation": "evening: вечерняя сводка, день закончен",
+   "ok": true,
+   "ms": 772,
+   "text": "Эх, хорошенько бы чайку. *Пожимает плечами*",
+   "usage": {
+    "prompt_tokens": 177,
+    "completion_tokens": 21,
+    "total_tokens": 198,
+    "prompt_tokens_details": {
+     "cached_tokens": 0
+    },
+    "neurons": 6.702300071716309
+   }
+  },
+  {
+   "mood": "tired",
+   "situation": "added: хозяин добавил новое дело",
+   "ok": true,
+   "ms": 473,
+   "text": "*вздыхаю* Опять, скажите, не отдохнуть ли?",
+   "usage": {
+    "prompt_tokens": 176,
+    "completion_tokens": 20,
+    "total_tokens": 196,
+    "prompt_tokens_details": {
+     "cached_tokens": 0
+    },
+    "neurons": 6.619935989379883
+   }
+  },
+  {
+   "mood": "tired",
+   "situation": "thanks: хозяин поблагодарил горничную",
+   "ok": true,
+   "ms": 779,
+   "text": "*присев* А вот, вы ещё и спасибо сказали.",
+   "usage": {
+    "prompt_tokens": 178,
+    "completion_tokens": 17,
+    "total_tokens": 195,
+    "prompt_tokens_details": {
+     "cached_tokens": 0
+    },
+    "neurons": 6.532224178314209
+   }
+  },
+  {
+   "mood": "tired",
+   "situation": "relief: у хозяина сегодня нет дел",
+   "ok": true,
+   "ms": 543,
+   "text": "*Глубокий вздох* Делать-то нечего, вы отдыхайте лучше.",
+   "usage": {
+    "prompt_tokens": 175,
+    "completion_tokens": 23,
+    "total_tokens": 198,
+    "prompt_tokens_details": {
+     "cached_tokens": 0
+    },
+    "neurons": 6.7395243644714355
+   }
+  },
+  {
+   "mood": "tsundere",
+   "situation": "reminder: пришло время дела, нужно напомнить хозяину",
+   "ok": true,
+   "ms": 483,
+   "text": "*Тихо кашляю.* Опять что-то забыли?",
+   "usage": {
+    "prompt_tokens": 179,
+    "completion_tokens": 17,
+    "total_tokens": 196,
+    "prompt_tokens_details": {
+     "cached_tokens": 0
+    },
+    "neurons": 6.56410026550293
+   }
+  },
+  {
+   "mood": "tsundere",
+   "situation": "reminder_repeat: хозяин не ответил на напоминание, горничная напоминает снова",
+   "ok": true,
+   "ms": 471,
+   "text": "*Подходит к двери*. Все равно выходите, хозяин.",
+   "usage": {
+    "prompt_tokens": 185,
+    "completion_tokens": 18,
+    "total_tokens": 203,
+    "prompt_tokens_details": {
+     "cached_tokens": 0
+    },
+    "neurons": 6.805844306945801
+   }
+  },
+  {
+   "mood": "tsundere",
+   "situation": "done: хозяин нажал «Готово»",
+   "ok": true,
+   "ms": 699,
+   "text": "*подаю чашку чая* Честно говоря, вы хорошо постарались.",
+   "usage": {
+    "prompt_tokens": 176,
+    "completion_tokens": 22,
+    "total_tokens": 198,
+    "prompt_tokens_details": {
+     "cached_tokens": 0
+    },
+    "neurons": 6.720911979675293
+   }
+  },
+  {
+   "mood": "tsundere",
+   "situation": "snoozed: хозяин отложил дело на потом",
+   "ok": true,
+   "ms": 1227,
+   "text": "Вам лучше не откладывать, хозяин. *Записываю,*",
+   "usage": {
+    "prompt_tokens": 178,
+    "completion_tokens": 20,
+    "total_tokens": 198,
+    "prompt_tokens_details": {
+     "cached_tokens": 0
+    },
+    "neurons": 6.683688163757324
+   }
+  },
+  {
+   "mood": "tsundere",
+   "situation": "missed: дело пропущено, прошло много времени",
+   "ok": true,
+   "ms": 1293,
+   "text": "*Приношу вам гармонию. Хотите немного поспокойнее? Пройдёт, не переживайте!",
+   "usage": {
+    "prompt_tokens": 174,
+    "completion_tokens": 29,
+    "total_tokens": 203,
+    "prompt_tokens_details": {
+     "cached_tokens": 0
+    },
+    "neurons": 7.010576248168945
+   }
+  },
+  {
+   "mood": "tsundere",
+   "situation": "morning: утренняя сводка дел на день",
+   "ok": true,
+   "ms": 752,
+   "text": "Пропустите мероприятие, но не забуду напоить. Пробуждение не заметите.",
+   "usage": {
+    "prompt_tokens": 175,
+    "completion_tokens": 26,
+    "total_tokens": 201,
+    "prompt_tokens_details": {
+     "cached_tokens": 0
+    },
+    "neurons": 6.890988349914551
+   }
+  },
+  {
+   "mood": "tsundere",
+   "situation": "evening: вечерняя сводка, день закончен",
+   "ok": true,
+   "ms": 418,
+   "text": "*Беру планшет*. Вы всё закончили, не забыли?",
+   "usage": {
+    "prompt_tokens": 175,
+    "completion_tokens": 16,
+    "total_tokens": 191,
+    "prompt_tokens_details": {
+     "cached_tokens": 0
+    },
+    "neurons": 6.3861083984375
+   }
+  },
+  {
+   "mood": "tsundere",
+   "situation": "added: хозяин добавил новое дело",
+   "ok": true,
+   "ms": 675,
+   "text": "*Поменяю график, не переживайте.",
+   "usage": {
+    "prompt_tokens": 174,
+    "completion_tokens": 15,
+    "total_tokens": 189,
+    "prompt_tokens_details": {
+     "cached_tokens": 0
+    },
+    "neurons": 6.303744316101074
+   }
+  },
+  {
+   "mood": "tsundere",
+   "situation": "thanks: хозяин поблагодарил горничную",
+   "ok": true,
+   "ms": 1249,
+   "text": "И так, вы всё-равно неблагодарный.",
+   "usage": {
+    "prompt_tokens": 176,
+    "completion_tokens": 16,
+    "total_tokens": 192,
+    "prompt_tokens_details": {
+     "cached_tokens": 0
+    },
+    "neurons": 6.4179840087890625
+   }
+  },
+  {
+   "mood": "tsundere",
+   "situation": "relief: у хозяина сегодня нет дел",
+   "ok": true,
+   "ms": 737,
+   "text": "*положила вам на стол вашу любимую книгу* Вы же не забыли про неё?",
+   "usage": {
+    "prompt_tokens": 173,
+    "completion_tokens": 22,
+    "total_tokens": 195,
+    "prompt_tokens_details": {
+     "cached_tokens": 0
+    },
+    "neurons": 6.625284194946289
+   }
+  },
+  {
+   "mood": "sleepy",
+   "situation": "reminder: пришло время дела, нужно напомнить хозяину",
+   "ok": true,
+   "ms": 1254,
+   "text": "Сейчас время, м-м-м... заранее предупреждаю. *тянула за рукав шторки*",
+   "usage": {
+    "prompt_tokens": 170,
+    "completion_tokens": 28,
+    "total_tokens": 198,
+    "prompt_tokens_details": {
+     "cached_tokens": 0
+    },
+    "neurons": 6.832583904266357
+   }
+  },
+  {
+   "mood": "sleepy",
+   "situation": "reminder_repeat: хозяин не ответил на напоминание, горничная напоминает снова",
+   "ok": true,
+   "ms": 527,
+   "text": "*Моргает*. Ночь на дворе, неплохо бы проверить.",
+   "usage": {
+    "prompt_tokens": 176,
+    "completion_tokens": 20,
+    "total_tokens": 196,
+    "prompt_tokens_details": {
+     "cached_tokens": 0
+    },
+    "neurons": 6.619935989379883
+   }
+  },
+  {
+   "mood": "sleepy",
+   "situation": "done: хозяин нажал «Готово»",
+   "ok": true,
+   "ms": 632,
+   "text": "*накрывает хозяина светлым пледом* Пусть ваш сон будет сладким.",
+   "usage": {
+    "prompt_tokens": 167,
+    "completion_tokens": 23,
+    "total_tokens": 190,
+    "prompt_tokens_details": {
+     "cached_tokens": 0
+    },
+    "neurons": 6.484516143798828
+   }
+  },
+  {
+   "mood": "sleepy",
+   "situation": "snoozed: хозяин отложил дело на потом",
+   "ok": true,
+   "ms": 458,
+   "text": "Подготовлю всё заранее, чтобы не забыть.",
+   "usage": {
+    "prompt_tokens": 169,
+    "completion_tokens": 14,
+    "total_tokens": 183,
+    "prompt_tokens_details": {
+     "cached_tokens": 0
+    },
+    "neurons": 6.093876361846924
+   }
+  },
+  {
+   "mood": "sleepy",
+   "situation": "missed: дело пропущено, прошло много времени",
+   "ok": true,
+   "ms": 940,
+   "text": "*Напеет нежную мелодию* Пропустили что-то важное, хозяин?",
+   "usage": {
+    "prompt_tokens": 165,
+    "completion_tokens": 24,
+    "total_tokens": 189,
+    "prompt_tokens_details": {
+     "cached_tokens": 0
+    },
+    "neurons": 6.471251964569092
+   }
+  },
+  {
+   "mood": "sleepy",
+   "situation": "morning: утренняя сводка дел на день",
+   "ok": true,
+   "ms": 818,
+   "text": "Вы сегодня очень заняты, позвольте я помогу. *Приносит чашку с чаем.*",
+   "usage": {
+    "prompt_tokens": 166,
+    "completion_tokens": 25,
+    "total_tokens": 191,
+    "prompt_tokens_details": {
+     "cached_tokens": 0
+    },
+    "neurons": 6.553616046905518
+   }
+  },
+  {
+   "mood": "sleepy",
+   "situation": "evening: вечерняя сводка, день закончен",
+   "ok": true,
+   "ms": 1728,
+   "text": "*Извени, забыла поставить на ночь. Проверьте, пожалуйста, окна.",
+   "usage": {
+    "prompt_tokens": 166,
+    "completion_tokens": 26,
+    "total_tokens": 192,
+    "prompt_tokens_details": {
+     "cached_tokens": 0
+    },
+    "neurons": 6.604104042053223
+   }
+  },
+  {
+   "mood": "sleepy",
+   "situation": "added: хозяин добавил новое дело",
+   "ok": true,
+   "ms": 419,
+   "text": "*Зевнет* Вы поставили новую задачу.",
+   "usage": {
+    "prompt_tokens": 165,
+    "completion_tokens": 13,
+    "total_tokens": 178,
+    "prompt_tokens_details": {
+     "cached_tokens": 0
+    },
+    "neurons": 5.915884017944336
+   }
+  },
+  {
+   "mood": "sleepy",
+   "situation": "thanks: хозяин поблагодарил горничную",
+   "ok": true,
+   "ms": 945,
+   "text": "Хозяин, вы как всегда добры. *Зевнёт* Попробую не засыпать.",
+   "usage": {
+    "prompt_tokens": 167,
+    "completion_tokens": 26,
+    "total_tokens": 193,
+    "prompt_tokens_details": {
+     "cached_tokens": 0
+    },
+    "neurons": 6.635980129241943
+   }
+  },
+  {
+   "mood": "sleepy",
+   "situation": "relief: у хозяина сегодня нет дел",
+   "ok": true,
+   "ms": 1881,
+   "text": "Помню, сегодня отдыхаете, не бужу, ладно?",
+   "usage": {
+    "prompt_tokens": 164,
+    "completion_tokens": 18,
+    "total_tokens": 182,
+    "prompt_tokens_details": {
+     "cached_tokens": 0
+    },
+    "neurons": 6.136448383331299
+   }
+  }
+ ],
+ "iso": [
+  {
+   "input": "в субботу после обеда напомни позвонить маме",
+   "ok": true,
+   "ms": 2192,
+   "text": "{\"title\": \"Позвонить Маме\", \"when_iso\": \"2026-11-07T14:00\", \"repeat\": null}",
+   "usage": {
+    "prompt_tokens": 248,
+    "completion_tokens": 40,
+    "total_tokens": 288,
+    "prompt_tokens_details": {
+     "cached_tokens": 0
+    },
+    "neurons": 9.924768447875977
+   }
+  },
+  {
+   "input": "через пару дней оплатить интернет",
+   "ok": true,
+   "ms": 1368,
+   "text": "{\"title\": \"Оплатить Интернет\", \"when_iso\": \"2026-11-09T09:00\", \"repeat\": null}",
+   "usage": {
+    "prompt_tokens": 242,
+    "completion_tokens": 40,
+    "total_tokens": 282,
+    "prompt_tokens_details": {
+     "cached_tokens": 0
+    },
+    "neurons": 9.733512878417969
+   }
+  },
+  {
+   "input": "каждый понедельник утром полить цветы",
+   "ok": true,
+   "ms": 3719,
+   "text": "```json\n{\n  \"title\": \"Полить Цветы\",\n  \"when_iso\": \"2026-11-10T09:00\",\n  \"repeat\": \"каждый понедельник в 9:00\"\n}\n```",
+   "usage": {
+    "prompt_tokens": 244,
+    "completion_tokens": 60,
+    "total_tokens": 304,
+    "prompt_tokens_details": {
+     "cached_tokens": 0
+    },
+    "neurons": 10.807024002075195
+   }
+  },
+  {
+   "input": "завтра в 8 вынести мусор",
+   "ok": true,
+   "ms": 772,
+   "text": "{\"title\": \"Вынести мусор\", \"when_iso\": \"2026-11-08T08:00\", \"repeat\": null}",
+   "usage": {
+    "prompt_tokens": 244,
+    "completion_tokens": 39,
+    "total_tokens": 283,
+    "prompt_tokens_details": {
+     "cached_tokens": 0
+    },
+    "neurons": 9.746776580810547
+   }
+  },
+  {
+   "input": "надо бы записаться к стоматологу на следующей неделе",
+   "ok": true,
+   "ms": 957,
+   "text": "{\"title\": \"Записаться к стоматологу\", \"when_iso\": \"2026-11-14T09:00\", \"repeat\": null}",
+   "usage": {
+    "prompt_tokens": 250,
+    "completion_tokens": 44,
+    "total_tokens": 294,
+    "prompt_tokens_details": {
+     "cached_tokens": 0
+    },
+    "neurons": 10.190472602844238
+   }
+  },
+  {
+   "input": "напомни через полчаса достать пирог",
+   "ok": true,
+   "ms": 910,
+   "text": "{\"title\": \"Достать Пирог\", \"when_iso\": \"2026-11-07T12:30\", \"repeat\": null}",
+   "usage": {
+    "prompt_tokens": 246,
+    "completion_tokens": 40,
+    "total_tokens": 286,
+    "prompt_tokens_details": {
+     "cached_tokens": 0
+    },
+    "neurons": 9.861016273498535
+   }
+  },
+  {
+   "input": "15 ноября продлить страховку машины",
+   "ok": true,
+   "ms": 969,
+   "text": "{\"title\": \"Продлить Страховку Машины\", \"when_iso\": \"2026-11-15T09:00\", \"repeat\": null}",
+   "usage": {
+    "prompt_tokens": 242,
+    "completion_tokens": 43,
+    "total_tokens": 285,
+    "prompt_tokens_details": {
+     "cached_tokens": 0
+    },
+    "neurons": 9.884976387023926
+   }
+  },
+  {
+   "input": "раз в месяц первого числа проверить счётчики",
+   "ok": true,
+   "ms": 1529,
+   "text": "{\"title\": \"Проверить Счётчики\", \"when_iso\": \"2026-12-01T09:00\", \"repeat\": \"каждый первый день месяца в 9:00\"}",
+   "usage": {
+    "prompt_tokens": 244,
+    "completion_tokens": 53,
+    "total_tokens": 297,
+    "prompt_tokens_details": {
+     "cached_tokens": 0
+    },
+    "neurons": 10.453608512878418
+   }
+  },
+  {
+   "input": "вечером в пятницу купить подарок Сашке",
+   "ok": true,
+   "ms": 1588,
+   "text": "```json\n{\n  \"title\": \"Купить Подарок Сашке\",\n  \"when_iso\": \"2026-11-14T19:00\",\n  \"repeat\": null\n}\n```",
+   "usage": {
+    "prompt_tokens": 246,
+    "completion_tokens": 52,
+    "total_tokens": 298,
+    "prompt_tokens_details": {
+     "cached_tokens": 0
+    },
+    "neurons": 10.466872215270996
+   }
+  },
+  {
+   "input": "не забыть послезавтра забрать посылку с почты",
+   "ok": true,
+   "ms": 3565,
+   "text": "```json\n{\n  \"title\": \"Забрать Посылку С Почты\",\n  \"when_iso\": \"2026-11-09T09:00\",\n  \"repeat\": null\n}\n```",
+   "usage": {
+    "prompt_tokens": 248,
+    "completion_tokens": 53,
+    "total_tokens": 301,
+    "prompt_tokens_details": {
+     "cached_tokens": 0
+    },
+    "neurons": 10.581111907958984
+   }
+  },
+  {
+   "input": "ежедневно в 22:30 принять витамины",
+   "ok": true,
+   "ms": 1842,
+   "text": "```json\n{\n  \"title\": \"Принять Витамины\",\n  \"when_iso\": \"2026-11-07T22:30\",\n  \"repeat\": \"каждый день в 22:30\"\n}\n```",
+   "usage": {
+    "prompt_tokens": 250,
+    "completion_tokens": 59,
+    "total_tokens": 309,
+    "prompt_tokens_details": {
+     "cached_tokens": 0
+    },
+    "neurons": 10.947792053222656
+   }
+  },
+  {
+   "input": "через три часа проверить стирку",
+   "ok": true,
+   "ms": 1020,
+   "text": "{\"title\": \"Проверить стирку\", \"when_iso\": \"2026-11-07T15:00\", \"repeat\": null}",
+   "usage": {
+    "prompt_tokens": 242,
+    "completion_tokens": 40,
+    "total_tokens": 282,
+    "prompt_tokens_details": {
+     "cached_tokens": 0
+    },
+    "neurons": 9.733512878417969
+   }
+  },
+  {
+   "input": "ближе к концу месяца сдать отчёт",
+   "ok": true,
+   "ms": 2097,
+   "text": "```json\n{\n  \"title\": \"Сдать Отчёт\",\n  \"when_iso\": \"2026-11-25T09:00\",\n  \"repeat\": null\n}\n```",
+   "usage": {
+    "prompt_tokens": 244,
+    "completion_tokens": 47,
+    "total_tokens": 291,
+    "prompt_tokens_details": {
+     "cached_tokens": 0
+    },
+    "neurons": 10.150680541992188
+   }
+  },
+  {
+   "input": "по средам и субботам тренировка в 19",
+   "ok": true,
+   "ms": 1463,
+   "text": "```json\n{\"title\": \"Тренировка\", \"when_iso\": null, \"repeat\": \"каждую среду и субботу в 19:00\"}\n```",
+   "usage": {
+    "prompt_tokens": 248,
+    "completion_tokens": 43,
+    "total_tokens": 291,
+    "prompt_tokens_details": {
+     "cached_tokens": 0
+    },
+    "neurons": 10.076231956481934
+   }
+  },
+  {
+   "input": "завтра утром помыть кота",
+   "ok": true,
+   "ms": 915,
+   "text": "{\"title\": \"Помыть Кота\", \"when_iso\": \"2026-11-08T09:00\", \"repeat\": null}",
+   "usage": {
+    "prompt_tokens": 243,
+    "completion_tokens": 40,
+    "total_tokens": 283,
+    "prompt_tokens_details": {
+     "cached_tokens": 0
+    },
+    "neurons": 9.765388488769531
+   }
+  },
+  {
+   "input": "в понедельник в обед созвон с банком",
+   "ok": true,
+   "ms": 1758,
+   "text": "```json\n{\n  \"title\": \"Созвон С Банком\",\n  \"when_iso\": \"2026-11-10T13:00\",\n  \"repeat\": \"каждый понедельник в 13:00\"\n}\n```",
+   "usage": {
+    "prompt_tokens": 246,
+    "completion_tokens": 62,
+    "total_tokens": 308,
+    "prompt_tokens_details": {
+     "cached_tokens": 0
+    },
+    "neurons": 10.971752166748047
+   }
+  },
+  {
+   "input": "двадцатого заплатить за квартиру",
+   "ok": true,
+   "ms": 1891,
+   "text": "```json\n{\n  \"title\": \"Заплатить за квартиру\",\n  \"when_iso\": \"2026-11-20T09:00\",\n  \"repeat\": null\n}\n```",
+   "usage": {
+    "prompt_tokens": 242,
+    "completion_tokens": 49,
+    "total_tokens": 291,
+    "prompt_tokens_details": {
+     "cached_tokens": 0
+    },
+    "neurons": 10.187904357910156
+   }
+  },
+  {
+   "input": "сегодня в 18:45 забрать заказ",
+   "ok": true,
+   "ms": 1156,
+   "text": "{\"title\": \"Забрать Заказ\", \"when_iso\": \"2026-11-07T18:45\", \"repeat\": null}",
+   "usage": {
+    "prompt_tokens": 246,
+    "completion_tokens": 39,
+    "total_tokens": 285,
+    "prompt_tokens_details": {
+     "cached_tokens": 0
+    },
+    "neurons": 9.810528755187988
+   }
+  },
+  {
+   "input": "каждые два дня менять воду в вазе",
+   "ok": true,
+   "ms": 3279,
+   "text": "{\"title\": \"Менять Воду В Вазе\", \"when_iso\": \"2026-11-07T09:00\", \"repeat\": \"каждые два дня в 9:00\"}",
+   "usage": {
+    "prompt_tokens": 245,
+    "completion_tokens": 53,
+    "total_tokens": 298,
+    "prompt_tokens_details": {
+     "cached_tokens": 0
+    },
+    "neurons": 10.48548412322998
+   }
+  },
+  {
+   "input": "на выходных разобрать антресоль",
+   "ok": true,
+   "ms": 1652,
+   "text": "{\"title\": \"Разобрать Антресоль\", \"when_iso\": \"2026-11-07T09:00\", \"repeat\": null}",
+   "usage": {
+    "prompt_tokens": 243,
+    "completion_tokens": 42,
+    "total_tokens": 285,
+    "prompt_tokens_details": {
+     "cached_tokens": 0
+    },
+    "neurons": 9.866364479064941
+   }
+  }
+ ]
+}

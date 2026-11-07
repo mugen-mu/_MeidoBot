@@ -1,0 +1,6 @@
+# Временный Worker для пробы моделей. Не деплоить: запускается только через `wrangler dev --remote`.
+name = "meido-llm-probe"
+main = "worker.ts"
+compatibility_date = "2026-11-01"
+[ai]
+binding = "AI"
