@@ -6,6 +6,7 @@ import type { AiBinding } from "../llm.ts";
 import { EMPTY_REPLY, EMPTY_SERIES_REPLY, NOT_RECURRING_REPLY, SECRET_REPLY, createFromText } from "../intake.ts";
 import { tired } from "../flavor.ts";
 import { MoodSession, makeCtx, recordDone, recordedLine, resetOps } from "../personality/director.ts";
+import { LIVE_TIMEOUT_INTERACTION_MS } from "../personality/liveLines.ts";
 import { MOODS, type Mood, isMood } from "../personality/moodEngine.ts";
 import { MOOD_CONFIG } from "../personality/config.ts";
 import { moodReport } from "../personality/report.ts";
@@ -23,6 +24,7 @@ import {
   parseRecipe,
   rescheduleOps,
   setLadderOps,
+  setPlainOps,
   setTitleOps,
   snoozeOps,
   stopSeriesOps,
@@ -134,11 +136,14 @@ export async function handleInteraction(i: Interaction, ctx: HandlerCtx): Promis
   }
 
   // настроение: любое действие хозяина (команда, кнопка, окно) — активность; состояние читаем, только если включено
-  const mood = new MoodSession({ repo: ctx.repo, userId: owner, ctx: makeCtx(ctx.now, s), rand: ctx.rand, style: s.style });
+  const mood = new MoodSession({
+    repo: ctx.repo, userId: owner, ctx: makeCtx(ctx.now, s), rand: ctx.rand, style: s.style,
+    live: s.liveOn && ctx.ai ? { ai: ctx.ai, tz: s.tz, timeoutMs: LIVE_TIMEOUT_INTERACTION_MS } : null,
+  });
   let returnLine: string | null = null;
   if (s.moodOn && (i.type === 2 || i.type === 3 || i.type === 5)) {
     await mood.load();
-    if (mood.apply({ type: "activity" }).returned) returnLine = mood.say("return_after_pause");
+    if (mood.apply({ type: "activity" }).returned) returnLine = await mood.sayLive("return_after_pause");
   }
   const c: C = { ...ctx, s, meta, owner, i, mood };
   let reply: Reply;
@@ -196,8 +201,8 @@ async function createReply(
       now: c.now,
       ai: c.ai,
       aiTimeoutMs: 1500,
-      recorded: (title, critical) => {
-        const line = c.s.moodOn ? recordedLine(c.mood, title, critical) : null;
+      recorded: async (title, critical) => {
+        const line = c.s.moodOn ? await recordedLine(c.mood, title, critical) : null;
         return line && c.mood.state ? { line, look: { mood: c.mood.state.mood, origin: spriteOrigin(c), sprite: wantSprite(c.mood.rand, c.mood.cinema) } } : null;
       },
     },
@@ -228,8 +233,15 @@ async function onCommand(c: C): Promise<Reply> {
       return createReply(c, String(opt(c, "text") ?? ""), "slash");
     case "every":
       return createReply(c, normalizeEvery(String(opt(c, "text") ?? "")), "slash", { requireRecurring: true });
-    case "list":
-      return eph(listText(await c.repo.openMain(50), c.now, c.s.tz, c.s.character));
+    case "list": {
+      const open = await c.repo.openMain(50);
+      // пустой список: реплика Хару (моделью или готовой фразой) вместо старой «усталой» приписки, чтобы не было двух подряд
+      if (open.length === 0 && c.s.moodOn && c.mood.loaded && c.mood.rand() < 0.8) {
+        const line = await c.mood.sayLive("empty_list", { facts: "список дел пуст" });
+        if (line) return eph(`${listText(open, c.now, c.s.tz, "neutral")}\n${line}`);
+      }
+      return eph(listText(open, c.now, c.s.tz, c.s.character));
+    }
     case "week":
       return eph(weekText(await c.repo.openMain(100), c.now, c.s.tz, c.s.character));
     case "cancel": {
@@ -545,7 +557,7 @@ async function onComponent(c: C): Promise<Reply> {
       const occ = await asOcc(c, a);
       if (!occ || occ.state === "done" || occ.state === "cancelled") return gone();
       let line: string | null = null;
-      if (c.s.moodOn) line = recordDone(c.mood, occ);
+      if (c.s.moodOn) line = await recordDone(c.mood, occ);
       await c.repo.exec(doneOps(occ, c.now));
       const look = line && c.mood.state ? { mood: c.mood.state.mood, origin: spriteOrigin(c), sprite: wantSprite(c.mood.rand, c.mood.cinema) } : null;
       return update(doneMessage(occ.title, c.s.character, occ.id, line, look));
@@ -583,7 +595,7 @@ async function onComponent(c: C): Promise<Reply> {
       if (!occ || !isOpen(occ)) return gone();
       const w = occ.due_at !== null && occ.kind === "main" && occ.item_kind !== "timer" && !occ.rule_recipe ? wallOf(occ.due_at, c.s.tz) : null;
       const whenText = w ? `${String(w.mo).padStart(2, "0")}.${String(w.d).padStart(2, "0")} ${fmtHHMM(w.h * 60 + w.mi)}` : null;
-      return { type: 9, data: editModal({ occId: occ.id, title: occ.title, whenText, ladderKey: "" }).data };
+      return { type: 9, data: editModal({ occId: occ.id, title: occ.title, whenText, ladderKey: "", plain: occ.plain === 1 }).data };
     }
     case "stop": {
       const item = await c.repo.getItem(Number(a));
@@ -742,7 +754,7 @@ async function onMenu(c: C, parts: string[], values: string[]): Promise<Reply> {
       const p = pageOf(arg[2]);
       const occ = await asOcc(c, arg[0]);
       if (!occ || !isOpen(occ)) return gonePage(f, p);
-      const line = c.s.moodOn ? recordDone(c.mood, occ) : null;
+      const line = c.s.moodOn ? await recordDone(c.mood, occ) : null;
       await c.repo.exec(doneOps(occ, c.now));
       const look = line && c.mood.state ? { mood: c.mood.state.mood, origin: spriteOrigin(c), sprite: wantSprite(c.mood.rand, c.mood.cinema) } : null;
       const done = doneMessage(occ.title, c.s.character, occ.id, line, look);
@@ -769,7 +781,7 @@ async function onMenu(c: C, parts: string[], values: string[]): Promise<Reply> {
       if (!occ || !isOpen(occ)) return gonePage(filterOf(arg[1]), pageOf(arg[2]));
       const w = occ.due_at !== null && occ.kind === "main" && occ.item_kind !== "timer" && !occ.rule_recipe ? wallOf(occ.due_at, c.s.tz) : null;
       const whenText = w ? `${String(w.mo).padStart(2, "0")}.${String(w.d).padStart(2, "0")} ${fmtHHMM(w.h * 60 + w.mi)}` : null;
-      const m = editModal({ occId: occ.id, title: occ.title, whenText, ladderKey: "" });
+      const m = editModal({ occId: occ.id, title: occ.title, whenText, ladderKey: "", plain: occ.plain === 1 });
       return { type: 9, data: { ...m.data, custom_id: `m_edit:${occ.id}:mn` } };
     }
     case "sp": {
@@ -848,6 +860,9 @@ async function onMenu(c: C, parts: string[], values: string[]): Promise<Reply> {
           break;
         case "llm":
           ops.push(setSetting("llm_on", c.s.llmOn ? "0" : "1"));
+          break;
+        case "lv":
+          ops.push(setSetting("live_on", c.s.liveOn ? "0" : "1"));
           break;
         case "sa":
           ops.push(setSetting("summary_morning", c.s.morning === null ? "08:00" : "off"));
@@ -1039,6 +1054,8 @@ async function editSubmit(c: C, id: string, v: Map<string, string | string[]>): 
     spec = { custom: steps };
   }
   if (ladder && ladder !== "keep") ops.push(setLadderOps(occ.item_id, spec));
+  const plainSel = str(v.get("plain"));
+  if (plainSel === "plain" || plainSel === "styled") ops.push(setPlainOps(occ.item_id, plainSel === "plain"));
   if (ops.length) await c.repo.exec(ops);
   return update(confirmFor(c, { ...occ, title, due_at: due, item_ladder: spec ? JSON.stringify(spec) : occ.item_ladder }));
 }

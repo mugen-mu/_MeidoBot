@@ -20,6 +20,8 @@ export interface Item {
   secret_note: string | null;
   ladder: string | null;
   critical: number;
+  /** «Без стиля»: Хару не комментирует это дело */
+  plain: number;
   archived_at: number | null;
   scrubbed_at: number | null;
 }
@@ -51,6 +53,7 @@ export interface OccView extends Occurrence {
   item_body: string | null;
   item_ladder: string | null;
   critical: number;
+  plain: number;
   secret_flag: number;
   rule_recipe: string | null;
   rule_tz: string | null;

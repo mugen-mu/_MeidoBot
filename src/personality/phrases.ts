@@ -36,11 +36,20 @@ export type Situation =
   | "chat_fallback"
   | "thanks"
   /** дело записано (подтверждение «Записано …») */
-  | "recorded";
+  | "recorded"
+  // этап 2 «Характер»: сообщения, где раньше реплики не было
+  | "summary_morning"
+  | "summary_evening"
+  | "summary_weekly"
+  | "empty_list"
+  | "empty_today"
+  | "holiday"
+  | "birthday_soon";
 
 export const SITUATIONS: Situation[] = [
   "reminder", "reminder_repeat", "missed_first", "missed", "done", "done_late", "streak_praise", "relief",
   "greeting", "return_after_pause", "idle_ping", "chat_fallback", "thanks", "recorded",
+  "summary_morning", "summary_evening", "summary_weekly", "empty_list", "empty_today", "holiday", "birthday_soon",
 ];
 
 /** Если у настроения нет фраз для ситуации, берём ближайшую «родственную» из того же настроения. */
@@ -52,11 +61,15 @@ export const FALLBACK_SITUATION: Partial<Record<Situation, Situation>> = {
   reminder_repeat: "reminder",
   return_after_pause: "greeting",
   idle_ping: "greeting",
+  summary_weekly: "summary_evening",
+  empty_today: "empty_list",
+  birthday_soon: "holiday",
 };
 
 export type Phrases = Record<string, Partial<Record<Situation, string[]>>>;
 
 import { BASE_PHRASES } from "./phrases.base.ts";
+import { EXTRA_PHRASES } from "./phrases.extra.ts";
 import { GENERATED } from "./phrases.generated.ts";
 
 const key = (t: string): string => t.toLowerCase().replace(/[^\p{L}]+/gu, " ").trim();
@@ -87,4 +100,9 @@ export function mergePools(primary: Phrases, fallback: Phrases, minPrimary = 8):
   return out;
 }
 
-export const PHRASES: Phrases = mergePools(GENERATED, BASE_PHRASES);
+/** Запасной набор: свои фразы и фразы для сводок/пустого списка/праздников (у них основного пула нет). */
+const FALLBACK_BANK: Phrases = Object.fromEntries(
+  [...new Set([...Object.keys(BASE_PHRASES), ...Object.keys(EXTRA_PHRASES)])].map((m) => [m, { ...BASE_PHRASES[m], ...EXTRA_PHRASES[m] }]),
+);
+
+export const PHRASES: Phrases = mergePools(GENERATED, FALLBACK_BANK);

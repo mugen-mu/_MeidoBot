@@ -181,6 +181,10 @@ export function setLadderOps(itemId: number, spec: LadderSpec | null): Op {
   return op("UPDATE items SET ladder = ? WHERE id = ?", spec ? JSON.stringify(spec) : null, itemId);
 }
 
+export function setPlainOps(itemId: number, plain: boolean): Op {
+  return op("UPDATE items SET plain = ? WHERE id = ?", plain ? 1 : 0, itemId);
+}
+
 export function setTitleOps(itemId: number, title: string): Op {
   return op("UPDATE items SET title = ? WHERE id = ?", title, itemId);
 }

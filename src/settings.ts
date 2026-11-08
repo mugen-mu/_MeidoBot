@@ -1,6 +1,7 @@
 // Настройки пользователя (таблица settings) и служебные значения (meta). Значения по умолчанию — только стартовые.
 import { type Character, parseCharacter } from "./flavor.ts";
 import { type StyleConfig, parseStyle } from "./personality/animeStyle.ts";
+import { type MonthDay, parseBirthday } from "./personality/occasions.ts";
 import { DEFAULT_SPEC, type LadderSpec, parseSpec } from "./ladder.ts";
 import { DEFAULT_TZ, parseHHMM } from "./time/tz.ts";
 
@@ -36,12 +37,16 @@ export interface AppSettings {
   style: StyleConfig;
   /** языковая модель понимает фразы, которые обычный разбор не понял (шаг 1): выкл по умолчанию */
   llmOn: boolean;
+  /** живые реплики Хару через модель (этап 2 «Характер»): вкл по умолчанию; без модели или при сбое — готовые фразы */
+  liveOn: boolean;
+  /** день рождения хозяина (месяц.день) или null; интерфейса пока нет — заготовка */
+  birthday: MonthDay | null;
 }
 
 export const SETTING_KEYS = [
   "tz", "default_ladder", "default_time", "quiet_enabled", "quiet_from", "quiet_to", "away_until",
   "summary_morning", "summary_evening", "weekly", "ch_remind", "ch_bot", "ch_today", "ch_forum", "ch_archive", "intake", "light", "character", "mood_on",
-  "style_level", "style_script", "style_sfx", "style_honorifics", "style_kaomoji", "hints_on", "llm_on",
+  "style_level", "style_script", "style_sfx", "style_honorifics", "style_kaomoji", "hints_on", "llm_on", "live_on", "birthday",
 ] as const;
 
 function minutes(v: string | undefined, fallback: number | null): number | null {
@@ -89,6 +94,8 @@ export function readSettings(rows: { key: string; value: string }[]): AppSetting
     moodOn: m.get("mood_on") !== "0",
     style: parseStyle(m),
     llmOn: m.get("llm_on") === "1",
+    liveOn: m.get("live_on") !== "0",
+    birthday: parseBirthday(m.get("birthday")),
   };
 }
 

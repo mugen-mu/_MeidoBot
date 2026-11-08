@@ -390,7 +390,7 @@ export function whenModal(customId: string, title: string) {
   ]);
 }
 
-export function editModal(a: { occId: number; title: string; whenText: string | null; ladderKey: string }) {
+export function editModal(a: { occId: number; title: string; whenText: string | null; ladderKey: string; plain?: boolean }) {
   const comps: unknown[] = [textLabel("Название", "title", { value: a.title, max: 200 })];
   if (a.whenText !== null) comps.push(textLabel("Когда", "when", { value: a.whenText, placeholder: "завтра 10:30", required: false, max: 100 }));
   comps.push(
@@ -402,6 +402,11 @@ export function editModal(a: { occId: number; title: string; whenText: string | 
       { value: "custom", label: "Свои числа (впишите ниже)" },
     ]),
     textLabel("Свои числа (минуты от срока)", "nums", { required: false, placeholder: "0 10 20 40", max: 60 }),
+    selectLabel("Реплики Хару", "plain", [
+      { value: "keep", label: a.plain ? "Не менять (сейчас: без стиля)" : "Не менять (сейчас: со стилем)" },
+      { value: "plain", label: "Без стиля: только суть" },
+      { value: "styled", label: "Со стилем" },
+    ]),
   );
   return modal(cid("m_edit", a.occId), "Изменить дело", comps);
 }

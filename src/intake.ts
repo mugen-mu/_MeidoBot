@@ -20,7 +20,7 @@ export interface CreateCtx {
   /** сколько ждать модель, мс (по умолчанию 2 с) */
   aiTimeoutMs?: number;
   /** реплика горничной к подтверждению: вызывается с названием и «критично»; null — без реплики */
-  recorded?: (title: string, critical: boolean) => { line: string; look: Look | null } | null;
+  recorded?: (title: string, critical: boolean) => Promise<{ line: string; look: Look | null } | null> | { line: string; look: Look | null } | null;
 }
 
 export type CreateResult =
@@ -74,7 +74,7 @@ export async function createFromText(
     const note = wasPast ? "Названное время уже прошло." : undefined;
     return { kind: "created", itemId, occId, draft: true, message: draftMessage({ occId, itemId, title: parsed.title, note }) };
   }
-  const rec = ctx.recorded?.(parsed.title, parsed.critical) ?? null;
+  const rec = (await ctx.recorded?.(parsed.title, parsed.critical)) ?? null;
   return {
     kind: "created",
     itemId,

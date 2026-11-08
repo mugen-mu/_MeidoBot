@@ -14,7 +14,8 @@ import {
 } from "./discord/ui.ts";
 import type { AiBinding } from "./llm.ts";
 import { createFromText, EMPTY_REPLY, EMPTY_SERIES_REPLY, messageTime, SECRET_REPLY } from "./intake.ts";
-import { MoodSession, canStyle, makeCtx, recordedLine } from "./personality/director.ts";
+import { MoodSession, canStyle, makeCtx, recordedLine, summaryLine } from "./personality/director.ts";
+import { LIVE_TIMEOUT_CRON_MS } from "./personality/liveLines.ts";
 import { maidEmbed, pickReaction, wantSprite } from "./personality/look.ts";
 import { isPolite, isSeriousTopic } from "./personality/moodEngine.ts";
 import { detectUserWord } from "./personality/userWords.ts";
@@ -97,7 +98,11 @@ export async function runCron(d: CronDeps): Promise<CronReport> {
 
   // настроение горничной (если включено в /settings): состояние читаем лениво, только когда оно понадобится
   const mood =
-    s.moodOn && owner ? new MoodSession({ repo, userId: owner, ctx: makeCtx(now, s), rand: d.rand, style: s.style }) : null;
+    s.moodOn && owner ? new MoodSession({
+          repo, userId: owner, ctx: makeCtx(now, s), rand: d.rand, style: s.style,
+          live: s.liveOn && d.ai ? { ai: d.ai, tz: s.tz, timeoutMs: LIVE_TIMEOUT_CRON_MS, gate: () => repo.counter.can(4 + RESERVE), spend: () => repo.counter.spend(1) } : null,
+        })
+      : null;
 
   // ---------- 1. созревшие срабатывания ----------
   const ops: Op[] = [];
@@ -138,12 +143,12 @@ export async function runCron(d: CronDeps): Promise<CronReport> {
           await mood.load();
           const becameOverdue = plan.phase === "overdue" && occ.state !== "overdue";
           if (becameOverdue) mood.apply({ type: "miss" });
-          if (canStyle(occ.title, occ.critical)) {
+          if (canStyle(occ.title, occ.critical, occ.plain)) {
             const situation = becameOverdue
               ? mood.state!.missStreak === 1 ? "missed_first" : "missed"
               : plan.phase === "overdue" ? "missed" : occ.fire_count === 0 && occ.state === "planned" ? "reminder" : "reminder_repeat";
             // повторное «просрочено» не должно каждый раз грозить: драма — с паузой, внутри say()
-            flavor = mood.say(situation, { task: occ.title });
+            flavor = await mood.sayLive(situation, { task: occ.title });
             // карточка с цветом настроения; спрайт — редко, а в «кино-моменте» и при затяжных пропусках — всегда
             if (flavor) look = { mood: mood.state!.mood, origin, sprite: wantSprite(mood.rand, mood.cinema || (situation === "missed" && mood.state!.missStreak >= 3)) };
           }
@@ -286,7 +291,7 @@ export async function runCron(d: CronDeps): Promise<CronReport> {
             mood.apply({ type: "activity", polite });
             if (polite) {
               report.intake++;
-              const line = mood.say("thanks");
+              const line = await mood.sayLive("thanks");
               try {
                 await api.postMessage(
                   ch,
@@ -301,9 +306,9 @@ export async function runCron(d: CronDeps): Promise<CronReport> {
               continue;
             }
           }
-          const recordedFor = (title: string, critical: boolean) => {
+          const recordedFor = async (title: string, critical: boolean) => {
             if (!mood?.loaded) return null;
-            const line = recordedLine(mood, title, critical);
+            const line = await recordedLine(mood, title, critical);
             return line ? { line, look: { mood: mood.state!.mood, origin, sprite: wantSprite(mood.rand) } } : null;
           };
           const r = await createFromText({ repo, settings: s, now, ai: d.ai, recorded: (title, critical) => recordedFor(title, critical) }, m.content, "channel", { at: messageTime(m, now) });
@@ -359,11 +364,13 @@ export async function runCron(d: CronDeps): Promise<CronReport> {
       const list = await getItems();
       let content: string;
       let more: ReturnType<typeof summaryMoreRow> | undefined;
+      let weeklyDone = 0;
       if (kind === "weekly") {
         const row = await repo.first<{ n: number }>(
           "SELECT COUNT(*) AS n FROM occurrences WHERE state = 'done' AND closed_reason = 'done' AND closed_at >= ?",
           now - 7 * 24 * 60 * MINUTE,
         );
+        weeklyDone = row?.n ?? 0;
         content = weeklyText({ doneCount: row?.n ?? 0, items: list, now, tz: s.tz, ownerId: owner as string, character: s.character });
       } else {
         let extra: string[] = [];
@@ -382,6 +389,16 @@ export async function runCron(d: CronDeps): Promise<CronReport> {
         const parts = summaryParts(kind, { items: list, now, tz: s.tz, ownerId: owner as string, extra, character: s.character });
         content = parts.text;
         if (parts.truncated) more = summaryMoreRow(kind);
+      }
+      // реплика Хару под сводкой (этап 2): моделью или готовой фразой; не ставится на «возвращение», при сбое сводка уходит без неё
+      if (mood && kind !== "return" && room2(3)) {
+        try {
+          await mood.load();
+          const line = await summaryLine(mood, { kind, open: list.length, done: kind === "weekly" ? weeklyDone : undefined, wall: wallOf(now, s.tz), birthday: s.birthday });
+          if (line) content = `${content}\n\n${line}`;
+        } catch (e) {
+          if (e instanceof BudgetExceeded) break;
+        }
       }
       try {
         await api.postMessage(s.chRemind as string, { content, allowed_mentions: { users: [owner as string] }, ...(more ? { components: [more] } : {}) });

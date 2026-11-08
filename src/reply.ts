@@ -95,7 +95,7 @@ export async function handleReply(
   let doneLine: string | null = null;
   if (d.mood && OPEN_STATES.includes(occ.state)) {
     await d.mood.load();
-    if (action.kind === "done") doneLine = recordDone(d.mood, occ);
+    if (action.kind === "done") doneLine = await recordDone(d.mood, occ);
     else d.mood.apply({ type: "activity" });
   }
   const res = applyReply(occ, action, d.s, d.now, doneLine);

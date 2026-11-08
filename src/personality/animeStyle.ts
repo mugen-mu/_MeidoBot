@@ -87,6 +87,8 @@ export interface StyleState {
   cin?: number;
   /** когда в последний раз засчитана симпатия за «ара-ара»/«ганбатте» хозяина, мс (раз в час) */
   bon?: number;
+  /** вызовы модели для живых реплик за текущие сутки UTC: d — номер суток, n — сколько вызовов (дневной потолок) */
+  lv?: { d: number; n: number };
 }
 export const emptyStyleState = (): StyleState => ({ n: 0, words: {} });
 
@@ -100,6 +102,7 @@ export function parseStyleState(json: string | null | undefined): StyleState {
     const out: StyleState = { n: Number.isFinite(Number(v?.n)) ? Number(v.n) : 0, words };
     if (Number(v?.cin) > 0) out.cin = Number(v.cin);
     if (Number(v?.bon) > 0) out.bon = Number(v.bon);
+    if (Number(v?.lv?.d) > 0 && Number(v?.lv?.n) >= 0) out.lv = { d: Number(v.lv.d), n: Number(v.lv.n) };
     return out;
   } catch {
     return emptyStyleState();

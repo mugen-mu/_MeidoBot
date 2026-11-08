@@ -35,7 +35,7 @@ const FIRING = inList(FIRING_STATES);
 
 const OCC_VIEW_SELECT = `
   SELECT o.*, i.title AS title, i.kind AS item_kind, i.body AS item_body, i.ladder AS item_ladder,
-         i.critical AS critical, i.secret_flag AS secret_flag,
+         i.critical AS critical, i.plain AS plain, i.secret_flag AS secret_flag,
          r.recipe AS rule_recipe, r.tz AS rule_tz, r.lead_days AS rule_leads
   FROM occurrences o
   JOIN items i ON i.id = o.item_id
