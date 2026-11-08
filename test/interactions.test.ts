@@ -72,13 +72,21 @@ describe("доступ", () => {
   it("/setup заводит три канала, второй раз — те же; id сохраняются, канал «бот» становится каналом приёма", async () => {
     w = new World();
     await cmd("setup");
-    expect(w.discord.created.map((c) => c.name)).toEqual(["напоминания", "бот", "сегодня"]);
+    expect(w.discord.created.map((c) => c.name)).toEqual(["почта", "бот", "сегодня"]);
     expect(w.discord.originals[0].body.content).toContain("Готово");
     await cmd("setup");
     expect(w.discord.created).toHaveLength(3);
     const s = await w.settings();
     expect([s.chRemind, s.chBot, s.chToday].every(Boolean)).toBe(true);
     expect(s.intake).toEqual([s.chBot]);
+  });
+
+  it("/setup узнаёт прежний канал «напоминания» как «почту» и не заводит второй", async () => {
+    w = new World();
+    w.discord.channels.push({ id: "77", name: "напоминания", type: 0 });
+    await cmd("setup");
+    expect(w.discord.created.map((c) => c.name)).toEqual(["бот", "сегодня"]);
+    expect((await w.settings()).chRemind).toBe("77");
   });
 
   it("/setup вне сервера — подсказка", async () => {

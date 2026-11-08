@@ -361,8 +361,10 @@ async function setup(c: C): Promise<Reply> {
         const existing = await c.api.listGuildChannels(guildId);
         const ids: Record<string, string> = {};
         const created: string[] = [];
-        for (const name of ["напоминания", "бот", "сегодня"]) {
-          const found = existing.find((ch) => ch.type === 0 && ch.name === name);
+        for (const name of ["почта", "бот", "сегодня"]) {
+          // канал напоминаний с 2026-11-08 называется «почта»; прежнее имя «напоминания» тоже узнаём (чтобы не заводить второй)
+          const names = name === "почта" ? ["почта", "напоминания"] : [name];
+          const found = names.map((n) => existing.find((ch) => ch.type === 0 && ch.name === n)).find(Boolean);
           if (found) ids[name] = found.id;
           else {
             ids[name] = (await c.api.createChannel(guildId, { name, type: 0 })).id;
@@ -372,13 +374,13 @@ async function setup(c: C): Promise<Reply> {
         const intake = new Set(c.s.intake);
         intake.add(ids["бот"]);
         await c.repo.exec([
-          setSetting("ch_remind", ids["напоминания"]),
+          setSetting("ch_remind", ids["почта"]),
           setSetting("ch_bot", ids["бот"]),
           setSetting("ch_today", ids["сегодня"]),
           setSetting("intake", JSON.stringify([...intake])),
           setMeta("guild_id", guildId),
         ]);
-        text = `Готово. Каналы: <#${ids["напоминания"]}> (напоминания), <#${ids["бот"]}> (пишите сюда обычным текстом), <#${ids["сегодня"]}> (панель «Горит»).${created.length ? ` Создано: ${created.join(", ")}.` : " Все каналы уже были."}${tired(c.s.character, "setupDone") ? `\n-# ${tired(c.s.character, "setupDone")}` : ""}`;
+        text = `Готово. Каналы: <#${ids["почта"]}> (почта: напоминания и сводки), <#${ids["бот"]}> (пишите сюда обычным текстом), <#${ids["сегодня"]}> (панель «Горит»).${created.length ? ` Создано: ${created.join(", ")}.` : " Все каналы уже были."}${tired(c.s.character, "setupDone") ? `\n-# ${tired(c.s.character, "setupDone")}` : ""}`;
       } catch {
         text = "Не получилось создать каналы. Проверьте, что у бота есть право «Управлять каналами», и повторите /setup.";
       }
