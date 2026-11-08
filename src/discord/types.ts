@@ -92,6 +92,8 @@ export interface DiscordApi {
   deleteMessage(channelId: string, messageId: string): Promise<void>;
   /** Поставить свою реакцию-эмодзи на сообщение. */
   addReaction(channelId: string, messageId: string, emoji: string): Promise<void>;
+  /** Закрепить сообщение (нужно право «Закреплять сообщения»). */
+  pinMessage(channelId: string, messageId: string): Promise<void>;
   /** Новые сообщения после `after` по возрастанию id. */
   listMessages(channelId: string, after: string | null, limit: number): Promise<IncomingMessage[]>;
   listGuildChannels(guildId: string): Promise<GuildChannel[]>;

@@ -32,6 +32,24 @@ import { describeLead, describeRecipe, formatWhen } from "../time/format.ts";
 import { normalizeEvery, parseInput, parseWhen } from "../time/parse.ts";
 import { quickDue } from "../time/quick.ts";
 import { DAY, MINUTE, addDaysWall, fmtHHMM, localDate, nextTimeOfDay, parseHHMM, wallOf } from "../time/tz.ts";
+import {
+  type ListFilter,
+  type Section,
+  addModal,
+  cardMessage,
+  confirmDeleteMessage,
+  homeMessage,
+  homeStats,
+  isFilter,
+  isSection,
+  listMessage,
+  menuPhrase,
+  panelMessage,
+  resultMessage,
+  sectionMessage,
+  settingsHomeMessage,
+  withNav,
+} from "./menu.ts";
 import type { DiscordApi, MessageBody } from "./types.ts";
 import {
   awayModal,
@@ -158,7 +176,12 @@ const opt = (c: C, name: string): string | number | undefined =>
 const publicHere = (c: C) => c.i.channel_id !== undefined && c.i.channel_id === c.s.chBot;
 const out = (c: C, body: MessageBody): Reply => msg(publicHere(c) ? body : { ...body, flags: 64 });
 
-async function createReply(c: C, text: string, source: "slash" | "menu", extra: { body?: string; requireRecurring?: boolean } = {}): Promise<Reply> {
+async function createReply(
+  c: C,
+  text: string,
+  source: "slash" | "menu",
+  extra: { body?: string; requireRecurring?: boolean; /** как показать готовую запись (по умолчанию — как команду) */ wrap?: (b: MessageBody) => Reply } = {},
+): Promise<Reply> {
   const r = await createFromText(
     {
       repo: c.repo,
@@ -173,11 +196,11 @@ async function createReply(c: C, text: string, source: "slash" | "menu", extra: 
     },
     text,
     source,
-    extra,
+    { body: extra.body, requireRecurring: extra.requireRecurring },
   );
   switch (r.kind) {
     case "created":
-      return out(c, r.message);
+      return extra.wrap ? extra.wrap(r.message) : out(c, r.message);
     case "secret":
       return eph(SECRET_REPLY);
     case "empty":
@@ -242,6 +265,8 @@ async function onCommand(c: C): Promise<Reply> {
       return powerCommand(c);
     case "light":
       return lightCommand(c);
+    case "menu":
+      return menuCommand(c);
     default:
       return eph("Такой команды бот не знает.");
   }
@@ -250,8 +275,13 @@ async function onCommand(c: C): Promise<Reply> {
 /** /power: ссылки для телефона. Видны только хозяину («только вам»); ключ не попадает ни в журнал, ни в чат. */
 /** /light: график отключений на сегодня и завтра для группы из настроек и «что сейчас». Запрос к Yasno — после ответа Discord (до 5 секунд). */
 async function lightCommand(c: C): Promise<Reply> {
-  const group = c.s.lightGroup;
-  if (!group) return eph("Группа света не задана: /settings → «Свет: группа…» → впишите номер (например, 3).");
+  if (!c.s.lightGroup) return eph("Группа света не задана: /settings → «Свет: группа…» → впишите номер (например, 3).");
+  return lightReply(c, (t) => plainMessage(t, true), { type: 5, data: { flags: 64 } });
+}
+
+/** График света: сразу `first` (ответ-ожидание), потом правка исходного сообщения готовым видом `wrap(текст)`. */
+function lightReply(c: C, wrap: (text: string) => MessageBody, first: Reply): Reply {
+  const group = c.s.lightGroup as string;
   c.defer(
     (async () => {
       const data = await fetchYasno(c.fetchFn ?? fetch);
@@ -260,10 +290,10 @@ async function lightCommand(c: C): Promise<Reply> {
       const text = data
         ? [...lightLines("today", group, data, today), nowLine(c.now, group, data, c.s.tz), ...lightLines("tomorrow", group, data, tomorrow)].filter(Boolean).join("\n")
         : "Не удалось получить график: Yasno не отвечает. Попробуйте позже.";
-      if (c.i.application_id) await c.api.editInteractionOriginal(c.i.application_id, c.i.token, plainMessage(text, true)).catch(() => undefined);
+      if (c.i.application_id) await c.api.editInteractionOriginal(c.i.application_id, c.i.token, wrap(text)).catch(() => undefined);
     })(),
   );
-  return { type: 5, data: { flags: 64 } };
+  return first;
 }
 
 /** «Только вам» (64) и без предпросмотра ссылок (4): Discord не должен сам открывать ссылки с ключом. */
@@ -372,14 +402,16 @@ async function setAway(c: C, days: number): Promise<string> {
 
 /** Ответ командой /mood: карточка цвета настроения со спрайтом (видна только хозяину). */
 function moodCard(c: C, text: string, header?: string): Reply {
-  const body: MessageBody = {
+  return msg({ ...moodBody(c, text, header), flags: 64 });
+}
+
+function moodBody(c: C, text: string, header?: string): MessageBody {
+  return {
     ...(header ? { content: header } : {}),
     embeds: [maidEmbed({ mood: c.mood.state!.mood, text, origin: spriteOrigin(c), sprite: true })],
     components: [],
     allowed_mentions: { parse: [] },
-    flags: 64,
   };
-  return msg(body);
 }
 
 async function moodCommand(c: C): Promise<Reply> {
@@ -495,8 +527,10 @@ const spriteOrigin = (c: C): string | null => c.env.origin ?? c.meta.get("public
 const gone = (): Reply => update(plainMessage("Это дело уже закрыто или удалено."));
 
 async function onComponent(c: C): Promise<Reply> {
-  const [kind, a, b] = String(c.i.data?.custom_id ?? "").split(":");
+  const parts = String(c.i.data?.custom_id ?? "").split(":");
+  const [kind, a, b] = parts;
   const values = (c.i.data?.values as string[] | undefined) ?? [];
+  if (kind === "mn" || kind === "pn") return onMenu(c, parts, values);
   switch (kind) {
     case "done": {
       const occ = await asOcc(c, a);
@@ -619,20 +653,224 @@ async function onSettingsComponent(c: C, kind: string, values: string[]): Promis
     case "s_llm":
       return redo([setSetting("llm_on", c.s.llmOn ? "0" : "1")]);
     case "s_dm": {
-      const on = await dmOn(c);
-      let dm = c.meta.get("dm_channel_id");
-      const intake = new Set(c.s.intake);
+      const t = await dmToggle(c);
+      return redo(t.ops, t.on);
+    }
+    default:
+      return eph("Это действие бот не знает.");
+  }
+}
+
+/** Включить или выключить приём дел в личке: какие записи сделать и каким станет состояние. */
+async function dmToggle(c: C): Promise<{ ops: Op[]; on: boolean }> {
+  const on = await dmOn(c);
+  let dm = c.meta.get("dm_channel_id");
+  const intake = new Set(c.s.intake);
+  const ops: Op[] = [];
+  if (on && dm) intake.delete(dm);
+  else {
+    if (!dm) {
+      dm = (await c.api.createDm(c.owner)).id;
+      ops.push(setMeta("dm_channel_id", dm));
+    }
+    intake.add(dm);
+  }
+  ops.push(setSetting("intake", JSON.stringify([...intake])));
+  return { ops, on: !on };
+}
+
+// ---------- кнопочное меню (экраны — menu.ts) ----------
+
+/** /menu: главный экран «только вам»; с panel:True — закреплённая панель в канале «бот» (правится, если уже есть). */
+async function menuCommand(c: C): Promise<Reply> {
+  if ((opt(c, "panel") as unknown) !== true) return msg({ ...homeMessage(homeStats(await c.repo.openMain(100), c.now, c.s.tz)), flags: 64 });
+  const ch = c.s.chBot;
+  if (!ch) return eph("Канала «бот» ещё нет: выполните /setup на сервере.");
+  const oldId = c.meta.get("menu_panel_id");
+  if (oldId) {
+    try {
+      await c.api.editMessage(ch, oldId, panelMessage());
+      return eph("Панель в канале «бот» обновлена.");
+    } catch {
+      /* сообщения нет (удалено) — пошлём новое */
+    }
+  }
+  let sent: { id: string };
+  try {
+    sent = await c.api.postMessage(ch, panelMessage());
+  } catch {
+    return eph("Не получилось поставить панель в канал «бот». Проверьте, что у бота есть право писать туда.");
+  }
+  await c.repo.exec([setMeta("menu_panel_id", sent.id)]);
+  let pinned = true;
+  try {
+    await c.api.pinMessage(ch, sent.id);
+  } catch {
+    pinned = false;
+  }
+  return eph(pinned ? "Панель поставлена в канал «бот» и закреплена." : "Панель поставлена в канал «бот». Закрепить не вышло (нет права «Закреплять сообщения») — закрепите вручную: ••• → Закрепить.");
+}
+
+/** Добавить строку навигации к ответу-обновлению (если это обновление сообщения). */
+function navReply(r: Reply): Reply {
+  if (r.type !== 7) return r;
+  const data = r.data as MessageBody;
+  return { ...r, data: withNav(data) };
+}
+
+/**
+ * Кнопки меню. `mn:…` — внутри сообщения «только вам» (обновляем его), `pn:…` — закреплённая панель (каждый экран — новое
+ * сообщение «только вам», сама панель не меняется). Маршруты и аргументы — как в menu.ts.
+ */
+async function onMenu(c: C, parts: string[], values: string[]): Promise<Reply> {
+  const panel = parts[0] === "pn";
+  const route = parts[1] ?? "home";
+  const arg = parts.slice(2);
+  const show = (b: MessageBody): Reply => (panel ? msg({ ...b, flags: 64 }) : update(b));
+  const filterOf = (x: string | undefined): ListFilter => (x !== undefined && isFilter(x) ? x : "a");
+  const pageOf = (x: string | undefined): number => Math.max(0, Number.parseInt(x ?? "0", 10) || 0);
+  const gonePage = (f: ListFilter, p: number): Reply => show(resultMessage("Это дело уже закрыто или удалено.", f, p));
+  const sectionScreen = async (sec: Section, cfg?: { settings: AppSettings; meta: Map<string, string> }): Promise<Reply> => {
+    const s = cfg?.settings ?? c.s;
+    const dm = cfg ? (() => { const id = cfg.meta.get("dm_channel_id"); return !!id && s.intake.includes(id); })() : await dmOn(c);
+    return show(sectionMessage(s, sec, c.now, dm));
+  };
+
+  switch (route) {
+    case "home":
+      return show(homeMessage(homeStats(await c.repo.openMain(100), c.now, c.s.tz)));
+    case "ls": {
+      const f = filterOf(arg[0]);
+      return show(listMessage(await c.repo.openMain(100), f, pageOf(arg[1]), c.now, c.s.tz));
+    }
+    case "it": {
+      const f = filterOf(arg[1]);
+      const p = pageOf(arg[2]);
+      const occ = await asOcc(c, arg[0]);
+      if (!occ || !isOpen(occ)) return gonePage(f, p);
+      return show(cardMessage(occ, f, p, c.now, c.s.tz, describeSpec(parseSpec(occ.item_ladder) ?? c.s.defaultLadder)));
+    }
+    case "dn": {
+      const f = filterOf(arg[1]);
+      const p = pageOf(arg[2]);
+      const occ = await asOcc(c, arg[0]);
+      if (!occ || !isOpen(occ)) return gonePage(f, p);
+      const line = c.s.moodOn ? recordDone(c.mood, occ) : null;
+      await c.repo.exec(doneOps(occ, c.now));
+      const look = line && c.mood.state ? { mood: c.mood.state.mood, origin: spriteOrigin(c), sprite: wantSprite(c.mood.rand, c.mood.cinema) } : null;
+      const done = doneMessage(occ.title, c.s.character, occ.id, line, look);
+      return show({ ...done, components: [resultMessage("", f, p).components![0]] });
+    }
+    case "sz": {
+      const f = filterOf(arg[2]);
+      const p = pageOf(arg[3]);
+      const occ = await asOcc(c, arg[0]);
+      if (!occ || !isOpen(occ)) return gonePage(f, p);
+      const due = quickDue(arg[1] ?? "", c.now, c.s.tz, c.s.defaultTime);
+      if (due === null) return eph("Не понял вариант времени.");
+      await c.repo.exec(occ.state === "draft" ? rescheduleOps(occ, due, c.now) : snoozeOps(occ, due, c.now));
+      return show(resultMessage(`Отложено: **${occ.title}** — до ${formatWhen(due, c.now, c.s.tz)}`, f, p));
+    }
+    case "sa": {
+      const occ = await asOcc(c, arg[0]);
+      if (!occ || !isOpen(occ)) return gonePage(filterOf(arg[1]), pageOf(arg[2]));
+      const m = whenModal(`m_snz:${occ.id}:mn`, "Отложить на…");
+      return { type: 9, data: m.data };
+    }
+    case "ed": {
+      const occ = await asOcc(c, arg[0]);
+      if (!occ || !isOpen(occ)) return gonePage(filterOf(arg[1]), pageOf(arg[2]));
+      const w = occ.due_at !== null && occ.kind === "main" && occ.item_kind !== "timer" && !occ.rule_recipe ? wallOf(occ.due_at, c.s.tz) : null;
+      const whenText = w ? `${String(w.mo).padStart(2, "0")}.${String(w.d).padStart(2, "0")} ${fmtHHMM(w.h * 60 + w.mi)}` : null;
+      const m = editModal({ occId: occ.id, title: occ.title, whenText, ladderKey: "" });
+      return { type: 9, data: { ...m.data, custom_id: `m_edit:${occ.id}:mn` } };
+    }
+    case "sp": {
+      const item = await c.repo.getItem(Number(arg[0]));
+      if (!item || item.archived_at) return gonePage(filterOf(arg[1]), pageOf(arg[2]));
+      await c.repo.exec(stopSeriesOps(item.id, c.now));
+      return show(resultMessage(`Повтор остановлен: **${item.title}**`, filterOf(arg[1]), pageOf(arg[2])));
+    }
+    case "dl": {
+      const item = await c.repo.getItem(Number(arg[0]));
+      const f = filterOf(arg[2]);
+      const p = pageOf(arg[3]);
+      if (!item || item.archived_at) return gonePage(f, p);
+      return show(confirmDeleteMessage(item.title, item.id, Number(arg[1]), f, p));
+    }
+    case "dy": {
+      const item = await c.repo.getItem(Number(arg[0]));
+      const f = filterOf(arg[1]);
+      const p = pageOf(arg[2]);
+      if (!item || item.archived_at) return gonePage(f, p);
+      await c.repo.exec(cancelItemOps(item.id, c.now, "delete"));
+      return show(resultMessage(`Удалено: **${item.title}**`, f, p));
+    }
+    case "add":
+      return { type: 9, data: addModal(panel ? "pn" : "mn").data };
+    case "wk":
+      return show(resultMessage(weekText(await c.repo.openMain(100), c.now, c.s.tz, c.s.character)));
+    case "lt": {
+      if (!c.s.lightGroup) return show(resultMessage("Группа света не задана: ⚙ Настройки → 📰 Сводки и свет → «Свет: группа…»."));
+      // долгий запрос к Yasno: сначала «ждём», потом правка этого же сообщения
+      return lightReply(c, (t) => resultMessage(t), panel ? { type: 5, data: { flags: 64 } } : { type: 6 });
+    }
+    case "mo": {
+      await c.mood.load();
+      const text = moodReport({ state: c.mood.state!, enabled: c.s.moodOn, greeting: c.mood.say("greeting") });
+      return show({ ...moodBody(c, text), components: resultMessage("").components });
+    }
+    case "st":
+      return show(settingsHomeMessage(c.s, c.now));
+    case "s":
+      return sectionScreen(isSection(arg[0] ?? "") ? (arg[0] as Section) : "q");
+    case "tg": {
+      const sec = isSection(arg[1] ?? "") ? (arg[1] as Section) : "q";
       const ops: Op[] = [];
-      if (on && dm) intake.delete(dm);
-      else {
-        if (!dm) {
-          dm = (await c.api.createDm(c.owner)).id;
-          ops.push(setMeta("dm_channel_id", dm));
-        }
-        intake.add(dm);
+      switch (arg[0]) {
+        case "q":
+          ops.push(setSetting("quiet_enabled", c.s.quietEnabled ? "0" : "1"));
+          break;
+        case "ch":
+          ops.push(setSetting("character", c.s.character === "maid" ? "neutral" : "maid"));
+          break;
+        case "mo":
+          ops.push(setSetting("mood_on", c.s.moodOn ? "0" : "1"));
+          break;
+        case "llm":
+          ops.push(setSetting("llm_on", c.s.llmOn ? "0" : "1"));
+          break;
+        case "dm":
+          ops.push(...(await dmToggle(c)).ops);
+          break;
+        default:
+          return eph("Это действие бот не знает.");
       }
-      ops.push(setSetting("intake", JSON.stringify([...intake])));
-      return redo(ops, !on);
+      await c.repo.exec(ops);
+      return sectionScreen(sec, await c.repo.loadConfig());
+    }
+    case "ld": {
+      const p = values[0];
+      if (p === "soft" || p === "standard" || p === "strong") await c.repo.exec([setSetting("default_ladder", JSON.stringify({ preset: p }))]);
+      return sectionScreen("l", await c.repo.loadConfig());
+    }
+    case "md": {
+      const sec = isSection(arg[1] ?? "") ? (arg[1] as Section) : "q";
+      const tagged = (id: string, m: { data: Record<string, unknown> }): Reply => ({ type: 9, data: { ...m.data, custom_id: `${id}:mn:${sec}` } });
+      switch (arg[0]) {
+        case "qt":
+          return tagged("m_quiet", quietModal(c.s));
+        case "aw":
+          return tagged("m_away", awayModal());
+        case "sm":
+          return tagged("m_summ", summModal(c.s));
+        case "lt":
+          return tagged("m_light", lightModal(c.s));
+        case "ln":
+          return tagged("m_ladn", ladderNumsModal());
+        default:
+          return eph("Это окно бот не знает.");
+      }
     }
     default:
       return eph("Это действие бот не знает.");
@@ -673,9 +911,22 @@ function whenFromModal(c: C, v: Map<string, string | string[]>): { due: number; 
 }
 
 async function onModal(c: C): Promise<Reply> {
-  const [kind, id] = String(c.i.data?.custom_id ?? "").split(":");
+  const parts = String(c.i.data?.custom_id ?? "").split(":");
+  const [kind, id] = parts;
+  // окна из меню: `…:mn` (дела — добавить строку навигации) или `…:mn:<раздел>` (настройки — вернуть экран раздела)
+  const fromMenu = parts[2] === "mn";
+  const sec: Section | undefined = parts[1] === "mn" && isSection(parts[2] ?? "") ? (parts[2] as Section) : undefined;
+  const nav = (r: Reply): Reply => (fromMenu ? navReply(r) : r);
   const v = modalValues(c.i.data?.components);
   switch (kind) {
+    case "m_add": {
+      const panel = id === "pn";
+      const what = str(v.get("what"));
+      if (!what) return eph("Напишите, что нужно сделать.");
+      const m = menuPhrase({ what, when: str(v.get("when")), repeat: str(v.get("repeat")) });
+      const wrap = (b: MessageBody): Reply => (panel ? msg({ ...withNav(b), flags: 64 }) : update(withNav(b)));
+      return createReply(c, m.recurring ? normalizeEvery(m.text) : m.text, "menu", { requireRecurring: m.recurring, wrap });
+    }
     case "m_snz":
     case "m_when": {
       const occ = await asOcc(c, id);
@@ -684,51 +935,52 @@ async function onModal(c: C): Promise<Reply> {
       if (w === "none") return eph("Выберите вариант или впишите время, например «завтра 10:30».");
       if (w === "bad") return eph("Не понял время. Пример: «завтра 10:30» или «через 2 часа».");
       if (w.past) return eph("Это время уже прошло.");
-      if (kind === "m_snz" && occ.state !== "draft") return snoozeTo(c, occ, w.due);
+      if (kind === "m_snz" && occ.state !== "draft") return nav(await snoozeTo(c, occ, w.due));
       await c.repo.exec(rescheduleOps(occ, w.due, c.now));
-      return update(confirmFor(c, { ...occ, due_at: w.due }));
+      return nav(update(confirmFor(c, { ...occ, due_at: w.due })));
     }
     case "m_edit":
-      return editSubmit(c, id, v);
+      return nav(await editSubmit(c, id, v));
     case "m_split":
-      return splitSubmit(c, id, v);
+      return nav(await splitSubmit(c, id, v));
     case "m_quiet": {
       const from = parseHHMM(str(v.get("from")));
       const to = parseHHMM(str(v.get("to")));
       if (from === null || to === null) return eph("Время нужно в виде ЧЧ:ММ, например 23:00.");
-      return settingsUpdate(c, [setSetting("quiet_from", fmtHHMM(from)), setSetting("quiet_to", fmtHHMM(to))]);
+      return settingsUpdate(c, [setSetting("quiet_from", fmtHHMM(from)), setSetting("quiet_to", fmtHHMM(to))], sec);
     }
     case "m_summ":
-      return summSubmit(c, v);
+      return summSubmit(c, v, sec);
     case "m_away": {
       const days = Number(str(v.get("days")));
       if (!Number.isInteger(days) || days < 0 || days > 90) return eph("Нужно число дней от 0 до 90.");
       await setAway(c, days);
-      return settingsUpdate(c, []);
+      return settingsUpdate(c, [], sec);
     }
     case "m_light": {
       const t = str(v.get("group")).toLowerCase();
-      if (t === "" || t === "выкл" || t === "off") return settingsUpdate(c, [setSetting("light", "off")]);
+      if (t === "" || t === "выкл" || t === "off") return settingsUpdate(c, [setSetting("light", "off")], sec);
       const g = normalizeGroup(t);
       if (!g) return eph("Нужна группа вроде 3 или 3.1 (от 1 до 6) или слово «выкл».");
-      return settingsUpdate(c, [setSetting("light", g)]);
+      return settingsUpdate(c, [setSetting("light", g)], sec);
     }
     case "m_ladn": {
       const steps = parseCustomSteps(str(v.get("nums")));
       if (!steps) return eph("Нужны числа (минуты от срока) через пробел, например: 0 10 20 40.");
       const spec: LadderSpec = { custom: steps };
-      return settingsUpdate(c, [setSetting("default_ladder", JSON.stringify(spec))]);
+      return settingsUpdate(c, [setSetting("default_ladder", JSON.stringify(spec))], sec);
     }
     default:
       return eph("Это окно бот не знает.");
   }
 }
 
-async function settingsUpdate(c: C, ops: Op[]): Promise<Reply> {
+async function settingsUpdate(c: C, ops: Op[], sec?: Section): Promise<Reply> {
   if (ops.length) await c.repo.exec(ops);
   const cfg = await c.repo.loadConfig();
   const dm = cfg.meta.get("dm_channel_id");
-  return update(settingsMessage(cfg.settings, c.now, !!dm && cfg.settings.intake.includes(dm)));
+  const dmOnNow = !!dm && cfg.settings.intake.includes(dm);
+  return update(sec ? sectionMessage(cfg.settings, sec, c.now, dmOnNow) : settingsMessage(cfg.settings, c.now, dmOnNow));
 }
 
 async function editSubmit(c: C, id: string, v: Map<string, string | string[]>): Promise<Reply> {
@@ -787,7 +1039,7 @@ async function splitSubmit(c: C, id: string, v: Map<string, string | string[]>):
   return update(plainMessage(`Разбито на шаги (${titles.length}): ${titles.join("; ")}. Время — ${formatWhen(target, c.now, c.s.tz)}, поменять: /snooze.`));
 }
 
-async function summSubmit(c: C, v: Map<string, string | string[]>): Promise<Reply> {
+async function summSubmit(c: C, v: Map<string, string | string[]>, sec?: Section): Promise<Reply> {
   const ops: Op[] = [];
   const errors: string[] = [];
   const timeOrOff = (raw: string, label: string, key: string) => {
@@ -818,6 +1070,6 @@ async function summSubmit(c: C, v: Map<string, string | string[]>): Promise<Repl
     }
   }
   if (errors.length) return eph(errors.join("\n"));
-  return settingsUpdate(c, ops);
+  return settingsUpdate(c, ops, sec);
 }
 

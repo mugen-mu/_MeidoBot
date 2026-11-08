@@ -175,6 +175,14 @@ export const COMMANDS = [
     options: [{ type: 4, name: "hours", description: "Сколько часов (0 — вернуть сейчас)", required: false, min_value: 0, max_value: 72 }],
   },
   { name: "light", description: "График отключений света: сегодня, завтра и что сейчас (видно только вам)", type: 1, integration_types: BOTH, contexts: EVERYWHERE },
+  {
+    name: "menu",
+    description: "Кнопочное меню: дела, добавление, свет, настройки (видно только вам)",
+    type: 1,
+    integration_types: BOTH,
+    contexts: EVERYWHERE,
+    options: [{ type: 5, name: "panel", description: "Поставить закреплённую панель с кнопками в канал «бот»", required: false }],
+  },
   { name: "setup", description: "Завести каналы бота на этом сервере (один раз)", type: 1, integration_types: [0], contexts: [0] },
   // Команда из меню сообщения (долгое нажатие -> Приложения). Описание у такой команды не указывается.
   { name: "Напомнить об этом", type: 3, integration_types: BOTH, contexts: EVERYWHERE },

@@ -53,6 +53,9 @@ export function createDiscordApi(token: string, fetchFn: typeof fetch = fetch): 
     async addReaction(channelId, messageId, emoji): Promise<void> {
       await call("PUT", `/channels/${channelId}/messages/${messageId}/reactions/${encodeURIComponent(emoji)}/@me`, undefined, { okStatuses: [404] });
     },
+    async pinMessage(channelId, messageId): Promise<void> {
+      await call("PUT", `/channels/${channelId}/pins/${messageId}`, undefined, { okStatuses: [404] });
+    },
     async listMessages(channelId, after, limit): Promise<IncomingMessage[]> {
       const q = new URLSearchParams({ limit: String(limit) });
       if (after) q.set("after", after);
@@ -87,6 +90,7 @@ export function countedApi(api: DiscordApi, counter: Counter): DiscordApi {
     editMessage: wrap(api.editMessage.bind(api)),
     deleteMessage: wrap(api.deleteMessage.bind(api)),
     addReaction: wrap(api.addReaction.bind(api)),
+    pinMessage: wrap(api.pinMessage.bind(api)),
     listMessages: wrap(api.listMessages.bind(api)),
     listGuildChannels: wrap(api.listGuildChannels.bind(api)),
     createChannel: wrap(api.createChannel.bind(api)),

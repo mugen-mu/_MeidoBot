@@ -9,7 +9,7 @@ import { MINUTE, fmtHHMM, startOfDay } from "../time/tz.ts";
 import type { OccView } from "../db/types.ts";
 import { styleSummary } from "../personality/styleReport.ts";
 import { parseRecipe } from "../service.ts";
-import { describeWeekly } from "./ui.ts";
+import { describeWeekly, selectLabel, textLabel, modal } from "./ui.ts";
 import type { ActionRow, Button, MessageBody, StringSelect } from "./types.ts";
 
 const btn = (label: string, id: string, style: Button["style"] = 2, disabled = false): Button => ({
@@ -179,6 +179,22 @@ export const REPEAT_CHOICES = [
   { value: "mo", label: "Каждый месяц", phrase: "каждый месяц" },
   { value: "yr", label: "Каждый год (впишите дату выше)", phrase: "каждый год" },
 ] as const;
+
+/** Окно «Добавить дело»: что, когда (необязательно), повтор. `tag` — откуда открыто: `mn` (меню в сообщении) или `pn` (панель). */
+export function addModal(tag: "mn" | "pn") {
+  return modal(`m_add:${tag}`, "Добавить дело", [
+    textLabel("Что нужно сделать", "what", { max: 200, placeholder: "купить хлеб" }),
+    textLabel("Когда (можно не писать)", "when", { required: false, max: 60, placeholder: "завтра в 10:00" }),
+    selectLabel("Повторять", "repeat", [{ value: "none", label: "Не повторять" }, ...REPEAT_CHOICES.map((r) => ({ value: r.value, label: r.label }))]),
+  ]);
+}
+
+/** Из полей окна — одна фраза для обычного разбора: «каждый день в 10:00 купить хлеб». */
+export function menuPhrase(a: { what: string; when: string; repeat: string }): { text: string; recurring: boolean } {
+  const rep = REPEAT_CHOICES.find((r) => r.value === a.repeat);
+  const parts = [rep?.phrase, a.when.trim(), a.what.trim()].filter(Boolean) as string[];
+  return { text: parts.join(" "), recurring: !!rep };
+}
 
 // ---------- настройки по разделам ----------
 

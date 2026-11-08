@@ -394,7 +394,7 @@ describe("описание команд для Discord", () => {
       }
       expect(c.integration_types).toContain(c.name === "setup" ? 0 : 1);
     }
-    expect(COMMANDS.map((c) => c.name)).toEqual(["remind", "every", "list", "week", "cancel", "snooze", "settings", "away", "power", "mood", "reset_mood", "style", "hints", "glossary", "quiet", "light", "setup", "Напомнить об этом"]);
+    expect(COMMANDS.map((c) => c.name)).toEqual(["remind", "every", "list", "week", "cancel", "snooze", "settings", "away", "power", "mood", "reset_mood", "style", "hints", "glossary", "quiet", "light", "menu", "setup", "Напомнить об этом"]);
   });
 });
 

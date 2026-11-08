@@ -58,6 +58,11 @@ export class FakeDiscord implements DiscordApi {
     this.calls++;
     this.reactions.push({ channel: channelId, id: messageId, emoji });
   }
+  pins: { channel: string; id: string }[] = [];
+  async pinMessage(channelId: string, messageId: string) {
+    this.calls++;
+    this.pins.push({ channel: channelId, id: messageId });
+  }
   async listMessages(channelId: string, after: string | null, limit: number) {
     this.calls++;
     const all = this.inbox.get(channelId) ?? [];

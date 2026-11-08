@@ -255,6 +255,13 @@ export async function runCron(d: CronDeps): Promise<CronReport> {
             if (!m.attachments?.length) blind++;
             continue;
           }
+          // Reply на сообщение бота, привязанное к делу (в том числе «Записано …»): «готово», «отмени», «на час» — действие над делом
+          if (m.message_reference?.message_id && room2(5)) {
+            if ((await handleReply({ repo, api, s, now, mood }, m, ch)) === "handled") {
+              report.intake++;
+              continue;
+            }
+          }
           // настроение: любое сообщение хозяина — активность; «спасибо» горничной — вежливость, дело из этого не создаём
           if (mood && room2(3)) {
             await mood.load();
@@ -306,7 +313,9 @@ export async function runCron(d: CronDeps): Promise<CronReport> {
               : { content: r.kind === "secret" ? SECRET_REPLY : r.kind === "empty" ? EMPTY_REPLY : EMPTY_SERIES_REPLY, allowed_mentions: { parse: [] } };
           if (r.kind === "secret") ops2.push(event(now, "secret_seen", null, "intake"));
           try {
-            await api.postMessage(ch, reply);
+            const sent = await api.postMessage(ch, reply);
+            // запомнить сообщение: ответ (Reply) на него будет действовать на это дело
+            if (r.kind === "created") ops2.push(rememberMessage(sent.id, sent.channel_id, r.occId, now));
           } catch (e) {
             if (e instanceof BudgetExceeded) break;
             report.notes.push("не удалось ответить на сообщение в канале приёма");

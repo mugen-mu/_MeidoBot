@@ -166,3 +166,47 @@ describe("cron: время сообщения в канале «бот» — о�
     expect(w.discord.live(CH_REMIND)).toHaveLength(1);
   });
 });
+
+describe("Reply на «Записано …» в канале приёма (отзыв пользователя 2026-11-08)", () => {
+  async function recorded(text = "завтра в 10 записать ребёнка к неврологу") {
+    await w.run(NOW); // запомнить конец канала
+    w.discord.say(CH_BOT, OWNER, text, { at: NOW + MINUTE });
+    await w.run(NOW + 2 * MINUTE);
+    const confirm = w.discord.live(CH_BOT).at(-1)!;
+    expect(confirm.body.content).toContain("Записано");
+    const item = (await w.repo().openMain(10))[0];
+    return { confirm, occId: item.id };
+  }
+
+  it("parseReply: «отмени» и близкие слова", () => {
+    for (const t of ["отмени", "Отмена!", "удали", "не надо", "отменить это"]) expect(parseReply(t, ctx), t).toEqual({ kind: "cancel" });
+  });
+
+  it("«отмени» в ответ на «Записано»: дело отменено, не создаётся новое «Отмени»", async () => {
+    const { confirm, occId } = await recorded();
+    w.discord.say(CH_BOT, OWNER, "отмени", { ref: confirm.id, at: NOW + 3 * MINUTE });
+    await w.run(NOW + 4 * MINUTE);
+    expect(w.occ(occId).state).toBe("cancelled");
+    expect(await w.repo().openMain(10)).toHaveLength(0);
+    expect(w.discord.edits.at(-1)!.id).toBe(confirm.id);
+    expect(w.discord.edits.at(-1)!.body.content).toContain("Отменено");
+    expect(w.discord.live(CH_BOT).at(-1)!.body.content).toContain("Отменено");
+  });
+
+  it("«на час» и «готово» в ответ на «Записано» тоже работают", async () => {
+    const a = await recorded();
+    w.discord.say(CH_BOT, OWNER, "на час", { ref: a.confirm.id, at: NOW + 3 * MINUTE });
+    await w.run(NOW + 4 * MINUTE);
+    expect(w.occ(a.occId).state).toBe("snoozed");
+    w.discord.say(CH_BOT, OWNER, "готово", { ref: a.confirm.id, at: NOW + 5 * MINUTE });
+    await w.run(NOW + 6 * MINUTE);
+    expect(w.occ(a.occId).state).toBe("done");
+  });
+
+  it("ответ на постороннее сообщение бота и обычный текст со ссылкой — запись нового дела как раньше", async () => {
+    await w.run(NOW);
+    w.discord.say(CH_BOT, OWNER, "завтра в 10 купить хлеб", { ref: "123456", at: NOW + MINUTE });
+    await w.run(NOW + 2 * MINUTE);
+    expect((await w.repo().openMain(10)).map((o) => o.title)).toEqual(["Купить хлеб"]);
+  });
+});

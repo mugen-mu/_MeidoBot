@@ -4,16 +4,17 @@ import type { Repo } from "./db/repo.ts";
 import { OPEN_STATES, type OccView, type Op } from "./db/types.ts";
 import type { DiscordApi, IncomingMessage, MessageBody } from "./discord/types.ts";
 import { messageTime } from "./intake.ts";
-import { doneMessage, snoozedMessage } from "./discord/ui.ts";
+import { doneMessage, plainMessage, snoozedMessage } from "./discord/ui.ts";
 import { type MoodSession, recordDone } from "./personality/director.ts";
-import { doneOps, rescheduleOps, snoozeOps } from "./service.ts";
+import { cancelItemOps, doneOps, rescheduleOps, snoozeOps } from "./service.ts";
 import type { AppSettings } from "./settings.ts";
 import { formatWhen } from "./time/format.ts";
 import { parseWhen } from "./time/parse.ts";
 
-export type ReplyAction = { kind: "done" } | { kind: "snooze"; due: number } | { kind: "past" } | { kind: "unknown" };
+export type ReplyAction = { kind: "done" } | { kind: "cancel" } | { kind: "snooze"; due: number } | { kind: "past" } | { kind: "unknown" };
 
 const DONE_RX = /^(?:напомни\s+)?(?:готово|сделано|сделал[аи]?|выполнено|закрыть|закрой|done)$/u;
+const CANCEL_RX = /^(?:отмени(?:ть|те)?|отмена|удали(?:ть|те)?|не\s+надо|не\s+нужно|cancel)(?:\s+(?:это|дело|его|её))?$/u;
 // «на час», «на 15 минут», «отложи на полчаса» -> «через …» (время «на 18:30» сюда не попадает)
 const ON_DURATION_RX = /^(?:(?:отложи(?:ть)?|перенеси(?:ть)?|напомни)\s+)?на\s+((?:\d+(?:[.,]\d+)?|час|полчаса|полтора\s+часа)(?:\s*(?:мин\S*|час\S*|ч|дн\S*|день|сутки|нед\S*))?)$/u;
 
@@ -28,12 +29,13 @@ function normalize(raw: string): string {
 export function parseReply(text: string, ctx: { at: number; tz: string; defaultTime: number }): ReplyAction {
   const t = normalize(text);
   if (DONE_RX.test(t)) return { kind: "done" };
+  if (CANCEL_RX.test(t)) return { kind: "cancel" };
   const w = parseWhen(t, { now: ctx.at, tz: ctx.tz, defaultTime: ctx.defaultTime });
   if (!w) return { kind: "unknown" };
   return w.past ? { kind: "past" } : { kind: "snooze", due: w.due };
 }
 
-export const REPLY_UNKNOWN = "Не понял. Ответьте, например, «через 15 минут», «на час», «завтра 10:30» или «готово».";
+export const REPLY_UNKNOWN = "Не понял. Ответьте, например, «через 15 минут», «на час», «завтра 10:30», «готово» или «отмени».";
 export const REPLY_PAST = "Это время уже прошло. Ответьте, например, «через 15 минут» или «завтра 10:30».";
 export const REPLY_CLOSED = "Это дело уже закрыто.";
 
@@ -50,6 +52,8 @@ export function applyReply(occ: OccView, action: ReplyAction, s: AppSettings, no
   switch (action.kind) {
     case "done":
       return { ops: doneOps(occ, now), edit: doneMessage(occ.title, s.character, occ.id, doneLine), text: `Готово: **${occ.title}**.` };
+    case "cancel":
+      return { ops: cancelItemOps(occ.item_id, now), edit: plainMessage(`Отменено: ${occ.title}`), text: `Отменено: **${occ.title}**.` };
     case "snooze": {
       const whenText = formatWhen(action.due, now, s.tz);
       const draft = occ.state === "draft";
@@ -68,7 +72,7 @@ export function applyReply(occ: OccView, action: ReplyAction, s: AppSettings, no
 
 /**
  * Обработать сообщение хозяина из канала напоминаний. Ответ не на напоминание (нет ссылки или ссылка
- * на сообщение, которое не от дела) — молча пропускаем. Тратит до 4 подзапросов.
+ * на сообщение, которое не от дела) — молча пропускаем. Тратит до 5 подзапросов.
  */
 export async function handleReply(
   d: { repo: Repo; api: DiscordApi; s: AppSettings; now: number; mood?: MoodSession | null },
@@ -89,11 +93,17 @@ export async function handleReply(
   }
   const res = applyReply(occ, action, d.s, d.now, doneLine);
   if (res.ops.length) await d.repo.exec(res.ops);
-  if (res.edit && occ.last_message_id && occ.last_channel_id) {
-    try {
-      await d.api.editMessage(occ.last_channel_id, occ.last_message_id, res.edit);
-    } catch {
-      /* сообщения уже нет: не страшно */
+  // живое сообщение дела и то, на которое ответили (например, «Записано …» в канале приёма): обоим — новый вид без старых кнопок
+  if (res.edit) {
+    const targets: { ch: string; id: string }[] = [];
+    if (occ.last_message_id && occ.last_channel_id) targets.push({ ch: occ.last_channel_id, id: occ.last_message_id });
+    if (!targets.some((t) => t.id === refId)) targets.push({ ch: channelId, id: refId });
+    for (const t of targets) {
+      try {
+        await d.api.editMessage(t.ch, t.id, res.edit);
+      } catch {
+        /* сообщения уже нет: не страшно */
+      }
     }
   }
   try {
