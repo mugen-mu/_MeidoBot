@@ -10,6 +10,8 @@
 
 **Проверено.** `npm test` 431 тест зелёный (новые: `test/menu.test.ts`, 4 теста Reply в `test/reply.test.ts`), `npm run typecheck`, `npm run dry-run`.
 
+**Выложено** 2026-11-08 по слову пользователя: Worker `638cffdd`, `npm run register` — 19 команд, среди них новая `/menu`.
+
 **Не проверено.** Настоящий Discord: вид кнопок и окон, закрепление панели (нужно право «Закреплять сообщения»), ответ `type 6` для «Свет». Не выложено; `npm run register` (новая команда `/menu`) не запускался. Шаги — `LIVE-CHECKS.md` 44–48.
 
 **Дальше.** По слову «выкладывай»: `npm run deploy`, `npm run register`, живые проверки 39–48.
