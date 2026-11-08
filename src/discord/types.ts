@@ -64,6 +64,8 @@ export interface IncomingMessage {
   timestamp?: string;
   /** если это ответ (Reply): на какое сообщение */
   message_reference?: { message_id?: string };
+  /** сообщение, на которое ответили (Discord присылает его вместе с ответом) */
+  referenced_message?: { content?: string; author?: { bot?: boolean } } | null;
 }
 
 export interface GuildChannel {

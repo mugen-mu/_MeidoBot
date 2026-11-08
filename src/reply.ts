@@ -81,7 +81,14 @@ export async function handleReply(
 ): Promise<"handled" | "ignored"> {
   const refId = m.message_reference?.message_id;
   if (!refId || !m.content.trim()) return "ignored";
-  const occ = await d.repo.occByMessageId(refId);
+  // сначала по запомненному сообщению; иначе — по номеру «#9» в тексте сообщения бота (старые «Записано», ответы на команды)
+  let occ = await d.repo.occByMessageId(refId);
+  if (!occ) {
+    const ref = m.referenced_message;
+    const nums = ref?.author?.bot ? [...(ref.content ?? "").matchAll(/#(\d+)/g)] : [];
+    const itemId = nums.length ? Number(nums[nums.length - 1][1]) : null;
+    if (itemId !== null) occ = await d.repo.openMainOfItem(itemId);
+  }
   if (!occ) return "ignored";
   const action = parseReply(m.content, { at: messageTime(m, d.now), tz: d.s.tz, defaultTime: d.s.defaultTime });
   // настроение: любой ответ — активность; «готово» — выполнено (вовремя или с опозданием)

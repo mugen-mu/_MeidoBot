@@ -210,3 +210,29 @@ describe("Reply на «Записано …» в канале приёма (от
     expect((await w.repo().openMain(10)).map((o) => o.title)).toEqual(["Купить хлеб"]);
   });
 });
+
+describe("Reply на старое сообщение бота: дело находится по номеру «#N» в тексте", () => {
+  it("«отмени» в ответ на «Записано … · #N», которое бот не запоминал", async () => {
+    const { occId, itemId } = await w.create("завтра в 10 записать ребёнка к неврологу");
+    await w.run(NOW);
+    w.discord.say(CH_BOT, OWNER, "отмени", { ref: "555", refText: `Записано: **Записать ребёнка** — завтра, 11:00 · #${itemId}`, at: NOW + MINUTE });
+    await w.run(NOW + 2 * MINUTE);
+    expect(w.occ(occId).state).toBe("cancelled");
+    expect(await w.repo().openMain(10)).toHaveLength(0);
+  });
+
+  it("черновик «когда напомнить? · #N»: «завтра 10:30» назначает время", async () => {
+    const { occId, itemId } = await w.create("подумать про отпуск");
+    await w.run(NOW);
+    w.discord.say(CH_BOT, OWNER, "завтра 10:30", { ref: "556", refText: `**Подумать про отпуск** — когда напомнить? · #${itemId}`, at: NOW + MINUTE });
+    await w.run(NOW + 2 * MINUTE);
+    expect(w.occ(occId).state).toBe("planned");
+  });
+
+  it("ссылка на чужое сообщение без номера или не от бота — как раньше, новое дело", async () => {
+    await w.run(NOW);
+    w.discord.say(CH_BOT, OWNER, "завтра в 10 купить хлеб", { ref: "557", at: NOW + MINUTE });
+    await w.run(NOW + 2 * MINUTE);
+    expect((await w.repo().openMain(10)).map((o) => o.title)).toEqual(["Купить хлеб"]);
+  });
+});

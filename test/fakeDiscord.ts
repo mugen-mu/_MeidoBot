@@ -90,7 +90,7 @@ export class FakeDiscord implements DiscordApi {
   }
 
   /** Добавить входящее сообщение в канал. */
-  say(channel: string, authorId: string, content: string, opts: { bot?: boolean; /** время отправки, мс */ at?: number; /** ответ на сообщение с этим id */ ref?: string } = {}): IncomingMessage {
+  say(channel: string, authorId: string, content: string, opts: { bot?: boolean; /** время отправки, мс */ at?: number; /** ответ на сообщение с этим id */ ref?: string; /** текст сообщения бота, на которое ответили (как referenced_message) */ refText?: string } = {}): IncomingMessage {
     const m: IncomingMessage = {
       id: this.nextId(),
       channel_id: channel,
@@ -99,6 +99,7 @@ export class FakeDiscord implements DiscordApi {
       attachments: [],
       ...(opts.at !== undefined ? { timestamp: new Date(opts.at).toISOString() } : {}),
       ...(opts.ref ? { message_reference: { message_id: opts.ref } } : {}),
+      ...(opts.refText ? { referenced_message: { content: opts.refText, author: { bot: true } } } : {}),
     };
     this.inbox.set(channel, [...(this.inbox.get(channel) ?? []), m]);
     return m;
