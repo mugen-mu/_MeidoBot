@@ -32,6 +32,8 @@ export interface AppSettings {
   lightGroup: string | null;
   /** слова места для отключений воды (район без окончания, улица); пусто — не следить */
   waterWords: string[];
+  /** слова адреса для графика газа (улица, при желании дом через пробел); пусто — не следить */
+  gasWords: string[];
   /** характер бота: нейтральный (по умолчанию) или «уставшая горничная» */
   character: Character;
   /** настроение горничной («Характер 2»): вкл по умолчанию (решение пользователя 2026-11-08; раньше было выкл) */
@@ -48,7 +50,7 @@ export interface AppSettings {
 
 export const SETTING_KEYS = [
   "tz", "default_ladder", "default_time", "quiet_enabled", "quiet_from", "quiet_to", "away_until",
-  "summary_morning", "summary_evening", "weekly", "ch_remind", "ch_bot", "ch_today", "ch_forum", "ch_archive", "intake", "light", "water", "character", "mood_on",
+  "summary_morning", "summary_evening", "weekly", "ch_remind", "ch_bot", "ch_today", "ch_forum", "ch_archive", "intake", "light", "water", "gas", "character", "mood_on",
   "style_level", "style_script", "style_sfx", "style_honorifics", "style_kaomoji", "hints_on", "llm_on", "live_on", "birthday",
 ] as const;
 
@@ -94,6 +96,7 @@ export function readSettings(rows: { key: string; value: string }[]): AppSetting
     intake,
     lightGroup: m.get("light") && m.get("light") !== "off" ? (m.get("light") as string) : null,
     waterWords: m.get("water") && m.get("water") !== "off" ? parseWaterWords(m.get("water") as string) : [],
+    gasWords: m.get("gas") && m.get("gas") !== "off" ? parseWaterWords(m.get("gas") as string) : [],
     character: parseCharacter(m.get("character")),
     moodOn: m.get("mood_on") !== "0",
     style: parseStyle(m),

@@ -69,6 +69,7 @@ import {
   ladderNumsModal,
   lightModal,
   waterModal,
+  gasModal,
   listText,
   plainMessage,
   withLine,
@@ -923,6 +924,8 @@ async function onMenu(c: C, parts: string[], values: string[]): Promise<Reply> {
           return tagged("m_light", lightModal(c.s));
         case "wt":
           return tagged("m_water", waterModal(c.s));
+        case "gs":
+          return tagged("m_gas", gasModal(c.s));
         case "ln":
           return tagged("m_ladn", ladderNumsModal());
         default:
@@ -1028,6 +1031,13 @@ async function onModal(c: C): Promise<Reply> {
       if (!words.length) return eph("Нужны слова от трёх букв через запятую, например: Чечелівськ, Могилевськ. Или «выкл».");
       // новые слова — заново читаем ленту (сразу, а не через час) и забываем прежние объявления
       return settingsUpdate(c, [setSetting("water", words.join(", ")), deleteMeta("water_state"), deleteMeta("water_outbox"), setMeta("water_next", "0")], sec);
+    }
+    case "m_gas": {
+      const t = str(v.get("words")).trim();
+      if (t === "" || /^(выкл|off)$/i.test(t)) return settingsUpdate(c, [setSetting("gas", "off"), deleteMeta("gas_state"), deleteMeta("gas_outbox")], sec);
+      const words = parseWaterWords(t);
+      if (!words.length) return eph("Нужны слова от трёх букв через запятую, например: Героїв 35, Козака Мамая. Или «выкл».");
+      return settingsUpdate(c, [setSetting("gas", words.join(", ")), deleteMeta("gas_state"), deleteMeta("gas_outbox"), setMeta("gas_next", "0")], sec);
     }
     case "m_ladn": {
       const steps = parseCustomSteps(str(v.get("nums")));

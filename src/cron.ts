@@ -14,6 +14,7 @@ import {
 } from "./discord/ui.ts";
 import type { AiBinding } from "./llm.ts";
 import { createFromText, EMPTY_REPLY, EMPTY_SERIES_REPLY, messageTime, SECRET_REPLY } from "./intake.ts";
+import { GAS_CHECK_EVERY, GAS_RETRY_AFTER, dueGas, failGas, fetchGas, gasSummaryLines, parseGasState, planGas } from "./gas.ts";
 import { WATER_CHECK_EVERY, WATER_RETRY_AFTER, dueWater, failWater, fetchWater, parseWaterState, planWater, waterSummaryLines } from "./water.ts";
 import { MoodSession, canStyle, makeCtx, reactionLine, recordedLine, summaryLine } from "./personality/director.ts";
 import { LIVE_TIMEOUT_CRON_MS } from "./personality/liveLines.ts";
@@ -389,6 +390,7 @@ export async function runCron(d: CronDeps): Promise<CronReport> {
         }
         // «Коммуналка»: свет, вода (газ — позже) одним блоком; про воду — только если что-то идёт или скоро будет
         if (s.waterWords.length) extra = [...extra, ...waterSummaryLines(parseWaterState(meta.get("water_state")), now, s.tz)];
+        if (s.gasWords.length) extra = [...extra, ...gasSummaryLines(parseGasState(meta.get("gas_state")), now, s.tz)];
         if (extra.length) extra = ["🏠 Коммуналка:", ...extra];
         const parts = summaryParts(kind, { items: list, now, tz: s.tz, ownerId: owner as string, extra, character: s.character });
         content = parts.text;
@@ -458,6 +460,28 @@ export async function runCron(d: CronDeps): Promise<CronReport> {
       }
     }
 
+    /** Отправить очередь сообщений коммуналки в «почту»; что не ушло (сбой Discord, лимит) — остаётся на следующую минуту. */
+    const flushOutbox = async (outbox: { text: string; mention: boolean }[], what: string) => {
+      while (outbox.length && room2(2)) {
+        const m = outbox[0];
+        try {
+          await api.postMessage(s.chRemind as string, {
+            content: m.mention ? `<@${owner}> ${m.text}` : m.text,
+            allowed_mentions: m.mention ? { users: [owner as string] } : { parse: [] },
+          });
+          outbox.shift();
+          report.notes.push(`${what}: сообщение отправлено`);
+        } catch (e) {
+          if (!(e instanceof BudgetExceeded)) {
+            healthy = false;
+            ops2.push(event(now, `${what}_send_failed`));
+          }
+          break;
+        }
+      }
+      return outbox;
+    };
+
     // 2б4. вода: раз в час читаем ленту водоканала; предупреждения по времени (накануне вечером, за 2 часа) — каждую минуту без запросов.
     // Сообщения сначала кладём в очередь (meta water_outbox) и только потом отправляем: сбой Discord не теряет предупреждение.
     if (s.waterWords.length && owner && s.chRemind) {
@@ -493,27 +517,52 @@ export async function runCron(d: CronDeps): Promise<CronReport> {
         outbox.push(...r.notices);
       }
       // отправка: срочное (с упоминанием) не ждёт тихих часов; при сбое остаток остаётся в очереди до следующей минуты
-      while (outbox.length && room2(2)) {
-        const m = outbox[0];
-        try {
-          await api.postMessage(s.chRemind, {
-            content: m.mention ? `<@${owner}> ${m.text}` : m.text,
-            allowed_mentions: m.mention ? { users: [owner] } : { parse: [] },
-          });
-          outbox.shift();
-          report.notes.push("вода: сообщение отправлено");
-        } catch (e) {
-          if (!(e instanceof BudgetExceeded)) {
-            healthy = false;
-            ops2.push(event(now, "water_send_failed"));
-          }
-          break;
-        }
-      }
+      outbox = await flushOutbox(outbox, "water");
       outbox = outbox.slice(-6);
       if (next) ops2.push(setMeta("water_next", next));
       if (JSON.stringify(st) + JSON.stringify(outbox) !== before) {
         ops2.push(setMeta("water_state", JSON.stringify(st)), outbox.length ? setMeta("water_outbox", JSON.stringify(outbox)) : deleteMeta("water_outbox"));
+      }
+    }
+
+    // 2б5. газ: раз в час главная страница газовиков (файл с графиком — только когда ссылка новая и раз в сутки);
+    // напоминания «накануне вечером» и «утром в день работ» — каждую минуту без запросов; очередь как у воды
+    if (s.gasWords.length && owner && s.chRemind) {
+      let st = parseGasState(meta.get("gas_state"));
+      let outbox: { text: string; mention: boolean }[] = [];
+      try {
+        const v = JSON.parse(meta.get("gas_outbox") ?? "[]");
+        if (Array.isArray(v)) outbox = v;
+      } catch {
+        /* повреждено: пусто */
+      }
+      const before = JSON.stringify(st) + JSON.stringify(outbox);
+      let next: string | null = null;
+      if (now >= (Number(meta.get("gas_next") ?? 0) || 0) && room2(6)) {
+        repo.counter.spend(2);
+        const got = await fetchGas(st, now, d.fetchFn ?? fetch);
+        if (got) {
+          const r = planGas(st, got.link, got.schedule, s.gasWords, now, s.tz);
+          st = r.state;
+          outbox.push(...r.notices);
+          next = String(now + GAS_CHECK_EVERY);
+        } else {
+          const r = failGas(st);
+          st = r.state;
+          if (r.notice) outbox.push(r.notice);
+          next = String(now + GAS_RETRY_AFTER);
+          report.notes.push("газ: график не прочитался");
+        }
+      }
+      if (!away) {
+        const r = dueGas(st, now, s.tz, s.evening ?? 20 * 60, s.morning ?? 8 * 60);
+        st = r.state;
+        outbox.push(...r.notices);
+      }
+      outbox = (await flushOutbox(outbox, "gas")).slice(-6);
+      if (next) ops2.push(setMeta("gas_next", next));
+      if (JSON.stringify(st) + JSON.stringify(outbox) !== before) {
+        ops2.push(setMeta("gas_state", JSON.stringify(st)), outbox.length ? setMeta("gas_outbox", JSON.stringify(outbox)) : deleteMeta("gas_outbox"));
       }
     }
 

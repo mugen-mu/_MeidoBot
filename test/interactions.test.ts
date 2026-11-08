@@ -391,6 +391,17 @@ describe("настройки", () => {
     expect((await w.settings()).waterWords).toEqual([]);
   });
 
+  it("газ: слова адреса — окно, подсказка, «выкл», слишком короткие слова", async () => {
+    expect(((await click("mn:s:m")).data.content as string)).toContain("Газ (Днепр): выкл");
+    expect((await click("mn:md:gs:m")).type).toBe(9);
+    expect((await submit("m_gas", { words: " Героїв 35, козака мамая " })).data.content).toContain("газ: вкл");
+    expect((await w.settings()).gasWords).toEqual(["героїв 35", "козака мамая"]);
+    expect((await click("mn:s:m")).data.content).toContain("слежу по словам «героїв 35, козака мамая»");
+    expect((await submit("m_gas", { words: "аб" })).data.content).toContain("от трёх букв");
+    expect((await submit("m_gas", { words: "выкл" })).data.content).toContain("газ: выкл");
+    expect((await w.settings()).gasWords).toEqual([]);
+  });
+
   it("новое значение подхватывается cron: тихие часы из настроек действуют", async () => {
     await click("mn:tg:q:q");
     await w.create("завтра в 2:30 дело");

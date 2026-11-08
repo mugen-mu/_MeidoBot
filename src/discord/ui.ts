@@ -447,6 +447,16 @@ export const waterModal = (s: AppSettings) =>
     }),
   ]);
 
+export const gasModal = (s: AppSettings) =>
+  modal("m_gas", "Газ: слова адреса", [
+    textLabel("1–5 слов через запятую («выкл» — не следить)", "words", {
+      value: s.gasWords.length ? s.gasWords.join(", ") : "",
+      placeholder: "Героїв 35, Козака Мамая",
+      required: false,
+      max: 100,
+    }),
+  ]);
+
 export const awayModal = () =>
   modal("m_away", "Я в отъезде", [textLabel("На сколько дней (0 — вернуться)", "days", { placeholder: "3", max: 3 })]);
 

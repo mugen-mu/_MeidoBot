@@ -23,6 +23,10 @@ export class World {
   /** что вернёт лента водоканала (wp-json); null — сайт не отвечает */
   water: unknown = null;
   waterFetches = 0;
+  /** главная страница газовиков (html) и файл графика (.docx); null — сайт не отвечает */
+  gasHome: string | null = null;
+  gasDocx: Uint8Array | null = null;
+  gasFetches = 0;
 
   /** Репозиторий с новым счётчиком (как новый запуск Worker). */
   repo(limit = 50): Repo {
@@ -59,6 +63,13 @@ export class World {
       if (String(typeof input === "string" ? input : (input as { url?: string; href?: string })?.url ?? (input as { href?: string })?.href).includes("vodokanal")) {
         this.waterFetches++;
         return this.water === null ? new Response("down", { status: 503 }) : Response.json(this.water);
+      }
+      const url = String(typeof input === "string" ? input : (input as { url?: string; href?: string })?.url ?? (input as { href?: string })?.href);
+      if (url.includes("grmu.com.ua")) {
+        this.gasFetches++;
+        const isFile = url.endsWith(".docx");
+        const body = isFile ? this.gasDocx : this.gasHome;
+        return body === null ? new Response("down", { status: 503 }) : new Response(body as BodyInit);
       }
       this.lightFetches++;
       return this.light === null ? new Response("down", { status: 503 }) : Response.json(this.light);
