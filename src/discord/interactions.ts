@@ -5,7 +5,8 @@ import type { OccView, Op } from "../db/types.ts";
 import type { AiBinding } from "../llm.ts";
 import { EMPTY_REPLY, EMPTY_SERIES_REPLY, NOT_RECURRING_REPLY, SECRET_REPLY, createFromText } from "../intake.ts";
 import { tired } from "../flavor.ts";
-import { MoodSession, makeCtx, recordDone, recordedLine, resetOps } from "../personality/director.ts";
+import { MoodSession, makeCtx, reactionLine, recordDone, recordedLine, resetOps } from "../personality/director.ts";
+import type { Situation } from "../personality/phrases.ts";
 import { LIVE_TIMEOUT_INTERACTION_MS } from "../personality/liveLines.ts";
 import { MOODS, type Mood, isMood } from "../personality/moodEngine.ts";
 import { MOOD_CONFIG } from "../personality/config.ts";
@@ -68,6 +69,7 @@ import {
   lightModal,
   listText,
   plainMessage,
+  withLine,
   quietModal,
   reminderButtons,
   snoozeChoiceRow,
@@ -111,6 +113,10 @@ export interface HandlerCtx {
 }
 
 type Reply = Record<string, unknown>;
+
+/** Реплика Хару к короткому ответу бота; без «Настроения» или на серьёзных/«Без стиля» делах — null. */
+const react = (c: { s: AppSettings; mood: MoodSession }, sit: Situation, o: { title: string; critical?: number | boolean; plain?: number | boolean }): Promise<string | null> =>
+  c.s.moodOn ? reactionLine(c.mood, sit, o) : Promise.resolve(null);
 const msg = (body: MessageBody): Reply => ({ type: 4, data: body });
 const eph = (text: string): Reply => msg({ ...plainMessage(text, true) });
 /** Ответ-обновление сообщения: прежняя карточка горничной (embed) убирается, если новый текст её не задаёт. */
@@ -201,6 +207,7 @@ async function createReply(
       now: c.now,
       ai: c.ai,
       aiTimeoutMs: 1500,
+      drafted: (title, critical) => react(c, "draft", { title, critical }),
       recorded: async (title, critical) => {
         const line = c.s.moodOn ? await recordedLine(c.mood, title, critical) : null;
         return line && c.mood.state ? { line, look: { mood: c.mood.state.mood, origin: spriteOrigin(c), sprite: wantSprite(c.mood.rand, c.mood.cinema) } } : null;
@@ -248,7 +255,7 @@ async function onCommand(c: C): Promise<Reply> {
       const item = await c.repo.getItem(Number(opt(c, "id")));
       if (!item || item.archived_at) return eph("Такого дела нет (или оно уже закрыто). Номера — в /list.");
       await c.repo.exec(cancelItemOps(item.id, c.now));
-      return eph(`Отменено: ${item.title}`);
+      return eph(withLine(`Отменено: ${item.title}`, await react(c, "cancelled", item)));
     }
     case "snooze":
       return slashSnooze(c);
@@ -358,7 +365,7 @@ async function slashSnooze(c: C): Promise<Reply> {
     const body = snoozedMessage({ occId: occ.id, title: occ.title, whenText: formatWhen(when.due, c.now, c.s.tz), itemId: occ.item_id });
     c.defer(c.api.editMessage(occ.last_channel_id, occ.last_message_id, body).catch(() => undefined));
   }
-  return eph(`Отложено: ${occ.title} — до ${formatWhen(when.due, c.now, c.s.tz)}`);
+  return eph(withLine(`Отложено: ${occ.title} — до ${formatWhen(when.due, c.now, c.s.tz)}`, await react(c, "snoozed", occ)));
 }
 
 async function onMessageCommand(c: C): Promise<Reply> {
@@ -600,7 +607,7 @@ async function onComponent(c: C): Promise<Reply> {
     case "stop": {
       const item = await c.repo.getItem(Number(a));
       await c.repo.exec(stopSeriesOps(Number(a), c.now));
-      return update(plainMessage(`Остановлено: ${item?.title ?? "таймер"}`));
+      return update(plainMessage(withLine(`Остановлено: ${item?.title ?? "таймер"}`, item ? await react(c, "stopped", item) : null)));
     }
     case "ok": {
       const occ = await asOcc(c, a);
@@ -621,7 +628,8 @@ async function onComponent(c: C): Promise<Reply> {
     case "del": {
       const item = await c.repo.getItem(Number(a));
       await c.repo.exec(cancelItemOps(Number(a), c.now, kind === "del" ? "delete" : "cancel"));
-      return update(plainMessage(`${kind === "del" ? "Удалено" : "Отменено"}: ${item?.title ?? "дело"}`));
+      const sayLine = item ? await react(c, kind === "del" ? "deleted" : "cancelled", item) : null;
+      return update(plainMessage(withLine(`${kind === "del" ? "Удалено" : "Отменено"}: ${item?.title ?? "дело"}`, sayLine)));
     }
     case "when": {
       const occ = await asOcc(c, a);
@@ -657,7 +665,7 @@ async function snoozeTo(c: C, occ: OccView, target: number, resetCount = false):
   const ops: Op[] = [...snoozeOps(occ, target, c.now)];
   if (resetCount) ops.push(updateOcc(occ.id, { snooze_count: 0 }));
   await c.repo.exec(ops);
-  return update(snoozedMessage({ occId: occ.id, title: occ.title, whenText: formatWhen(target, c.now, c.s.tz), itemId: occ.item_id }));
+  return update(snoozedMessage({ occId: occ.id, title: occ.title, whenText: formatWhen(target, c.now, c.s.tz), itemId: occ.item_id, line: await react(c, "snoozed", occ) }));
 }
 
 /** Включить или выключить приём дел в личке: какие записи сделать и каким станет состояние. */
@@ -768,7 +776,7 @@ async function onMenu(c: C, parts: string[], values: string[]): Promise<Reply> {
       const due = quickDue(arg[1] ?? "", c.now, c.s.tz, c.s.defaultTime);
       if (due === null) return eph("Не понял вариант времени.");
       await c.repo.exec(occ.state === "draft" ? rescheduleOps(occ, due, c.now) : snoozeOps(occ, due, c.now));
-      return show(resultMessage(`Отложено: **${occ.title}** — до ${formatWhen(due, c.now, c.s.tz)}`, f, p));
+      return show(resultMessage(withLine(`Отложено: **${occ.title}** — до ${formatWhen(due, c.now, c.s.tz)}`, await react(c, "snoozed", occ)), f, p));
     }
     case "sa": {
       const occ = await asOcc(c, arg[0]);
@@ -788,7 +796,7 @@ async function onMenu(c: C, parts: string[], values: string[]): Promise<Reply> {
       const item = await c.repo.getItem(Number(arg[0]));
       if (!item || item.archived_at) return gonePage(filterOf(arg[1]), pageOf(arg[2]));
       await c.repo.exec(stopSeriesOps(item.id, c.now));
-      return show(resultMessage(`Повтор остановлен: **${item.title}**`, filterOf(arg[1]), pageOf(arg[2])));
+      return show(resultMessage(withLine(`Повтор остановлен: **${item.title}**`, await react(c, "stopped", item)), filterOf(arg[1]), pageOf(arg[2])));
     }
     case "dl": {
       const item = await c.repo.getItem(Number(arg[0]));
@@ -803,7 +811,7 @@ async function onMenu(c: C, parts: string[], values: string[]): Promise<Reply> {
       const p = pageOf(arg[2]);
       if (!item || item.archived_at) return gonePage(f, p);
       await c.repo.exec(cancelItemOps(item.id, c.now, "delete"));
-      return show(resultMessage(`Удалено: **${item.title}**`, f, p));
+      return show(resultMessage(withLine(`Удалено: **${item.title}**`, await react(c, "deleted", item)), f, p));
     }
     case "add":
       return { type: 9, data: addModal(panel ? "pn" : "mn").data };

@@ -382,3 +382,29 @@ export async function summaryLine(
   return m.sayLive("summary_weekly", { facts: `закрыто за неделю: ${a.done ?? 0}, открыто: ${a.open}` });
 }
 
+/** Шанс реплики к коротким ответам бота (этап 2б): «почти везде, но без перебора». Частые действия (откладывание кнопкой) — реже. */
+export const REACTION_CHANCE: Partial<Record<Situation, number>> = {
+  draft: 0.7,
+  cancelled: 0.8,
+  stopped: 0.8,
+  snoozed: 0.5,
+  deleted: 0.7,
+  reply_unknown: 0.8,
+  reply_past: 0.8,
+  reply_closed: 0.6,
+};
+
+/**
+ * Реплика Хару к короткому ответу бота («Отменено», «Отложено», «Удалено», черновик…). null — реплику не ставим:
+ * серьёзная тема, критичное дело, «Без стиля» на деле, шанс не выпал или пула нет. Модель — в рамках потолка, иначе готовая фраза.
+ */
+export async function reactionLine(
+  m: MoodSession,
+  situation: Situation,
+  o: { title?: string; critical?: boolean | number; plain?: boolean | number } = {},
+): Promise<string | null> {
+  if (o.title !== undefined && !canStyle(o.title, o.critical ?? 0, o.plain ?? 0)) return null;
+  await m.load();
+  if (m.rand() >= (REACTION_CHANCE[situation] ?? 0.7)) return null;
+  return m.sayLive(situation, { task: o.title });
+}

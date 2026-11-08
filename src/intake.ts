@@ -20,6 +20,8 @@ export interface CreateCtx {
   /** сколько ждать модель, мс (по умолчанию 2 с) */
   aiTimeoutMs?: number;
   /** реплика горничной к подтверждению: вызывается с названием и «критично»; null — без реплики */
+  /** реплика Хару под черновиком «когда напомнить?» (этап 2б); null — без реплики */
+  drafted?: (title: string, critical: boolean) => Promise<string | null> | string | null;
   recorded?: (title: string, critical: boolean) => Promise<{ line: string; look: Look | null } | null> | { line: string; look: Look | null } | null;
 }
 
@@ -72,7 +74,8 @@ export async function createFromText(
 
   if (parsed.due === null) {
     const note = wasPast ? "Названное время уже прошло." : undefined;
-    return { kind: "created", itemId, occId, draft: true, message: draftMessage({ occId, itemId, title: parsed.title, note }) };
+    const line = (await ctx.drafted?.(parsed.title, parsed.critical)) ?? null;
+    return { kind: "created", itemId, occId, draft: true, message: draftMessage({ occId, itemId, title: parsed.title, note, line }) };
   }
   const rec = (await ctx.recorded?.(parsed.title, parsed.critical)) ?? null;
   return {

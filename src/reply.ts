@@ -4,8 +4,9 @@ import type { Repo } from "./db/repo.ts";
 import { OPEN_STATES, type OccView, type Op } from "./db/types.ts";
 import type { DiscordApi, IncomingMessage, MessageBody } from "./discord/types.ts";
 import { messageTime } from "./intake.ts";
-import { doneMessage, plainMessage, snoozedMessage } from "./discord/ui.ts";
-import { type MoodSession, recordDone } from "./personality/director.ts";
+import { doneMessage, plainMessage, snoozedMessage, withLine } from "./discord/ui.ts";
+import { type MoodSession, reactionLine, recordDone } from "./personality/director.ts";
+import type { Situation } from "./personality/phrases.ts";
 import { cancelItemOps, doneOps, rescheduleOps, snoozeOps } from "./service.ts";
 import type { AppSettings } from "./settings.ts";
 import { formatWhen } from "./time/format.ts";
@@ -47,26 +48,30 @@ export interface ReplyResult {
   text: string;
 }
 
+/**
+ * `doneLine` — реплика Хару: для «готово» она идёт в карточку «Готово», для остального — мелкой строкой под ответом бота
+ * (и под правкой сообщения «Отменено»/«Отложено»).
+ */
 export function applyReply(occ: OccView, action: ReplyAction, s: AppSettings, now: number, doneLine: string | null = null): ReplyResult {
-  if (!OPEN_STATES.includes(occ.state)) return { ops: [], edit: null, text: REPLY_CLOSED };
+  if (!OPEN_STATES.includes(occ.state)) return { ops: [], edit: null, text: withLine(REPLY_CLOSED, doneLine) };
   switch (action.kind) {
     case "done":
       return { ops: doneOps(occ, now), edit: doneMessage(occ.title, s.character, occ.id, doneLine), text: `Готово: **${occ.title}**.` };
     case "cancel":
-      return { ops: cancelItemOps(occ.item_id, now), edit: plainMessage(`Отменено: ${occ.title}`), text: `Отменено: **${occ.title}**.` };
+      return { ops: cancelItemOps(occ.item_id, now), edit: plainMessage(withLine(`Отменено: ${occ.title}`, doneLine)), text: withLine(`Отменено: **${occ.title}**.`, doneLine) };
     case "snooze": {
       const whenText = formatWhen(action.due, now, s.tz);
       const draft = occ.state === "draft";
       return {
         ops: draft ? rescheduleOps(occ, action.due, now) : snoozeOps(occ, action.due, now),
-        edit: draft ? null : snoozedMessage({ occId: occ.id, title: occ.title, whenText, itemId: occ.item_id }),
-        text: `Отложено: **${occ.title}**. Напомню: ${whenText}.`,
+        edit: draft ? null : snoozedMessage({ occId: occ.id, title: occ.title, whenText, itemId: occ.item_id, line: doneLine }),
+        text: withLine(`Отложено: **${occ.title}**. Напомню: ${whenText}.`, doneLine),
       };
     }
     case "past":
-      return { ops: [], edit: null, text: REPLY_PAST };
+      return { ops: [], edit: null, text: withLine(REPLY_PAST, doneLine) };
     default:
-      return { ops: [], edit: null, text: REPLY_UNKNOWN };
+      return { ops: [], edit: null, text: withLine(REPLY_UNKNOWN, doneLine) };
   }
 }
 
@@ -97,6 +102,13 @@ export async function handleReply(
     await d.mood.load();
     if (action.kind === "done") doneLine = await recordDone(d.mood, occ);
     else d.mood.apply({ type: "activity" });
+  }
+  // реплика Хару к остальным ответам (этап 2б): отмена, откладывание, «не поняла», «время прошло», «уже закрыто»
+  if (d.mood && action.kind !== "done") {
+    const sit: Situation = !OPEN_STATES.includes(occ.state)
+      ? "reply_closed"
+      : action.kind === "cancel" ? "cancelled" : action.kind === "snooze" ? "snoozed" : action.kind === "past" ? "reply_past" : "reply_unknown";
+    doneLine = await reactionLine(d.mood, sit, { title: occ.title, critical: occ.critical, plain: occ.plain });
   }
   const res = applyReply(occ, action, d.s, d.now, doneLine);
   if (res.ops.length) await d.repo.exec(res.ops);

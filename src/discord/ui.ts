@@ -91,6 +91,9 @@ ${subtext(a.flavor)}`;
   return body;
 }
 
+/** Текст ответа бота плюс (если есть) мелкая реплика Хару на новой строке. */
+export const withLine = (text: string, line: string | null | undefined): string => (line ? `${text}\n${subtext(line)}` : text);
+
 /** Мелкий серый текст Discord («-# …»): каждая строка отдельно, чтобы манга-звук второй строкой тоже был мелким. */
 export const subtext = (text: string): string =>
   text
@@ -110,9 +113,9 @@ export function doneMessage(title: string, ch: Character = "neutral", seed = 0, 
 /** Обычный текст плюс (для характера «горничная») короткая фраза через пробел. */
 const withTired = (text: string, extra: string | null): string => (extra ? `${text} ${extra}` : text);
 
-export function snoozedMessage(a: { occId: number; title: string; whenText: string; itemId: number }): MessageBody {
+export function snoozedMessage(a: { occId: number; title: string; whenText: string; itemId: number; line?: string | null }): MessageBody {
   return {
-    content: `Отложено: **${a.title}** — до ${a.whenText} · #${a.itemId}`,
+    content: withLine(`Отложено: **${a.title}** — до ${a.whenText} · #${a.itemId}`, a.line),
     allowed_mentions: { parse: [] },
     components: [row(btn("Готово", cid("done", a.occId), 3), btn("Изменить", cid("edit", a.occId)))],
   };
@@ -156,9 +159,10 @@ export function confirmedMessage(a: { title: string; whenText: string; itemId: n
   return { content: `Записано: **${a.title}** — ${a.whenText} · #${a.itemId}`, components: [], allowed_mentions: { parse: [] } };
 }
 
-export function draftMessage(a: { occId: number; itemId: number; title: string; note?: string }): MessageBody {
+export function draftMessage(a: { occId: number; itemId: number; title: string; note?: string; line?: string | null }): MessageBody {
   return {
-    content: `**${a.title}** — когда напомнить?${a.note ? `\n${a.note}` : ""} · #${a.itemId}`,
+    // «#N» остаётся в конце строки с названием/пояснением: по нему находится дело при Reply; реплика — отдельной строкой ниже
+    content: withLine(`**${a.title}** — когда напомнить?${a.note ? `\n${a.note}` : ""} · #${a.itemId}`, a.line),
     allowed_mentions: { parse: [] },
     components: [
       row(

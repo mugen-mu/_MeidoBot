@@ -14,7 +14,7 @@ import {
 } from "./discord/ui.ts";
 import type { AiBinding } from "./llm.ts";
 import { createFromText, EMPTY_REPLY, EMPTY_SERIES_REPLY, messageTime, SECRET_REPLY } from "./intake.ts";
-import { MoodSession, canStyle, makeCtx, recordedLine, summaryLine } from "./personality/director.ts";
+import { MoodSession, canStyle, makeCtx, reactionLine, recordedLine, summaryLine } from "./personality/director.ts";
 import { LIVE_TIMEOUT_CRON_MS } from "./personality/liveLines.ts";
 import { maidEmbed, pickReaction, wantSprite } from "./personality/look.ts";
 import { isPolite, isSeriousTopic } from "./personality/moodEngine.ts";
@@ -311,7 +311,7 @@ export async function runCron(d: CronDeps): Promise<CronReport> {
             const line = await recordedLine(mood, title, critical);
             return line ? { line, look: { mood: mood.state!.mood, origin, sprite: wantSprite(mood.rand) } } : null;
           };
-          const r = await createFromText({ repo, settings: s, now, ai: d.ai, recorded: (title, critical) => recordedFor(title, critical) }, m.content, "channel", { at: messageTime(m, now) });
+          const r = await createFromText({ repo, settings: s, now, ai: d.ai, recorded: (title, critical) => recordedFor(title, critical), drafted: (title, critical) => (mood?.loaded ? reactionLine(mood, "draft", { title, critical }) : null) }, m.content, "channel", { at: messageTime(m, now) });
           report.intake++;
           const reply =
             r.kind === "created"

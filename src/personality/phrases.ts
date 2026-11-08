@@ -44,12 +44,22 @@ export type Situation =
   | "empty_list"
   | "empty_today"
   | "holiday"
-  | "birthday_soon";
+  | "birthday_soon"
+  // этап 2б: короткие ответы бота (черновик, отмена, откладывание, удаление, «не поняла» в Reply)
+  | "draft"
+  | "cancelled"
+  | "stopped"
+  | "snoozed"
+  | "deleted"
+  | "reply_unknown"
+  | "reply_past"
+  | "reply_closed";
 
 export const SITUATIONS: Situation[] = [
   "reminder", "reminder_repeat", "missed_first", "missed", "done", "done_late", "streak_praise", "relief",
   "greeting", "return_after_pause", "idle_ping", "chat_fallback", "thanks", "recorded",
   "summary_morning", "summary_evening", "summary_weekly", "empty_list", "empty_today", "holiday", "birthday_soon",
+  "draft", "cancelled", "stopped", "snoozed", "deleted", "reply_unknown", "reply_past", "reply_closed",
 ];
 
 /** Если у настроения нет фраз для ситуации, берём ближайшую «родственную» из того же настроения. */
@@ -64,6 +74,9 @@ export const FALLBACK_SITUATION: Partial<Record<Situation, Situation>> = {
   summary_weekly: "summary_evening",
   empty_today: "empty_list",
   birthday_soon: "holiday",
+  stopped: "cancelled",
+  reply_past: "reply_unknown",
+  reply_closed: "reply_unknown",
 };
 
 export type Phrases = Record<string, Partial<Record<Situation, string[]>>>;
@@ -71,6 +84,7 @@ export type Phrases = Record<string, Partial<Record<Situation, string[]>>>;
 import { BASE_PHRASES } from "./phrases.base.ts";
 import { EXTRA_PHRASES } from "./phrases.extra.ts";
 import { GENERATED } from "./phrases.generated.ts";
+import { REACTION_PHRASES } from "./phrases.reactions.ts";
 
 const key = (t: string): string => t.toLowerCase().replace(/[^\p{L}]+/gu, " ").trim();
 
@@ -102,7 +116,10 @@ export function mergePools(primary: Phrases, fallback: Phrases, minPrimary = 8):
 
 /** Запасной набор: свои фразы и фразы для сводок/пустого списка/праздников (у них основного пула нет). */
 const FALLBACK_BANK: Phrases = Object.fromEntries(
-  [...new Set([...Object.keys(BASE_PHRASES), ...Object.keys(EXTRA_PHRASES)])].map((m) => [m, { ...BASE_PHRASES[m], ...EXTRA_PHRASES[m] }]),
+  [...new Set([...Object.keys(BASE_PHRASES), ...Object.keys(EXTRA_PHRASES), ...Object.keys(REACTION_PHRASES)])].map((m) => [
+    m,
+    { ...BASE_PHRASES[m], ...EXTRA_PHRASES[m], ...REACTION_PHRASES[m] },
+  ]),
 );
 
 export const PHRASES: Phrases = mergePools(GENERATED, FALLBACK_BANK);
