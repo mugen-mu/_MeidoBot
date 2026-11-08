@@ -1,0 +1,472 @@
+<title>Вопросы по аниме</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Лист решений: шапка со счётчиками, ниже группы вопросов; каждая группа привязана к плану, который ждёт ответов */
+:root {
+  --bg: #f2f5f7; --panel: #ffffff; --ink: #17222c; --muted: #5a6875; --line: #d6dde4;
+  --accent: #1f5f8b; --accent-text: #1f5f8b; --accent-on: #ffffff; --accent-soft: #e2eef6;
+  --ok: #2e7d4f; --ok-soft: #e1f2e7; --defer: #9a6a00; --defer-soft: #f6ecd2;
+  --drop: #b3322a; --drop-soft: #f8e3e1; --deleg: #5b4aa0; --deleg-soft: #ebe7f6;
+  --font: "IBM Plex Sans", "Segoe UI", system-ui, sans-serif; --mono: "IBM Plex Mono", Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #1C1C1C; --panel: #2B2B2B; --ink: #F3F3F3; --muted: #A0A0A0; --line: #3D3D3D;
+  --accent: #14B8A6; --accent-soft: #10403C; --accent-text: #5EEAD4; --accent-on: #04201D;
+  --ok: #6fcf97; --ok-soft: #1d3428; --defer: #e2b552; --defer-soft: #3a3020;
+  --drop: #f08a80; --drop-soft: #3d2220; --deleg: #b4a6ec; --deleg-soft: #2b2745; color-scheme: dark } }
+:root[data-theme="dark"] {
+  --bg: #1C1C1C; --panel: #2B2B2B; --ink: #F3F3F3; --muted: #A0A0A0; --line: #3D3D3D;
+  --accent: #14B8A6; --accent-soft: #10403C; --accent-text: #5EEAD4; --accent-on: #04201D;
+  --ok: #6fcf97; --ok-soft: #1d3428; --defer: #e2b552; --defer-soft: #3a3020;
+  --drop: #f08a80; --drop-soft: #3d2220; --deleg: #b4a6ec; --deleg-soft: #2b2745; color-scheme: dark }
+body { background: var(--bg); color: var(--ink); font: 14px/1.5 var(--font); }
+.wrap { max-width: 880px; margin: 0 auto; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); padding-block: 20px 70px; display: grid; gap: 16px; }
+h1 { font-size: 22px; font-weight: 600; margin: 0; text-wrap: balance; }
+.sub { color: var(--muted); font-size: 13px; }
+.how { display: grid; gap: 4px; background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 10px 12px; font-size: 13px; }
+.how b { font-weight: 600; }
+.sticky { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 5; background: var(--bg); padding-block: 8px; display: grid; gap: 8px; border-bottom: 1px solid var(--line); }
+body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-area-inset-top, 0px); z-index: 10; background: var(--bg); }
+.bar { height: 8px; border-radius: 4px; background: var(--line); overflow: hidden; display: flex; }
+.bar i { display: block; height: 100%; }
+.b-ok { background: var(--ok); } .b-defer { background: var(--defer); } .b-drop { background: var(--drop); } .b-deleg { background: var(--deleg); }
+.nums { display: flex; flex-wrap: wrap; gap: 4px 14px; font-variant-numeric: tabular-nums; font-size: 13px; }
+.nums b { font-weight: 600; }
+.chips { display: flex; gap: 6px; overflow-x: auto; padding-bottom: 2px; }
+.chip { flex: none; font: inherit; font-size: 13px; border: 1px solid var(--line); background: var(--panel); color: var(--ink); border-radius: 999px; padding: 3px 11px; cursor: pointer; font-variant-numeric: tabular-nums; }
+.chip[aria-pressed="true"] { background: var(--accent); border-color: var(--accent); color: var(--accent-on); }
+button:focus-visible, textarea:focus-visible, input:focus-visible, summary:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.tools { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.tools button, .gh button { font: inherit; font-size: 13px; padding: 3px 11px; border-radius: 6px; border: 1px solid var(--line); background: transparent; color: var(--ink); cursor: pointer; }
+.tools button[aria-pressed="true"] { border-color: var(--accent); color: var(--accent-text); font-weight: 600; }
+.banner { border: 1px solid var(--defer); background: var(--defer-soft); border-radius: 8px; padding: 10px 12px; }
+.grp { display: grid; gap: 10px; }
+.gh { display: flex; flex-wrap: wrap; gap: 4px 12px; align-items: baseline; margin-top: 12px; }
+.gh h2 { font-size: 16px; font-weight: 600; margin: 0; }
+.gh .gate { color: var(--muted); font-size: 12.5px; flex: 1 1 260px; min-width: 0; }
+.gh .gcount { font-size: 12.5px; color: var(--muted); font-variant-numeric: tabular-nums; }
+.q { background: var(--panel); border: 1px solid var(--line); border-left: 4px solid var(--line); border-radius: 8px; padding: 12px 14px; display: grid; gap: 8px; min-width: 0; scroll-margin-top: 130px; }
+.q.s-choice, .q.s-note { border-left-color: var(--ok); }
+.q.s-defer { border-left-color: var(--defer); }
+.q.s-drop { border-left-color: var(--drop); }
+.q.s-delegate { border-left-color: var(--deleg); }
+.qh { display: flex; gap: 10px; align-items: baseline; }
+.qh h3 { font-size: 15px; font-weight: 600; margin: 0; text-wrap: balance; min-width: 0; }
+.qid { font-family: var(--mono); font-size: 12.5px; font-weight: 500; color: var(--accent-text); background: var(--accent-soft); border-radius: 4px; padding: 0 6px; flex: none; }
+.ctx { margin: 0; color: var(--muted); font-size: 13px; overflow-wrap: anywhere; }
+.meta { display: flex; flex-wrap: wrap; gap: 6px; }
+.tag { border: 1px solid var(--line); border-radius: 4px; padding: 0 6px; font-size: 11.5px; color: var(--muted); }
+fieldset.opts { border: 0; padding: 0; margin: 0; display: grid; gap: 6px; min-width: 0; }
+fieldset.opts legend { padding: 0; font-size: 12px; color: var(--muted); margin-bottom: 2px; }
+.opt { display: flex; gap: 10px; align-items: flex-start; border: 1px solid var(--line); border-radius: 8px; padding: 8px 10px; cursor: pointer; min-width: 0; }
+.opt:hover { border-color: var(--accent); }
+.opt:has(input:checked) { border-color: var(--accent); background: var(--accent-soft); }
+.opt input { margin: 3px 0 0; flex: none; accent-color: var(--accent); }
+.ob { display: grid; gap: 2px; min-width: 0; }
+.ot { font-weight: 500; overflow-wrap: anywhere; }
+.od { color: var(--muted); font-size: 12.5px; overflow-wrap: anywhere; }
+.recb { margin-left: 8px; font-size: 11px; font-weight: 600; color: var(--ok); background: var(--ok-soft); border-radius: 4px; padding: 0 6px; white-space: nowrap; }
+.acts { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.acts button { font: inherit; font-size: 13px; padding: 4px 12px; border-radius: 6px; border: 1px solid var(--line); background: transparent; color: var(--ink); cursor: pointer; }
+.acts button[data-act="defer"][aria-pressed="true"] { background: var(--defer-soft); border-color: var(--defer); color: var(--defer); font-weight: 600; }
+.acts button[data-act="drop"][aria-pressed="true"] { background: var(--drop-soft); border-color: var(--drop); color: var(--drop); font-weight: 600; }
+.acts button[data-act="delegate"][aria-pressed="true"] { background: var(--deleg-soft); border-color: var(--deleg); color: var(--deleg); font-weight: 600; }
+.acts button[data-act="clear"] { border-color: transparent; color: var(--muted); text-decoration: underline; padding-inline: 4px; }
+.acts .when { color: var(--muted); font-size: 12px; margin-left: auto; font-variant-numeric: tabular-nums; }
+textarea { width: 100%; box-sizing: border-box; font: inherit; font-size: 13px; padding: 6px 8px; border: 1px solid var(--line); border-radius: 6px; background: var(--bg); color: var(--ink); resize: vertical; min-height: 36px; }
+details.more { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 8px 14px; }
+details.more summary { cursor: pointer; font-weight: 600; }
+details.more ul { margin: 8px 0 4px; padding-left: 18px; display: grid; gap: 4px; color: var(--muted); font-size: 13px; }
+.empty { text-align: center; color: var(--muted); padding: 40px 0; }
+#exp { font-family: var(--mono); font-size: 12px; min-height: 160px; }
+#toast { position: fixed; left: 50%; transform: translateX(-50%); bottom: calc(16px + env(safe-area-inset-bottom, 0px)); z-index: 30; background: var(--ink); color: var(--bg); padding: 8px 14px; border-radius: 8px; font-size: 13px; max-width: calc(100% - 32px); }
+@media (prefers-reduced-motion: no-preference) { .q, .opt { transition: border-color .15s, background .15s; } }
+</style>
+
+<div class="wrap">
+  <div style="display:grid;gap:6px">
+    <h1>Вопросы по аниме</h1>
+    <div class="sub"><a href="https://claude.ai/artifact/1Pe5ZnfBQsDQo1BBmVDvoN" target="_blank" rel="noopener">Сначала откройте набросок экрана (макеты М1–М11)</a></div>
+    <div class="sub" id="sub"></div>
+  </div>
+  <div class="how">
+    <div><b>Вариант</b> — выберите один (или несколько, где так сказано). Первым стоит вариант, который рекомендую.</div>
+    <div><b>Отложить</b> — вернёмся позже, ничего не решаем. <b>Не делать</b> — закрываем пункт, пометим отказ. <b>Решай сам</b> — выбираю по рекомендации и коротко сообщаю, что выбрал.</div>
+    <div>Свой вариант или уточнение — в поле комментария. Ответы сохраняются сразу; когда закончите, напишите в чате «ответил».</div>
+  </div>
+  <div class="banner" id="nodb" hidden>Ответы не уходят в базу страницы: войдите в аккаунт или откройте страницу из claude.ai. Пока они хранятся только в этом браузере, а кнопка «Скопировать ответы» отдаст текст.</div>
+
+  <div class="sticky">
+    <div class="bar" id="bar"></div>
+    <div class="nums" id="nums"></div>
+    <div class="chips" id="chips"></div>
+    <div class="tools">
+      <button id="onlyOpen" aria-pressed="false">Только без ответа</button>
+      <button id="copy">Скопировать ответы</button>
+    </div>
+  </div>
+
+  <textarea id="exp" hidden readonly aria-label="Текст ответов"></textarea>
+  <div id="list"></div>
+
+  </div>
+<div id="toast" hidden></div>
+
+<script>
+/* Аниме Meido: вопросы по наброску экрана и разведке источников (2026-11-09). Первым стоит рекомендованный вариант (o(текст, пояснение, 1)). */
+const o = (t, d, rec) => ({ t, d: d || ``, rec: !!rec });
+const SRC = { A: `Экран`, B: `Расписание`, C: `Сообщения`, D: `Занесение`, E: `Порядок` };
+const GROUPS = [
+  { id: `A`, t: `Экран`, gate: `Макеты М1–М4: как выглядят списки и карточка` },
+  { id: `B`, t: `Расписание`, gate: `Откуда время серий и что делать, если источники подводят` },
+  { id: `C`, t: `Сообщения`, gate: `Макеты М5–М9, М11: когда и как пишет Хару` },
+  { id: `D`, t: `Занесение`, gate: `Макет М10: как попадают тайтлы в коллекцию` },
+  { id: `E`, t: `Порядок`, gate: `Что выкладывать первым и что не так в макетах` }
+];
+const Q = [];
+const add = (id, title, ctx, opts, multi) => Q.push({ id, g: id[0], title, ctx, src: SRC[id[0]], multi: !!multi, opts });
+
+/* ---------- A: экран ---------- */
+add(`A1`, `Где кнопка «Аниме» в /menu? (макет М1)`,
+  `Раньше решили: отдельный экран в /menu. Но правило «добавил кнопку — убери кнопку»: на главном экране сейчас Добавить, Сегодня, Висит и Ещё.`, [
+  o(`Четвёртой кнопкой на главном экране`, `Аниме под рукой. Экран остаётся из пяти кнопок, это ещё терпимо.`, 1),
+  o(`Спрятать в «Ещё»`, `Главный экран чистый, но аниме на один клик дальше.`),
+  o(`Отдельная команда /anime`, `Команд на виду станет 8 вместо 7, правило нарушаем.`)]);
+add(`A2`, `Как выглядит строка тайтла в списке «Смотрю»? (макет М2)`,
+  `Сейчас в макете три слоя: название по-русски, серия и «следующая выходит», у некоторых оригинал и озвучка.`, [
+  o(`Название, серия, следующая выходит`, `Как в макете М2. Оригинальное название и озвучка — только в карточке.`, 1),
+  o(`Совсем коротко: название и серия`, `Даже время выхода уходит в карточку. Список самый чистый.`),
+  o(`Полностью: всё, включая озвучку`, `Всё сразу видно, но список вырастет втрое.`)]);
+add(`A3`, `В каком порядке показывать «Смотрю»?`,
+  `Все до 5 тайтлов в сезон, но порядок всё равно нужен.`, [
+  o(`По ближайшему выходу`, `Сверху то, что выйдет раньше всего. Видно, что ждёт дальше.`, 1),
+  o(`По алфавиту`, `Предсказуемо, но нужное может быть внизу.`),
+  o(`По времени добавления`, `Новые снизу. Порядок не прыгает.`)]);
+add(`A4`, `Сколько сердечек в оценке? (макет М3)`,
+  `Раньше решили: оценка — сердечко. Но сколько их — не обсуждали. «Понравилось» и «в восторге» — отдельные отметки, не оценка.`, [
+  o(`От 1 до 3`, `Просто: «ничего», «хорошо», «шедевр». Оценить можно одним нажатием.`, 1),
+  o(`От 1 до 5`, `Привычная шкала, но выбирать дольше.`),
+  o(`От 1 до 10 числом`, `Точно, но это не сердечки, и кнопок в ряд много.`)]);
+add(`A5`, `Как отметить несколько серий сразу (марафон)? (макет М4)`,
+  `Кнопка «Серия +1» хороша для одной серии. А если вечером посмотрели пять подряд?`, [
+  o(`«Серия +1» и «Указать номер…»`, `Вторая кнопка открывает окно: введите номер, на котором остановились.`, 1),
+  o(`Только «Серия +1», нажимать несколько раз`, `Меньше кнопок, но пять нажатий подряд неудобно.`),
+  o(`«+1» и «+3»`, `Две кнопки. Любое другое число всё равно приходится нажимать вручную.`)]);
+add(`A6`, `Тайтл давно лежит в «В планах» (полгода и больше). Что делать?`,
+  `Список планов может разрастись и перестать быть полезным.`, [
+  o(`Хару спросит «между прочим»: ещё хотите?`, `Раз в сезон про один давний тайтл. Ответ «нет» убирает из планов.`, 1),
+  o(`Ничего не делать`, `План — это план, пусть лежит. Список вы чистите сами.`),
+  o(`Убирать автоматически через год`, `Тихо и без вопросов, но можно потерять то, что ещё хотелось.`)]);
+
+/* ---------- B: расписание ---------- */
+add(`B1`, `Какой источник главный для времени серий?`,
+  `Разведка (docs/RECON-ANIME.md): AniList отдаёт точное время каждой серии и быстрый; Shikimori даёт русские названия и свой календарь на неделю; Jikan с моего ПК не ответил.`, [
+  o(`AniList — время, Shikimori — русские названия и вторая проверка`, `Склейка по номеру MyAnimeList, угадывать по названию не нужно. Если AniList упал — берём календарь Shikimori.`, 1),
+  o(`Shikimori — всё, AniList запасной`, `Всё по-русски в одном месте. Но Shikimori недавно сменил адрес (.one на .io): риск, что опять.`),
+  o(`Оба равноправно, брать более раннее время`, `Надёжнее при расхождении, но сложнее объяснить, откуда время.`)]);
+add(`B2`, `Озвучка AniLibria (второй источник): что показывать? (макет М6)`,
+  `Разведка: AniLibria знает день недели выхода озвучки и когда вышла последняя серия, но не точный час будущей серии. Покрывает не всё: 38 тайтлов на неделю из ~90 идущих.`, [
+  o(`Строку «озвучка обычно через ~N часов» в вечерней сводке и в карточке`, `N считаем по прошлым сериям. Для тайтлов без AniLibria строки нет, об этом не пишем.`, 1),
+  o(`Отдельное сообщение, когда озвучка вышла`, `Пришло — значит можно смотреть. Но это ещё одно сообщение на каждую серию.`),
+  o(`Только в карточке`, `Ничего не добавляется в сообщения. Придётся заглядывать.`)]);
+add(`B3`, `Серия выходит в Японии в пятницу 01:00, у нас это четверг 18:00. Какой это день?`,
+  `Выход считается по Японии, а показывается время по Киеву. Но в сводке нужен день: «сегодня выходит».`, [
+  o(`День по Киеву`, `Четверг 18:00 — значит «сегодня» в четверг. Всё по моим часам.`, 1),
+  o(`День по Японии`, `Пятница, как в японских расписаниях, но «сегодня» может обмануть.`)]);
+add(`B4`, `Источники расходятся больше часа. Чьему времени верить до выхода? (макет М11)`,
+  `Предупредить решили. Вопрос — какое время показывать в сводках, пока серия не вышла.`, [
+  o(`Время AniList, плюс пометка «расходятся»`, `Он ближе к вещателю. Пометка одной строкой, не чаще раза на тайтл.`, 1),
+  o(`Более позднее`, `Не придёте на вышедшее, но серия могла выйти раньше. Спокойнее, чуть позже.`),
+  o(`Показывать оба времени`, `Честно, но сводка загромождается.`)]);
+add(`B5`, `У тайтла ещё нет даты выхода серий (анонс или перерыв). Как показывать?`,
+  `В «В планах» такое будет часто: сезон объявлен, а точной даты нет.`, [
+  o(`«Дата не объявлена», проверять раз в сутки`, `Когда появится — одно сообщение: «дата известна, старт такого-то».`, 1),
+  o(`Молчать, пока даты нет`, `В списке тайтл есть, в расписании нет. Сообщение, когда дата появится.`),
+  o(`Тихо показывать «жду объявления»`, `Без сообщений, но строка в списке видна всегда.`)]);
+add(`B6`, `Если расписание не обновилось несколько дней (источники недоступны)?`,
+  `Как с водой и газом: бот не должен врать, но и не должен пугать.`, [
+  o(`Показывать последнее известное с пометкой «данные от …» и один раз написать`, `Одна строка в сводке. Новых напоминаний об этом нет, пока не починится.`, 1),
+  o(`Молчать до починки`, `Меньше шума, но серия может выйти, а вы не узнаете.`),
+  o(`Писать каждое утро, пока не починится`, `Заметно, но надоест.`)]);
+
+/* ---------- C: сообщения ---------- */
+add(`C1`, `Когда приходит «Вчерашнюю серию посмотрели?» (макет М5)`,
+  `Решили: раз в день одним сообщением, только если вчера что-то вышло из «смотрю». Время не решали.`, [
+  o(`Отдельным сообщением сразу после утренней сводки`, `Кнопки «Посмотрел всё», «Только одну…», «Не успел». Не засоряет саму сводку.`, 1),
+  o(`Блоком внутри утренней сводки`, `Одно сообщение вместо двух, но сводка длиннее и с кнопками.`),
+  o(`Вечером вместе с «сегодня выходит»`, `Всё про аниме одним сообщением вечером, но вчерашнее уже успеет забыться.`)]);
+add(`C2`, `Вы несколько дней подряд не отвечаете на вопрос про вчерашнюю серию. Что дальше?`,
+  `Так бывает: смотрите без отметок. Нужно, чтобы бот не превратился в надоеду.`, [
+  o(`После 3 дней спросить один раз, продолжать ли`, `«Записывать, что смотрите? Или поставить на паузу». Ответ «пауза» гасит вопросы.`, 1),
+  o(`Продолжать спрашивать`, `Никогда не сдаётся, но быстро надоедает.`),
+  o(`Тихо считать «посмотрел»`, `Серия +1 сама. Данные могут врать, зато без вопросов.`)]);
+add(`C3`, `«Сегодня выходит» отдельным сообщением или внутри вечерней сводки? (макет М6)`,
+  `Решили: о выходе писать вечером, со списком и репликой Хару.`, [
+  o(`Блок «Аниме» внутри вечерней сводки дел`, `Одно сообщение вечером. Реплика Хару в этом же блоке.`, 1),
+  o(`Отдельное сообщение в то же время`, `Два сообщения вечером. Аниме отделено от дел.`),
+  o(`Отдельное, за час до выхода`, `Серии в разное время — сообщения в разное. Больше шума.`)]);
+add(`C4`, `Серия выходит ночью (с 00:00 до 06:00 по Киеву). Как о ней сообщить? (макет М6)`,
+  `Бот не должен будить. Но и пропустить ночную серию нельзя.`, [
+  o(`Накануне вечером строкой «в ночь на …»`, `Как в макете М6. Ночью бот молчит.`, 1),
+  o(`Утром того дня, как о вышедшей`, `Ночью тихо, утром «вышла в 02:30».`),
+  o(`Ночью, если вне тихих часов`, `Тихие часы остаются, но ночная серия с 02:30 может прийти, если вы их отключили.`)]);
+add(`C5`, `В какой день и время Хару задаёт «между прочим»? (макет М8)`,
+  `Решили: примерно раз в неделю, кнопками. День и час не решали.`, [
+  o(`Воскресенье вечером`, `Спокойный день, итоги недели рядом с воскресной сводкой.`, 1),
+  o(`В будни вечером, в разные дни`, `Неожиданно, как живой собеседник. Но сложнее предсказать.`),
+  o(`Вместе с вечерним «сегодня выходит», когда серия есть`, `Контекстно, но раздувает вечернее сообщение.`)]);
+add(`C6`, `Начало сезона: когда писать отдельным сообщением? (макет М7)`,
+  `Решили: отдельным сообщением, в день старта тайтла из «В планах».`, [
+  o(`Утром в день старта, в время утренней сводки`, `Знаете заранее, успеете подготовиться.`, 1),
+  o(`За час до выхода серии`, `Точнее, но для ночных серий придёт ночью.`),
+  o(`Накануне вечером`, `Заранее, но уведомление про «завтра» легко забыть.`)]);
+add(`C7`, `Вопрос «между прочим» остался без ответа. Что дальше? (макет М8)`,
+  `Вопросы кнопками, их можно просто не нажимать.`, [
+  o(`Снять через сутки и не повторять эту неделю`, `Не давит. На следующей неделе, возможно, другой вопрос.`, 1),
+  o(`Повторить через неделю`, `Если вопрос важен (бросил ли) — повторит, но может надоесть.`),
+  o(`Спросить про другой тайтл`, `Бот не застревает, но тайтл остаётся без ответа.`)]);
+
+/* ---------- D: занесение ---------- */
+add(`D1`, `Какие слова понимает бот при занесении фразой? (макет М10)`,
+  `Решили: заносить фразой в «бот» и интервью. Слова не обсуждали.`, [
+  o(`«смотрю», «хочу / в планах», «посмотрел», «бросил» + название, серия по желанию`, `Например: «бот смотрю фрирен 3», «бот хочу блич», «бот бросил ДжоДжо». Достаточно для всех статусов.`, 1),
+  o(`Только «аниме» + название`, `Бот сам спросит статус кнопками. Проще слова, но кнопок больше.`),
+  o(`Любая фраза со словом «аниме»`, `Свободнее, но чаще путает с обычными напоминаниями.`)]);
+add(`D2`, `У тайтла несколько сезонов (Фрирен 1, 2, 3). Как хранить?`,
+  `AniList и Shikimori хранят каждый сезон отдельной записью.`, [
+  o(`Каждый сезон — отдельный тайтл`, `Как в базах. Оценка у каждого своя, расписание у каждого своё.`, 1),
+  o(`Один тайтл — все сезоны`, `Короткий список, но расписание и серии путаются.`),
+  o(`Бот спрашивает каждый раз`, `Гибко, но лишний вопрос при каждом занесении.`)]);
+add(`D3`, `Вы закончили сезон, а вышел анонс продолжения. Что делать?`,
+  `Решили: завершённый — спросить «понравилось?» и перевести в «просмотрено».`, [
+  o(`Хару спросит: «добавить 2-й сезон в планы?»`, `Если вам понравилось. Одна кнопка «Да».`, 1),
+  o(`Добавлять в планы автоматически`, `Ничего не нажимать, но планы могут захламиться.`),
+  o(`Не делать ничего`, `Продолжение заносите сами фразой.`)]);
+add(`D4`, `В «Смотрю» больше 5 тайтлов. Что делать?`,
+  `Решили: до 5 тайтлов в сезон. Ограничение нужно и для лимитов, и чтобы сводки не раздувались.`, [
+  o(`Можно, но уведомления только по первым 5`, `Остальные — «на паузе»: в списке видны, сообщений по ним нет. Не блокирует.`, 1),
+  o(`Не пускать шестой, пока не освободится место`, `Строго, но раздражает.`),
+  o(`Без ограничения`, `Больше тайтлов — больше сообщений. Риск раздутых сводок.`)]);
+add(`D5`, `Как внести первую коллекцию (человек 20–30 тайтлов)?`,
+  `Сейчас она где-то в голове, заметках или на сайте.`, [
+  o(`Списком одним сообщением в канал`, `«бот аниме: смотрю … / в планах … / просмотрено …». Бот разберёт, неясные — кнопками.`, 1),
+  o(`По одному фразой, как в макете М10`, `Самый простой путь, но много сообщений.`),
+  o(`Загрузить файл (экспорт Shikimori или MyAnimeList)`, `Быстро, если список уже там. Потребует отдельной работы.`)]);
+
+/* ---------- E: порядок ---------- */
+add(`E1`, `Что выкладывать первым, а что отдельной выкладкой? (одна вещь = одна выкладка)`,
+  `Решили: первая версия — списки «смотрю» и «в планах» + утренний дайджест выхода. Макеты шире. Предлагаю две выкладки.`, [
+  o(`1) списки, карточка, занесение, «сегодня выходит», «вчерашняя серия»; 2) «между прочим», озвучка, начало сезона`, `В первой выкладке бот уже полезен, во второй получает характер и тонкости.`, 1),
+  o(`Минимум: списки и вечерний дайджест, остальное по одному`, `Ещё осторожнее: каждая мелочь отдельной выкладкой.`),
+  o(`Всё одной выкладкой`, `Дольше ждать, больше проверять сразу.`)]);
+add(`E2`, `Что в макетах М1–М11 лишнее или не так? (можно несколько)`,
+  `Если нажмёте «Всё нравится», остальное не отмечайте. Подробности — в комментарии.`, [
+  o(`Всё нравится`, ``, 1),
+  o(`Слишком много кнопок в карточке (М4)`, ``),
+  o(`Слишком много сообщений (М5–М8)`, ``),
+  o(`Хару слишком болтлива про аниме`, ``),
+  o(`Список «Смотрю» слишком плотный (М2)`, ``)], true);
+add(`E3`, `Сколько характера Хару в аниме-сообщениях?`,
+  `Решили: реплики Хару — в вечернем и в «между прочим». Вопрос — где её совсем не должно быть.`, [
+  o(`Короткая реплика в вечернем, начале сезона и «между прочим»`, `Списки и карточки без реплик: рабочий экран остаётся чистым.`, 1),
+  o(`Реплика везде, даже в списках`, `Максимум характера, но списки читаются хуже.`),
+  o(`Только в «между прочим»`, `Остальное — сухо и коротко.`)]);
+
+</script>
+
+<script>
+const $ = id => document.getElementById(id);
+const esc = s => String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+const KEYS = "abcdefghij";
+Q.forEach(q => q.opts.forEach((op, i) => { op.k = KEYS[i]; }));
+const byId = new Map(Q.map(q => [q.id, q]));
+const STATUS = { choice: "Выбрано", note: "Комментарий", defer: "Отложено", drop: "Не делать", delegate: "Решай сам" };
+const BTN = ["defer", "drop", "delegate"];
+const S = { ans: {}, db: null, filterG: "all", onlyOpen: false, writing: {}, dirty: {}, timers: {} };
+
+const optLabel = (q, k) => (q.opts.find(x => x.k === k) || {}).t || k;
+const hhmm = iso => { try { return new Date(iso).toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit" }); } catch (e) { return ""; } };
+function toast(msg) { const t = $("toast"); t.textContent = msg; t.hidden = false; clearTimeout(toast.h); toast.h = setTimeout(() => { t.hidden = true; }, 4000); }
+
+function get(id) { return S.ans[id] || (S.ans[id] = { btn: null, choice: [], note: "", bulk: false }); }
+function statusOf(id) {
+  const a = S.ans[id]; if (!a) return null;
+  return a.btn || (a.choice.length ? "choice" : (a.note || "").trim() ? "note" : null);
+}
+
+function cardHtml(q) {
+  const opts = q.opts.map(op =>
+    `<label class="opt"><input type="${q.multi ? "checkbox" : "radio"}" name="o-${q.id}" value="${op.k}"><span class="ob"><span class="ot">${esc(op.t)}${op.rec ? '<span class="recb">Рекомендую</span>' : ""}</span>${op.d ? `<span class="od">${esc(op.d)}</span>` : ""}</span></label>`).join("");
+  return `<article class="q" id="q-${q.id}" data-id="${q.id}">
+    <div class="qh"><span class="qid">${q.id}</span><h3>${esc(q.title)}</h3></div>
+    <p class="ctx">${q.ctx}</p>
+    <div class="meta"><span class="tag">${esc("Meido")}</span><span class="tag">${esc(q.src)}</span></div>
+    <fieldset class="opts"><legend>${q.multi ? "Можно выбрать несколько" : "Выберите один вариант"}</legend>${opts}</fieldset>
+    <div class="acts">
+      <button type="button" data-act="defer" aria-pressed="false">Отложить</button>
+      <button type="button" data-act="drop" aria-pressed="false">Не делать</button>
+      <button type="button" data-act="delegate" aria-pressed="false">Решай сам</button>
+      <button type="button" data-act="clear" hidden>Сбросить выбор</button>
+      <span class="when"></span>
+    </div>
+    <textarea id="n-${q.id}" rows="2" placeholder="Комментарий или свой вариант…" aria-label="Комментарий к ${q.id}"></textarea>
+  </article>`;
+}
+
+function renderList() {
+  $("list").innerHTML = GROUPS.map(g => {
+    const qs = Q.filter(q => q.g === g.id);
+    return `<section class="grp" id="g-${g.id}" data-g="${g.id}">
+      <div class="gh"><h2>${esc(g.t)}</h2><span class="gcount" data-gcount="${g.id}"></span>
+        <span class="gate">${esc(g.gate)}</span>
+        <button type="button" data-bulk="${g.id}">Принять рекомендации в группе</button></div>
+      ${qs.map(cardHtml).join("")}</section>`;
+  }).join("");
+}
+
+function syncCard(id) {
+  const el = document.getElementById("q-" + id); if (!el) return;
+  const a = S.ans[id] || { btn: null, choice: [], note: "" };
+  el.querySelectorAll('input[name^="o-"]').forEach(i => { i.checked = a.choice.includes(i.value); });
+  el.querySelectorAll("[data-act]").forEach(b => { if (b.dataset.act !== "clear") b.setAttribute("aria-pressed", String(b.dataset.act === a.btn)); });
+  const st = statusOf(id);
+  el.className = "q" + (st ? " s-" + st : "");
+  const ta = el.querySelector("textarea");
+  if (document.activeElement !== ta && ta.value !== (a.note || "")) ta.value = a.note || "";
+  el.querySelector('[data-act="clear"]').hidden = !(a.btn || a.choice.length);
+  el.querySelector(".when").textContent = (st && a.at) ? "сохранено в " + hhmm(a.at) : "";
+}
+
+function counts() {
+  const c = { choice: 0, note: 0, defer: 0, drop: 0, delegate: 0, open: 0 };
+  Q.forEach(q => { c[statusOf(q.id) || "open"]++; });
+  return c;
+}
+function renderStats() {
+  const c = counts(), n = Q.length, pct = v => (100 * v / n).toFixed(2) + "%";
+  $("bar").innerHTML = `<i class="b-ok" style="width:${pct(c.choice + c.note)}"></i><i class="b-deleg" style="width:${pct(c.delegate)}"></i><i class="b-defer" style="width:${pct(c.defer)}"></i><i class="b-drop" style="width:${pct(c.drop)}"></i>`;
+  $("nums").innerHTML = `<span>Без ответа <b>${c.open}</b> из ${n}</span><span>Выбрано <b>${c.choice + c.note}</b></span><span>Решай сам <b>${c.delegate}</b></span><span>Отложено <b>${c.defer}</b></span><span>Не делать <b>${c.drop}</b></span>`;
+  GROUPS.forEach(g => {
+    const qs = Q.filter(q => q.g === g.id), done = qs.filter(q => statusOf(q.id)).length;
+    const el = document.querySelector(`[data-gcount="${g.id}"]`); if (el) el.textContent = `${done} из ${qs.length}`;
+  });
+}
+function renderChips() {
+  const all = [{ id: "all", t: "Все", done: Q.filter(q => statusOf(q.id)).length, n: Q.length }]
+    .concat(GROUPS.map(g => { const qs = Q.filter(q => q.g === g.id); return { id: g.id, t: g.t, done: qs.filter(q => statusOf(q.id)).length, n: qs.length }; }));
+  $("chips").innerHTML = all.map(c => `<button type="button" class="chip" data-chip="${c.id}" aria-pressed="${c.id === S.filterG}">${esc(c.t)} ${c.done}/${c.n}</button>`).join("");
+}
+function applyFilter() {
+  Q.forEach(q => {
+    const el = document.getElementById("q-" + q.id); if (!el) return;
+    el.hidden = (S.filterG !== "all" && q.g !== S.filterG) || (S.onlyOpen && !!statusOf(q.id));
+  });
+  GROUPS.forEach(g => {
+    const sec = document.getElementById("g-" + g.id);
+    sec.hidden = !Q.some(q => q.g === g.id && !document.getElementById("q-" + q.id).hidden);
+  });
+}
+function refreshAll() { Q.forEach(q => syncCard(q.id)); renderStats(); renderChips(); }
+function touch(id, delay) { syncCard(id); renderStats(); renderChips(); persist(id, delay); }
+
+/* Сохранение: один документ на вопрос, коллекция answers; запись по одной на документ */
+function persist(id, delay) {
+  clearTimeout(S.timers[id]);
+  S.timers[id] = setTimeout(() => { delete S.timers[id]; flush(id); }, delay || 0);
+}
+async function flush(id) {
+  if (!S.db) { saveLocal(); return; }
+  if (S.writing[id]) { S.dirty[id] = true; return; }
+  S.writing[id] = true;
+  try {
+    do { S.dirty[id] = false; await write(id); } while (S.dirty[id]);
+  } catch (e) { toast("Не сохранилось: " + (e.message || e.code) + ". Повторите действие."); }
+  finally { delete S.writing[id]; syncCard(id); }
+}
+async function write(id) {
+  const q = byId.get(id), a = S.ans[id], st = statusOf(id);
+  const ref = S.db.collection("answers").doc(id);
+  if (!st) { await ref.delete(); return; }
+  a.at = new Date().toISOString();
+  await ref.set({ qid: id, group: q.g, title: q.title, status: st, choice: a.choice, choiceLabels: a.choice.map(k => optLabel(q, k)), note: a.note || "", bulk: !!a.bulk, at: a.at });
+}
+function saveLocal() { try { localStorage.setItem("anime-answers", JSON.stringify(S.ans)); } catch (e) { /* браузер не даёт хранить */ } }
+function loadLocal() { try { const v = JSON.parse(localStorage.getItem("anime-answers") || "null"); if (v) S.ans = v; } catch (e) { /* пусто */ } }
+
+/* События */
+document.addEventListener("change", e => {
+  const i = e.target; if (!i.matches || !i.matches('input[name^="o-"]')) return;
+  const id = i.closest(".q").dataset.id, q = byId.get(id), a = get(id);
+  if (q.multi) { const set = new Set(a.choice); if (i.checked) set.add(i.value); else set.delete(i.value); a.choice = q.opts.map(x => x.k).filter(k => set.has(k)); }
+  else a.choice = [i.value];
+  a.btn = null; a.bulk = false;
+  touch(id);
+});
+document.addEventListener("input", e => {
+  const t = e.target; if (!t.matches || !t.matches(".q textarea")) return;
+  const id = t.closest(".q").dataset.id, a = get(id);
+  a.note = t.value; touch(id, 700);
+});
+document.addEventListener("click", e => {
+  const act = e.target.closest("[data-act]");
+  if (act) {
+    const id = act.closest(".q").dataset.id, a = get(id), v = act.dataset.act;
+    if (v === "clear") { a.btn = null; a.choice = []; a.bulk = false; }
+    else if (a.btn === v) { a.btn = null; }
+    else { a.btn = v; a.choice = []; a.bulk = false; }
+    touch(id); return;
+  }
+  const bulk = e.target.closest("[data-bulk]");
+  if (bulk) {
+    let applied = 0, skipped = 0;
+    Q.filter(q => q.g === bulk.dataset.bulk && !statusOf(q.id)).forEach(q => {
+      const rec = q.opts.filter(x => x.rec).map(x => x.k);
+      if (!rec.length) { skipped++; return; }
+      const a = get(q.id); a.btn = null; a.choice = q.multi ? rec : [rec[0]]; a.bulk = true; applied++; touch(q.id);
+    });
+    toast(applied ? `Принято рекомендаций: ${applied}` + (skipped ? `. Без рекомендации осталось: ${skipped}` : "") : "В группе нечего принимать: всё отвечено или без рекомендации.");
+    return;
+  }
+  const chip = e.target.closest("[data-chip]");
+  if (chip) { S.filterG = chip.dataset.chip; renderChips(); applyFilter(); return; }
+});
+$("onlyOpen").addEventListener("click", e => {
+  S.onlyOpen = !S.onlyOpen; e.currentTarget.setAttribute("aria-pressed", String(S.onlyOpen)); applyFilter();
+});
+function exportText() {
+  const L = [];
+  Q.forEach(q => {
+    const st = statusOf(q.id); if (!st) return; const a = S.ans[q.id];
+    L.push(`### ${q.id} ${q.title}`, `Статус: ${STATUS[st]}${a.bulk ? " (по рекомендации)" : ""}`);
+    if (a.choice.length) L.push("Ответ: " + a.choice.map(k => optLabel(q, k)).join("; "));
+    if ((a.note || "").trim()) L.push("Комментарий: " + a.note.trim());
+    L.push("");
+  });
+  return L.join("\n") || "Ответов пока нет.";
+}
+$("copy").addEventListener("click", async () => {
+  const text = exportText(), box = $("exp");
+  try { await navigator.clipboard.writeText(text); toast("Ответы скопированы"); box.hidden = true; }
+  catch (e) { box.value = text; box.hidden = false; box.focus(); box.select(); toast("Буфер недоступен: текст выделен ниже, скопируйте вручную."); }
+});
+
+$("sub").textContent = "Аниме в Discord-боте Meido, 9 ноября 2026: 27 вопросов по макетам и источникам расписания. Первый вариант в каждом вопросе — рекомендация. Отвечайте кнопками и комментариями, потом напишите в чате «ответил».";
+renderList(); refreshAll(); applyFilter();
+
+(async () => {
+  const db = await (window.claude?.use?.("db") ?? null);
+  if (!db) { $("nodb").hidden = false; loadLocal(); refreshAll(); return; }
+  S.db = db;
+  db.collection("answers").limit(200).onSnapshot(snap => {
+    const seen = new Set();
+    snap.docs.forEach(d => {
+      const v = d.data(); if (!v || !byId.has(v.qid)) return; seen.add(v.qid);
+      if (S.writing[v.qid] || S.timers[v.qid]) return;
+      S.ans[v.qid] = { btn: BTN.includes(v.status) ? v.status : null, choice: v.choice || [], note: v.note || "", bulk: !!v.bulk, at: v.at };
+    });
+    Object.keys(S.ans).forEach(id => { if (!seen.has(id) && !S.writing[id] && !S.timers[id]) delete S.ans[id]; });
+    refreshAll();
+  }, e => toast("Хранилище недоступно: " + (e.message || e.code)));
+})();
+</script>
