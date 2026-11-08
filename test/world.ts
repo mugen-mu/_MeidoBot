@@ -20,6 +20,9 @@ export class World {
   /** что вернёт «Yasno»; null — сервис не отвечает */
   light: unknown = null;
   lightFetches = 0;
+  /** что вернёт лента водоканала (wp-json); null — сайт не отвечает */
+  water: unknown = null;
+  waterFetches = 0;
 
   /** Репозиторий с новым счётчиком (как новый запуск Worker). */
   repo(limit = 50): Repo {
@@ -52,7 +55,11 @@ export class World {
   async run(now: number, env: CronEnv = {}, limit = 50): Promise<CronReport> {
     const repo = this.repo(limit);
     const api = countedApi(this.discord, repo.counter);
-    const fetchFn = (async () => {
+    const fetchFn = (async (input: unknown) => {
+      if (String(typeof input === "string" ? input : (input as { url?: string; href?: string })?.url ?? (input as { href?: string })?.href).includes("vodokanal")) {
+        this.waterFetches++;
+        return this.water === null ? new Response("down", { status: 503 }) : Response.json(this.water);
+      }
       this.lightFetches++;
       return this.light === null ? new Response("down", { status: 503 }) : Response.json(this.light);
     }) as unknown as typeof fetch;

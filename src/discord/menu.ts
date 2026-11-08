@@ -9,6 +9,7 @@ import { MINUTE, fmtHHMM, startOfDay } from "../time/tz.ts";
 import type { OccView } from "../db/types.ts";
 import { styleSummary } from "../personality/styleReport.ts";
 import { parseRecipe } from "../service.ts";
+import { WATER_WORDS_HINT } from "../water.ts";
 import { describeWeekly, selectLabel, textLabel, modal } from "./ui.ts";
 import type { ActionRow, Button, MessageBody, StringSelect } from "./types.ts";
 
@@ -222,12 +223,12 @@ export function settingsHomeMessage(s: AppSettings, now: number): MessageBody {
   const text = [
     "**Настройки**",
     `🌙 Тишина: тихие часы ${onOff(s.quietEnabled)} (${fmtHHMM(s.quietFrom)}–${fmtHHMM(s.quietTo)}), отъезд: ${away}`,
-    `📰 Сводки и свет: утром ${s.morning === null ? "выкл" : fmtHHMM(s.morning)}, вечером ${s.evening === null ? "выкл" : fmtHHMM(s.evening)}; свет: ${s.lightGroup ? `группа ${s.lightGroup}` : "выкл"}`,
+    `📰 Сводки и коммуналка: утром ${s.morning === null ? "выкл" : fmtHHMM(s.morning)}, вечером ${s.evening === null ? "выкл" : fmtHHMM(s.evening)}; свет: ${s.lightGroup ? `группа ${s.lightGroup}` : "выкл"}; вода: ${s.waterWords.length ? "вкл" : "выкл"}`,
     `🔁 Как часто напоминать: ${describeSpec(s.defaultLadder)}`,
     `🎭 Характер: ${CHARACTER_LABELS[s.character]}; настроение ${onOff(s.moodOn)}`,
   ].join("\n");
   return body(text, [
-    row(btn("🌙 Тишина", "mn:s:q"), btn("📰 Сводки и свет", "mn:s:m"), btn("🔁 Как часто напоминать", "mn:s:l"), btn("🎭 Характер", "mn:s:c"), btn("⋯ Ещё", "mn:s:a")),
+    row(btn("🌙 Тишина", "mn:s:q"), btn("📰 Сводки и коммуналка", "mn:s:m"), btn("🔁 Как часто напоминать", "mn:s:l"), btn("🎭 Характер", "mn:s:c"), btn("⋯ Ещё", "mn:s:a")),
     row(btn("🏠 Меню", "mn:home")),
   ]);
 }
@@ -260,10 +261,13 @@ export function sectionMessage(s: AppSettings, sec: Section, now: number, dmOn: 
     case "m":
       return body(
         [
-          "**📰 Сводки и свет**",
+          "**📰 Сводки и коммуналка**",
           `Утренняя сводка: ${s.morning === null ? "выкл" : fmtHHMM(s.morning)}; вечерняя: ${s.evening === null ? "выкл" : fmtHHMM(s.evening)}; итоги недели: ${describeWeekly(s)}.`,
           `Часовой пояс: ${s.tz}.`,
           `График света (Днепр): ${s.lightGroup ? `группа ${s.lightGroup}` : "выкл"}.`,
+          s.waterWords.length
+            ? `Вода (Днепр): слежу по словам «${s.waterWords.join(", ")}». Предупреждаю сразу, накануне вечером и за 2 часа; если отключений нет — молчу.`
+            : `Вода (Днепр): выкл. ${WATER_WORDS_HINT}`,
         ].join("\n"),
         [
           row(
@@ -271,7 +275,7 @@ export function sectionMessage(s: AppSettings, sec: Section, now: number, dmOn: 
             btn(s.evening === null ? "Вечер: включить" : "Вечер: выключить", "mn:tg:se:m", s.evening === null ? 2 : 3),
             btn("Время и пояс…", "mn:md:sm:m"),
           ),
-          row(btn("Свет: группа…", "mn:md:lt:m"), btn("Ссылки для телефона", "mn:pw"), btn("Новый ключ ссылок", "mn:pw:new", 4)),
+          row(btn("Свет: группа…", "mn:md:lt:m"), btn("Вода: слова…", "mn:md:wt:m"), btn("Ссылки для телефона", "mn:pw"), btn("Новый ключ ссылок", "mn:pw:new", 4)),
           back,
         ],
       );

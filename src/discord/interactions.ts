@@ -1,6 +1,7 @@
 // Обработчик взаимодействий Discord: команды, кнопки, меню и окна. Всё, что бот делает по нажатию пользователя.
 // Ответ нужен за 3 секунды: быстрые действия отвечают сразу, долгие (/setup) — «отложенным» ответом и правкой потом.
-import { type Repo, setMeta, setSetting, updateOcc } from "../db/repo.ts";
+import { type Repo, deleteMeta, setMeta, setSetting, updateOcc } from "../db/repo.ts";
+import { parseWaterWords } from "../water.ts";
 import type { OccView, Op } from "../db/types.ts";
 import type { AiBinding } from "../llm.ts";
 import { EMPTY_REPLY, EMPTY_SERIES_REPLY, NOT_RECURRING_REPLY, SECRET_REPLY, createFromText } from "../intake.ts";
@@ -67,6 +68,7 @@ import {
   editModal,
   ladderNumsModal,
   lightModal,
+  waterModal,
   listText,
   plainMessage,
   withLine,
@@ -919,6 +921,8 @@ async function onMenu(c: C, parts: string[], values: string[]): Promise<Reply> {
           return tagged("m_summ", summModal(c.s));
         case "lt":
           return tagged("m_light", lightModal(c.s));
+        case "wt":
+          return tagged("m_water", waterModal(c.s));
         case "ln":
           return tagged("m_ladn", ladderNumsModal());
         default:
@@ -1016,6 +1020,14 @@ async function onModal(c: C): Promise<Reply> {
       const g = normalizeGroup(t);
       if (!g) return eph("Нужна группа вроде 3 или 3.1 (от 1 до 6) или слово «выкл».");
       return settingsUpdate(c, [setSetting("light", g)], sec);
+    }
+    case "m_water": {
+      const t = str(v.get("words")).trim();
+      if (t === "" || /^(выкл|off)$/i.test(t)) return settingsUpdate(c, [setSetting("water", "off"), deleteMeta("water_state"), deleteMeta("water_outbox")], sec);
+      const words = parseWaterWords(t);
+      if (!words.length) return eph("Нужны слова от трёх букв через запятую, например: Чечелівськ, Могилевськ. Или «выкл».");
+      // новые слова — заново читаем ленту (сразу, а не через час) и забываем прежние объявления
+      return settingsUpdate(c, [setSetting("water", words.join(", ")), deleteMeta("water_state"), deleteMeta("water_outbox"), setMeta("water_next", "0")], sec);
     }
     case "m_ladn": {
       const steps = parseCustomSteps(str(v.get("nums")));

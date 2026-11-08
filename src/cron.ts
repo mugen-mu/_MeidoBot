@@ -1,7 +1,7 @@
 // Цикл cron раз в минуту (DESIGN §8). Worker без памяти: всё состояние в базе, любой сбой подхватит следующий запуск.
 // На бесплатном плане за запуск можно сделать 50 подзапросов (D1 и Discord вместе): считаем их и оставляем запас
 // на запись результата и пинг сторожу.
-import { BudgetExceeded, type Repo, event, releaseLocks, rememberMessage, setMeta, setSetting, updateOcc } from "./db/repo.ts";
+import { BudgetExceeded, type Repo, deleteMeta, event, releaseLocks, rememberMessage, setMeta, setSetting, updateOcc } from "./db/repo.ts";
 import type { OccView, Op } from "./db/types.ts";
 import { type DiscordApi, DiscordError } from "./discord/types.ts";
 import {
@@ -14,6 +14,7 @@ import {
 } from "./discord/ui.ts";
 import type { AiBinding } from "./llm.ts";
 import { createFromText, EMPTY_REPLY, EMPTY_SERIES_REPLY, messageTime, SECRET_REPLY } from "./intake.ts";
+import { WATER_CHECK_EVERY, WATER_RETRY_AFTER, dueWater, failWater, fetchWater, parseWaterState, planWater, waterSummaryLines } from "./water.ts";
 import { MoodSession, canStyle, makeCtx, reactionLine, recordedLine, summaryLine } from "./personality/director.ts";
 import { LIVE_TIMEOUT_CRON_MS } from "./personality/liveLines.ts";
 import { maidEmbed, pickReaction, wantSprite } from "./personality/look.ts";
@@ -386,6 +387,9 @@ export async function runCron(d: CronDeps): Promise<CronReport> {
             ops2.push(setMeta("light_tmr", localDate(addDaysWall(now, 1, s.tz), s.tz)));
           }
         }
+        // «Коммуналка»: свет, вода (газ — позже) одним блоком; про воду — только если что-то идёт или скоро будет
+        if (s.waterWords.length) extra = [...extra, ...waterSummaryLines(parseWaterState(meta.get("water_state")), now, s.tz)];
+        if (extra.length) extra = ["🏠 Коммуналка:", ...extra];
         const parts = summaryParts(kind, { items: list, now, tz: s.tz, ownerId: owner as string, extra, character: s.character });
         content = parts.text;
         if (parts.truncated) more = summaryMoreRow(kind);
@@ -451,6 +455,65 @@ export async function runCron(d: CronDeps): Promise<CronReport> {
             if (!(e instanceof BudgetExceeded)) report.notes.push("свет: не удалось отправить график на завтра");
           }
         }
+      }
+    }
+
+    // 2б4. вода: раз в час читаем ленту водоканала; предупреждения по времени (накануне вечером, за 2 часа) — каждую минуту без запросов.
+    // Сообщения сначала кладём в очередь (meta water_outbox) и только потом отправляем: сбой Discord не теряет предупреждение.
+    if (s.waterWords.length && owner && s.chRemind) {
+      let st = parseWaterState(meta.get("water_state"));
+      let outbox: { text: string; mention: boolean }[] = [];
+      try {
+        const v = JSON.parse(meta.get("water_outbox") ?? "[]");
+        if (Array.isArray(v)) outbox = v;
+      } catch {
+        /* повреждено: пусто */
+      }
+      const before = JSON.stringify(st) + JSON.stringify(outbox);
+      let next: string | null = null;
+      if (now >= (Number(meta.get("water_next") ?? 0) || 0) && room2(5)) {
+        repo.counter.spend(1);
+        const posts = await fetchWater(d.fetchFn ?? fetch);
+        if (posts) {
+          const r = planWater(st, posts, s.waterWords, now, s.tz);
+          st = r.state;
+          outbox.push(...r.notices);
+          next = String(now + WATER_CHECK_EVERY);
+        } else {
+          const r = failWater(st);
+          st = r.state;
+          if (r.notice) outbox.push(r.notice);
+          next = String(now + WATER_RETRY_AFTER);
+          report.notes.push("вода: лента водоканала не прочиталась");
+        }
+      }
+      if (!away) {
+        const r = dueWater(st, now, s.tz, s.evening ?? 20 * 60);
+        st = r.state;
+        outbox.push(...r.notices);
+      }
+      // отправка: срочное (с упоминанием) не ждёт тихих часов; при сбое остаток остаётся в очереди до следующей минуты
+      while (outbox.length && room2(2)) {
+        const m = outbox[0];
+        try {
+          await api.postMessage(s.chRemind, {
+            content: m.mention ? `<@${owner}> ${m.text}` : m.text,
+            allowed_mentions: m.mention ? { users: [owner] } : { parse: [] },
+          });
+          outbox.shift();
+          report.notes.push("вода: сообщение отправлено");
+        } catch (e) {
+          if (!(e instanceof BudgetExceeded)) {
+            healthy = false;
+            ops2.push(event(now, "water_send_failed"));
+          }
+          break;
+        }
+      }
+      outbox = outbox.slice(-6);
+      if (next) ops2.push(setMeta("water_next", next));
+      if (JSON.stringify(st) + JSON.stringify(outbox) !== before) {
+        ops2.push(setMeta("water_state", JSON.stringify(st)), outbox.length ? setMeta("water_outbox", JSON.stringify(outbox)) : deleteMeta("water_outbox"));
       }
     }
 

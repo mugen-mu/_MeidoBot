@@ -437,6 +437,16 @@ export const lightModal = (s: AppSettings) =>
     textLabel("Группа (3 или 3.1; «выкл» — не показывать)", "group", { value: s.lightGroup ?? "выкл", max: 10 }),
   ]);
 
+export const waterModal = (s: AppSettings) =>
+  modal("m_water", "Вода: слова места", [
+    textLabel("1–5 слов через запятую («выкл» — не следить)", "words", {
+      value: s.waterWords.length ? s.waterWords.join(", ") : "",
+      placeholder: "Чечелівськ, Могилевськ",
+      required: false,
+      max: 100,
+    }),
+  ]);
+
 export const awayModal = () =>
   modal("m_away", "Я в отъезде", [textLabel("На сколько дней (0 — вернуться)", "days", { placeholder: "3", max: 3 })]);
 

@@ -376,6 +376,21 @@ describe("настройки", () => {
     expect((await w.settings()).lightGroup).toBeNull();
   });
 
+  it("вода: слова места — окно, подсказка, «выкл», слишком короткие слова", async () => {
+    const off = (await click("mn:s:m")).data.content as string;
+    expect(off).toContain("Вода (Днепр): выкл");
+    expect(off).toContain("без окончаний");
+    expect((await click("mn:md:wt:m")).type).toBe(9);
+    const on = await submit("m_water", { words: " Чечелівськ, могилевськ ,Чечелівськ" });
+    expect(on.data.content).toContain("вода: вкл");
+    expect((await click("mn:s:m")).data.content).toContain("слежу по словам «чечелівськ, могилевськ»");
+    expect((await w.settings()).waterWords).toEqual(["чечелівськ", "могилевськ"]);
+    expect((await submit("m_water", { words: "аб" })).data.content).toContain("от трёх букв");
+    expect((await w.settings()).waterWords).toHaveLength(2);
+    expect((await submit("m_water", { words: "выкл" })).data.content).toContain("вода: выкл");
+    expect((await w.settings()).waterWords).toEqual([]);
+  });
+
   it("новое значение подхватывается cron: тихие часы из настроек действуют", async () => {
     await click("mn:tg:q:q");
     await w.create("завтра в 2:30 дело");
