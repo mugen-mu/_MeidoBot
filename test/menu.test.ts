@@ -48,8 +48,20 @@ describe("меню: главный экран и навигация", () => {
     const r = await call({ type: 2, data: { name: "menu", type: 1 } });
     expect(r.type).toBe(4);
     expect(r.data.flags).toBe(64);
-    expect(r.data.content).toContain("открыто **1**");
-    expect(ids(r)).toEqual(expect.arrayContaining(["mn:add", "mn:ls:a:0", "mn:ls:h:0", "mn:wk", "mn:lt", "mn:mo", "mn:st"]));
+    expect(r.data.content).toContain("на сегодня **0**");
+    expect(r.data.content).toContain("висит **0**");
+    // главный экран: добавить, сегодня, висит; ниже — все дела, неделя, «Ещё»
+    expect(ids(r)).toEqual(["mn:add", "mn:ls:t:0", "mn:ls:h:0", "mn:ls:a:0", "mn:wk", "mn:more"]);
+    expect(labels(r)).toEqual(["➕ Добавить дело", "📅 Сегодня 0", "⏳ Висит 0", "📋 Все дела", "🗓 Неделя", "⋯ Ещё"]);
+  });
+
+  it("«Ещё»: свет, настроение, настройки (на экране и из панели)", async () => {
+    const r = await click("mn:more");
+    expect(r.type).toBe(7);
+    expect(ids(r)).toEqual(["mn:lt", "mn:mo", "mn:st", "mn:home"]);
+    const p = await click("pn:more");
+    expect(p.type).toBe(4);
+    expect(ids(p)).toEqual(["pn:lt", "pn:mo", "pn:st", "pn:home"]);
   });
 
   it("кнопка панели открывает тот же экран отдельным сообщением «только вам»", async () => {
@@ -74,7 +86,7 @@ describe("меню: главный экран и навигация", () => {
     const p1 = await click("mn:ls:a:1");
     expect(p1.data.content).toContain("страница 2 из 2");
     expect(ids(p1).filter((x) => x.startsWith("mn:it:"))).toHaveLength(2);
-    expect(labels(p0)).toEqual(expect.arrayContaining(["Все 7", "Горит 0"]));
+    expect(labels(p0)).toEqual(expect.arrayContaining(["Все 7", "Висит 0"]));
     const hot = await click("mn:ls:h:0");
     expect(hot.data.content).toContain("Здесь пусто");
   });
@@ -297,10 +309,10 @@ describe("меню: настройки по разделам", () => {
     const l = await submit("m_light:mn:m", { group: "3" });
     expect(l.data.content).toContain("группа 3");
     const a = await submit("m_away:mn:q", { days: "2" });
-    expect(a.data.content).toContain("Я в отъезде");
+    expect(a.data.content).toContain("отъезд");
     const n = await submit("m_ladn:mn:l", { nums: "0 5 10" });
-    expect(n.data.content).toContain("Настойчивость");
-    // старые окна /settings работают как раньше
+    expect(n.data.content).toContain("Как часто напоминать");
+    // окно без раздела (из /settings) возвращает главный экран настроек
     const old = await submit("m_quiet", { from: "23:00", to: "06:00" });
     expect(old.data.content).toContain("Настройки");
   });

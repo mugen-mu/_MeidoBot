@@ -30,7 +30,7 @@ export interface StyleConfig {
 }
 
 /** Умолчания ТЗ (раздел 2): уровень 2, кириллица, манга-звуки кана, подсказки вкл. */
-export const STYLE_DEFAULT: StyleConfig = { level: 2, script: "cyrillic", sfx: "kana", honorifics: true, kaomoji: "auto", hints: true };
+export const STYLE_DEFAULT: StyleConfig = { level: 2, script: "cyrillic", sfx: "kana", honorifics: true, kaomoji: "auto", hints: false };
 
 /** Настройки стиля из таблицы settings (ключи style_level, style_script, style_sfx, style_honorifics, style_kaomoji, hints_on). */
 export function parseStyle(m: Map<string, string>): StyleConfig {

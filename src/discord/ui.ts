@@ -35,6 +35,18 @@ const clip = (s: string, n: number) => (s.length > n ? `${s.slice(0, n - 1)}…`
 
 // ---------- напоминание ----------
 
+/** Кнопки под напоминанием: три — «Готово», «Отложить», «Изменить» (у повторяющегося «таймера» вместо «Изменить» — «Стоп»). */
+export function reminderButtons(occ: OccView): Button[] {
+  if (occ.kind === "lead") return [btn("Принято", cid("done", occ.id), 3), btn("Отложить", cid("snzm", occ.id))];
+  if (occ.item_kind === "timer") return [btn("Готово", cid("done", occ.id), 3), btn("Отложить", cid("snzm", occ.id)), btn("Стоп", cid("stop", occ.item_id), 4)];
+  return [btn("Готово", cid("done", occ.id), 3), btn("Отложить", cid("snzm", occ.id)), btn("Изменить", cid("edit", occ.id))];
+}
+
+/** Второй шаг «Отложить»: быстрые варианты вместо трёх кнопок; «Назад» возвращает прежние. */
+export function snoozeChoiceRow(occId: number): ActionRow {
+  return row(btn("15 мин", cid("snz", occId, 15)), btn("1 час", cid("snz", occId, 60)), btn("На…", cid("snzat", occId)), btn("◀ Назад", cid("snzb", occId)));
+}
+
 export function reminderMessage(a: {
   occ: OccView;
   plan: FirePlan;
@@ -51,18 +63,16 @@ export function reminderMessage(a: {
   const ref = `#${occ.item_id}`;
   const mention = `<@${ownerId}>`;
   let content: string;
-  const buttons: Button[] = [];
+  const buttons = reminderButtons(occ);
   if (occ.kind === "lead") {
     content = `${mention} Скоро срок: **${occ.title}** — ${formatWhen(due, now, tz)} (через ${occ.lead_days} дн.) · ${ref}`;
-    buttons.push(btn("Принято", cid("done", occ.id), 3), btn("На…", cid("snzat", occ.id)));
   } else if (occ.item_kind === "timer") {
     const r = parseRecipe(occ);
     content = `${mention} **${occ.title}**\nПовтор: ${r ? describeRecipe(r, tz) : "по расписанию"} · ${ref}`;
-    buttons.push(btn("Готово", cid("done", occ.id), 3), btn("Стоп", cid("stop", occ.item_id), 4), btn("На…", cid("snzat", occ.id)));
   } else {
     const lines: string[] = [];
     if (plan.phase === "overdue") {
-      lines.push(`${mention} **${occ.title}** — просрочено`);
+      lines.push(`${mention} **${occ.title}** — висит`);
       lines.push(`Срок был: ${formatWhen(due, now, tz)}. Прошло: ${fmtDuration(plan.lateMinutes)}. · ${ref}`);
     } else {
       lines.push(`${mention} **${occ.title}**`);
@@ -73,13 +83,6 @@ export function reminderMessage(a: {
       lines.push(`Срок: ${formatWhen(due, now, tz)}${extra.length ? ` · ${extra.join(", ")}` : ""} · ${ref}`);
     }
     content = lines.join("\n");
-    buttons.push(
-      btn("Готово", cid("done", occ.id), 3),
-      btn("15 мин", cid("snz", occ.id, 15)),
-      btn("1 час", cid("snz", occ.id, 60)),
-      btn("На…", cid("snzat", occ.id)),
-      btn("Изменить", cid("edit", occ.id)),
-    );
   }
   const body: MessageBody = { content, components: [row(...buttons)], allowed_mentions: { users: [ownerId] } };
   if (a.flavor && a.look) body.embeds = [maidEmbed({ mood: a.look.mood, text: a.flavor, origin: a.look.origin, sprite: a.look.sprite })];
@@ -191,7 +194,7 @@ const STATE_LABEL: Record<string, string> = {
   planned: "запланировано",
   snoozed: "отложено до",
   fired: "ждёт «Готово»",
-  overdue: "просрочено",
+  overdue: "висит",
 };
 
 function itemLine(o: OccView, now: number, tz: string): string {
@@ -222,8 +225,8 @@ const isBurning = (o: OccView) => o.state === "overdue" || o.state === "fired";
 
 export function panelText(items: OccView[], now: number, tz: string, ch: Character = "neutral"): string {
   const hot = items.filter(isBurning);
-  if (hot.length === 0) return withTired("**Горит**\nГорящего нет.", tired(ch, "panelEmpty", 0));
-  return joinLines("**Горит**", hot.map((o) => itemLine(o, now, tz)));
+  if (hot.length === 0) return withTired("**Висит**\nНичего не висит.", tired(ch, "panelEmpty", 0));
+  return joinLines("**Висит**", hot.map((o) => itemLine(o, now, tz)));
 }
 
 export function weekText(items: OccView[], now: number, tz: string, ch: Character = "neutral"): string {
@@ -253,10 +256,15 @@ export function weekText(items: OccView[], now: number, tz: string, ch: Characte
   return joinLines("Ближайшие 7 дней:", lines);
 }
 
-export function summaryText(
-  kind: "morning" | "evening" | "return",
-  a: { items: OccView[]; now: number; tz: string; ownerId: string; extra?: string[]; character?: Character },
-): string {
+/** Сколько строк списка дел показывает сводка (остальное — по кнопке «Показать всё»). */
+export const SUMMARY_MAX_LINES = 10;
+
+export const summaryText = (kind: "morning" | "evening" | "return", a: SummaryArgs): string => summaryParts(kind, a).text;
+
+type SummaryArgs = { items: OccView[]; now: number; tz: string; ownerId: string; extra?: string[]; character?: Character; /** без обрезки до 10 строк */ full?: boolean };
+
+/** Сводка: текст и признак «список обрезан» (тогда под сообщением нужна кнопка «Показать всё»). */
+export function summaryParts(kind: "morning" | "evening" | "return", a: SummaryArgs): { text: string; truncated: boolean } {
   const ch = a.character ?? "neutral";
   const day = Math.floor(a.now / (24 * 60 * MINUTE));
   const { items, now, tz } = a;
@@ -275,15 +283,22 @@ export function summaryText(
   if (kind === "morning") {
     const t = dueIn(today, tomorrow);
     lines.push(t.length ? "**Сегодня:**" : "На сегодня дел со сроком нет.", ...t.map((o) => `• ${time(o)} ${clip(o.title, 80)} (#${o.item_id})`));
-    if (hot.length) lines.push("**Просрочено и не закрыто:**", ...hot.map((o) => itemLine(o, now, tz)));
+    if (hot.length) lines.push("**Висит:**", ...hot.map((o) => itemLine(o, now, tz)));
   } else if (kind === "evening") {
     lines.push(hot.length ? "**Не закрыто — закройте или перенесите на конкретное время:**" : "Незакрытого нет.", ...hot.map((o) => itemLine(o, now, tz)));
     const t = dueIn(tomorrow, dayAfter);
     if (t.length) lines.push("**Завтра:**", ...t.map((o) => `• ${time(o)} ${clip(o.title, 80)} (#${o.item_id})`));
   } else {
-    lines.push(...(hot.length ? hot.map((o) => itemLine(o, now, tz)) : ["Просроченного нет."]));
+    lines.push(...(hot.length ? hot.map((o) => itemLine(o, now, tz)) : ["Ничего не висит."]));
     const t = dueIn(today, dayAfter);
     if (t.length) lines.push("**Скоро:**", ...t.map((o) => `• ${formatWhen(at(o) as number, now, tz)} ${clip(o.title, 80)} (#${o.item_id})`));
+  }
+  let truncated = false;
+  if (!a.full && lines.length > SUMMARY_MAX_LINES) {
+    const rest = lines.length - SUMMARY_MAX_LINES;
+    lines.length = SUMMARY_MAX_LINES;
+    lines.push(`… и ещё ${rest}`);
+    truncated = true;
   }
   if (drafts) lines.push(`Без срока: ${drafts}. Список — /list.`);
   if (a.extra?.length) lines.push(...a.extra);
@@ -292,8 +307,11 @@ export function summaryText(
     const sign = tired(ch, "eveningSign", day);
     if (sign) lines.push(sign);
   }
-  return joinLines(`<@${a.ownerId}> ${head}`, lines);
+  return { text: joinLines(`<@${a.ownerId}> ${head}`, lines), truncated };
 }
+
+/** Кнопка под обрезанной сводкой: полный список приходит отдельным сообщением «только вам». */
+export const summaryMoreRow = (kind: "morning" | "evening" | "return"): ActionRow => row(btn("Показать всё", cid("sumall", kind)));
 
 export function weeklyText(a: { doneCount: number; items: OccView[]; now: number; tz: string; ownerId: string; character?: Character }): string {
   const hot = a.items.filter(isBurning);
@@ -314,50 +332,6 @@ const WD_NAME = ["", "понедельник", "вторник", "среда", "
 
 export function describeWeekly(s: AppSettings): string {
   return s.weekly ? `${WD_NAME[s.weekly.dow]} ${fmtHHMM(s.weekly.at)}` : "выкл";
-}
-
-export function settingsMessage(s: AppSettings, now: number, dmOn: boolean): MessageBody {
-  const away = s.awayUntil > now ? `до ${formatWhen(s.awayUntil, now, s.tz)}` : "нет";
-  const lines = [
-    "**Настройки Meido**",
-    `Часовой пояс: ${s.tz}`,
-    `Настойчивость по умолчанию: ${describeSpec(s.defaultLadder)}`,
-    `Тихие часы: ${s.quietEnabled ? "вкл" : "выкл"} (${fmtHHMM(s.quietFrom)}–${fmtHHMM(s.quietTo)})`,
-    `Я в отъезде: ${away}`,
-    `Сводки: утром ${s.morning === null ? "выкл" : fmtHHMM(s.morning)}, вечером ${s.evening === null ? "выкл" : fmtHHMM(s.evening)}; итоги недели: ${describeWeekly(s)}`,
-    `Приём обычного текста: канал «бот»${s.chBot ? "" : " (не создан: /setup)"}; личка: ${dmOn ? "вкл" : "выкл"}`,
-    `График света (Днепр): ${s.lightGroup ? `группа ${s.lightGroup}` : "выкл"}`,
-    `Характер: ${CHARACTER_LABELS[s.character]}`,
-    `Настроение горничной: ${s.moodOn ? "вкл (меняется от того, как вы выполняете дела; /mood)" : "выкл"}`,
-    `Стиль речи: ${styleSummary(s.style)}`,
-    `Понимание фраз моделью: ${s.llmOn ? "вкл (если бот не понял время, спросит языковую модель; запись нужно проверить)" : "выкл"}`,
-  ];
-  const preset = "preset" in s.defaultLadder ? s.defaultLadder.preset : "";
-  return {
-    content: lines.join("\n"),
-    flags: 64,
-    allowed_mentions: { parse: [] },
-    components: [
-      row({
-        type: 3,
-        custom_id: "s_lad",
-        placeholder: "Настойчивость по умолчанию",
-        options: (["soft", "standard", "strong"] as const).map((k) => ({
-          label: PRESET_LABELS[k][0].toUpperCase() + PRESET_LABELS[k].slice(1),
-          value: k,
-          default: k === preset,
-        })),
-      }),
-      row(
-        btn(s.quietEnabled ? "Тихие часы: выключить" : "Тихие часы: включить", "s_q"),
-        btn("Время тишины…", "s_qt"),
-        btn("Я в отъезде…", "s_away"),
-      ),
-      row(btn("Сводки и пояс…", "s_summ"), btn("Свои числа лестницы…", "s_ladn"), btn(dmOn ? "Личка: выключить" : "Личка: включить", "s_dm")),
-      row(btn("Свет: группа…", "s_light"), btn(s.character === "maid" ? "Характер: нейтральный" : "Характер: уставшая горничная", "s_char"), btn(s.moodOn ? "Настроение: выключить" : "Настроение: включить", "s_mood")),
-      row(btn(s.llmOn ? "Понимание моделью: выключить" : "Понимание моделью: включить", "s_llm")),
-    ],
-  };
 }
 
 export function specKey(spec: LadderSpec): string {

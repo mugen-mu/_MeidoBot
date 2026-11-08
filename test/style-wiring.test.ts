@@ -34,7 +34,7 @@ async function call(i: Partial<Interaction>, now = NOW): Promise<any> {
   await Promise.all(pending.splice(0));
   return r;
 }
-const click = (custom_id: string, now = NOW) => call({ type: 3, data: { custom_id }, message: { id: "m1" } }, now);
+const click = (custom_id: string, now = NOW, values?: string[]) => call({ type: 3, data: { custom_id, ...(values ? { values } : {}) }, message: { id: "m1" } }, now);
 const cmd = (name: string, options: { name: string; value: string | number | boolean }[] = [], now = NOW) =>
   call({ type: 2, data: { name, type: 1, options } }, now);
 const row = () => w.d1.q<Record<string, any>>("SELECT * FROM mood_state WHERE user_id = ?", OWNER)[0];
@@ -46,11 +46,8 @@ beforeEach(async () => {
 });
 
 describe("команды стиля", () => {
-  it("зарегистрированы /style, /hints, /glossary с нужными параметрами", () => {
-    const style = COMMANDS.find((c) => c.name === "style") as { options: { name: string }[] };
-    expect(style.options.map((o) => o.name)).toEqual(["level", "script", "sfx", "honorifics", "kaomoji"]);
-    expect(COMMANDS.find((c) => c.name === "hints")).toBeTruthy();
-    expect(COMMANDS.find((c) => c.name === "glossary")).toBeTruthy();
+  it("/style, /hints, /glossary убраны из подсказки Discord (всё это — в ⚙ Настройки → Характер)", () => {
+    for (const n of ["style", "hints", "glossary"]) expect(COMMANDS.find((c) => c.name === n)).toBeUndefined();
     expect(COMMANDS.length).toBeLessThanOrEqual(100);
   });
 
@@ -73,8 +70,8 @@ describe("команды стиля", () => {
     expect(r.data.content).toContain("Изменено: уровень 3, письмо, манга-звуки");
     expect(r.data.content).toContain("Уровень: 3 — полный отаку");
     const s = (await w.settings()).style;
-    expect(s).toMatchObject({ level: 3, script: "latin", sfx: "off", hints: true });
-    expect((await cmd("settings")).data.content).toContain("Стиль речи: уровень 3, письмо: латиница");
+    expect(s).toMatchObject({ level: 3, script: "latin", sfx: "off", hints: false });
+    expect((await click("mn:s:c")).data.content).toContain("Стиль речи: уровень 3, письмо: латиница");
   });
 
   it("/style honorifics:false kaomoji:on", async () => {
@@ -83,11 +80,29 @@ describe("команды стиля", () => {
   });
 
   it("/hints: показать, выключить, включить", async () => {
-    expect((await cmd("hints")).data.content).toContain("включены");
-    expect((await cmd("hints", [{ name: "mode", value: "off" }])).data.content).toContain("выключены");
+    expect((await cmd("hints")).data.content).toContain("выключены"); // по умолчанию подсказки скрыты
     expect((await w.settings()).style.hints).toBe(false);
     await cmd("hints", [{ name: "mode", value: "on" }]);
     expect((await w.settings()).style.hints).toBe(true);
+    expect((await cmd("hints", [{ name: "mode", value: "off" }])).data.content).toContain("выключены");
+    expect((await w.settings()).style.hints).toBe(false);
+  });
+
+  it("подсказки перевода включаются кнопкой в Настройки → Характер → Стиль речи", async () => {
+    const s = await click("mn:s:s");
+    expect(s.data.content).toContain("подсказки перевода: выкл");
+    const on = await click("mn:tg:hi:s");
+    expect(on.data.content).toContain("подсказки перевода: вкл");
+    expect((await w.settings()).style.hints).toBe(true);
+  });
+
+  it("уровень и письмо — выпадающими списками, манга-звуки и каомодзи — кнопками по кругу", async () => {
+    await click("mn:sv", NOW, ["3"]);
+    await click("mn:sw", NOW, ["latin"]);
+    await click("mn:tg:sx:s");
+    await click("mn:tg:km:s");
+    await click("mn:tg:ho:s");
+    expect((await w.settings()).style).toMatchObject({ level: 3, script: "latin", sfx: "cyrillic", kaomoji: "on", honorifics: false });
   });
 
   it("/glossary пуст, пока слов не было", async () => {
@@ -99,7 +114,7 @@ describe("команды стиля", () => {
 
 describe("слой в работе: cron и словарь", () => {
   beforeEach(async () => {
-    await click("s_mood");
+    await click("mn:tg:mo:c");
   });
 
   it("напоминание со стилем: слова копятся в базе, /glossary их показывает, суть по-русски", async () => {

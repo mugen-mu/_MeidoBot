@@ -121,7 +121,7 @@ describe("аниме-слой: подсказки перевода", () => {
     let state = emptyStyleState();
     const outs: string[] = [];
     for (let i = 0; i < 4; i++) {
-      const r = render({ template: "{yare_yare} Пора за делом.", state, rand: seq(0.99) });
+      const r = render({ template: "{yare_yare} Пора за делом.", state, rand: seq(0.99), style: { ...STYLE_DEFAULT, hints: true } });
       outs.push(r.text);
       state = r.state;
     }

@@ -24,7 +24,7 @@ describe("cron: лестница настойчивости", () => {
     expect(msgs[0].body.content).toContain("Позвонить маме");
     expect(msgs[0].body.allowed_mentions).toEqual({ users: [OWNER] });
     const ids = msgs[0].body.components![0].components.map((c) => c.custom_id);
-    expect(ids).toEqual([`done:${occId}`, `snz:${occId}:15`, `snz:${occId}:60`, `snzat:${occId}`, `edit:${occId}`]);
+    expect(ids).toEqual([`done:${occId}`, `snzm:${occId}`, `edit:${occId}`]);
     const o = w.occ(occId);
     expect([o.state, o.fire_count, o.next_fire_at, o.lock_token]).toEqual(["fired", 1, min(15), null]);
   });
@@ -46,7 +46,7 @@ describe("cron: лестница настойчивости", () => {
 
     await w.run(min(due + 120));
     const last = w.discord.live(CH_REMIND)[0];
-    expect(last.body.content).toContain("просрочено");
+    expect(last.body.content).toContain("висит");
     expect(w.occ(occId).state).toBe("overdue");
     // ещё два «просрочено» раз в 2 часа, потом тишина до сводок
     await w.run(min(due + 240));
@@ -86,7 +86,7 @@ describe("cron: лестница настойчивости", () => {
     const { occId } = await w.create("через 5 минут важное дело");
     const rep = await w.run(min(5 + 5 * 60)); // бот не работал 5 часов
     expect(rep.sent).toBe(1);
-    expect(w.discord.posted[0].body.content).toContain("просрочено");
+    expect(w.discord.posted[0].body.content).toContain("висит");
     expect(w.discord.posted[0].body.content).toContain("Прошло: 5 ч");
     expect(w.occ(occId).state).toBe("overdue");
     expect(w.occ(occId).next_fire_at).toBe(min(5 + 360));
@@ -129,7 +129,7 @@ describe("cron: повторяющиеся дела и таймеры", () => {
     expect(w.discord.live(CH_REMIND)).toHaveLength(1);
     const ids = w.discord.live(CH_REMIND)[0].body.components![0].components.map((c) => c.custom_id);
     expect(ids[0]).toMatch(/^done:/);
-    expect(ids[1]).toBe(`stop:${itemId}`);
+    expect(ids[2]).toBe(`stop:${itemId}`);
     const states = w.d1.q<{ state: string }>("SELECT state FROM occurrences WHERE item_id = ? ORDER BY due_at", itemId).map((r) => r.state);
     expect(states.slice(0, 2)).toEqual(["done", "fired"]);
     // до 13:00 (через 60 минут) — последний; после границы ряд кончается
@@ -312,7 +312,7 @@ describe("cron: сводки, панель, сторож", () => {
     await w.create("через 5 минут позвонить");
     await w.run(t0);
     expect(w.discord.live(CH_TODAY)).toHaveLength(1);
-    expect(w.discord.live(CH_TODAY)[0].body.content).toContain("Горящего нет");
+    expect(w.discord.live(CH_TODAY)[0].body.content).toContain("Ничего не висит");
     await w.run(t0 + 5 * MINUTE); // дело сработало -> в панели
     expect(w.discord.live(CH_TODAY)).toHaveLength(1); // то же сообщение
     expect(w.discord.edits).toHaveLength(1);

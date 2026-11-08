@@ -170,10 +170,10 @@ describe("настройка в /settings", () => {
       return r as any;
     };
     expect((await w.settings()).llmOn).toBe(false);
-    const r = await call({ data: { custom_id: "s_llm" } });
+    const r = await call({ data: { custom_id: "mn:tg:llm:a" } });
     expect((await w.settings()).llmOn).toBe(true);
     expect(JSON.stringify(r)).toContain("Понимание фраз моделью: вкл");
-    await call({ data: { custom_id: "s_llm" } });
+    await call({ data: { custom_id: "mn:tg:llm:a" } });
     expect((await w.settings()).llmOn).toBe(false);
   });
 });

@@ -8,7 +8,8 @@ import {
   type Look,
   panelText,
   reminderMessage,
-  summaryText,
+  summaryMoreRow,
+  summaryParts,
   weeklyText,
 } from "./discord/ui.ts";
 import type { AiBinding } from "./llm.ts";
@@ -357,6 +358,7 @@ export async function runCron(d: CronDeps): Promise<CronReport> {
       if (!room2(3)) break;
       const list = await getItems();
       let content: string;
+      let more: ReturnType<typeof summaryMoreRow> | undefined;
       if (kind === "weekly") {
         const row = await repo.first<{ n: number }>(
           "SELECT COUNT(*) AS n FROM occurrences WHERE state = 'done' AND closed_reason = 'done' AND closed_at >= ?",
@@ -377,10 +379,12 @@ export async function runCron(d: CronDeps): Promise<CronReport> {
             ops2.push(setMeta("light_tmr", localDate(addDaysWall(now, 1, s.tz), s.tz)));
           }
         }
-        content = summaryText(kind, { items: list, now, tz: s.tz, ownerId: owner as string, extra, character: s.character });
+        const parts = summaryParts(kind, { items: list, now, tz: s.tz, ownerId: owner as string, extra, character: s.character });
+        content = parts.text;
+        if (parts.truncated) more = summaryMoreRow(kind);
       }
       try {
-        await api.postMessage(s.chRemind as string, { content, allowed_mentions: { users: [owner as string] } });
+        await api.postMessage(s.chRemind as string, { content, allowed_mentions: { users: [owner as string] }, ...(more ? { components: [more] } : {}) });
         report.summaries.push(kind);
         if (kind !== "return") ops2.push(setMeta(`last_${kind}`, today));
         if (kind === "morning") ops2.push(...scrubOps(now));

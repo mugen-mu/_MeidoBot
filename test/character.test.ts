@@ -1,7 +1,8 @@
 import { beforeEach, describe, expect, it } from "vitest";
 import { type Character, parseCharacter, tired } from "../src/flavor.ts";
 import { type Interaction, handleInteraction } from "../src/discord/interactions.ts";
-import { doneMessage, listText, panelText, settingsMessage, summaryText, weekText, weeklyText } from "../src/discord/ui.ts";
+import { doneMessage, listText, panelText, summaryText, weekText, weeklyText } from "../src/discord/ui.ts";
+import { sectionMessage } from "../src/discord/menu.ts";
 import { readSettings } from "../src/settings.ts";
 import { kyiv, NOW } from "./helpers.ts";
 import { OWNER, World } from "./world.ts";
@@ -37,7 +38,7 @@ describe("характер: тексты", () => {
   it("нейтральные тексты не изменились (без параметра и с «neutral»)", () => {
     expect(listText([], NOW, TZ)).toBe("Открытых дел нет.");
     expect(listText([], NOW, TZ, "neutral")).toBe("Открытых дел нет.");
-    expect(panelText([], NOW, TZ)).toBe("**Горит**\nГорящего нет.");
+    expect(panelText([], NOW, TZ)).toBe("**Висит**\nНичего не висит.");
     expect(weekText([], NOW, TZ)).toBe("На ближайшие 7 дней дел нет.");
     expect(doneMessage("купить хлеб").content).toBe("Готово: купить хлеб");
   });
@@ -45,7 +46,7 @@ describe("характер: тексты", () => {
   it("горничная: пустые списки и «Готово» с усталой ноткой, суть сообщения сохранена", () => {
     expect(listText([], NOW, TZ, MAID)).toContain("Открытых дел нет");
     expect(listText([], NOW, TZ, MAID)).not.toBe("Открытых дел нет.");
-    expect(panelText([], NOW, TZ, MAID)).toContain("Горящего нет");
+    expect(panelText([], NOW, TZ, MAID)).toContain("Ничего не висит");
     expect(weekText([], NOW, TZ, MAID)).toContain("дел нет");
     const d = doneMessage("купить хлеб", MAID, 2).content ?? "";
     expect(d.startsWith("Готово: купить хлеб")).toBe(true);
@@ -67,12 +68,12 @@ describe("характер: тексты", () => {
 
   it("окно настроек показывает характер и кнопку переключения", () => {
     const s = readSettings([{ key: "character", value: "neutral" }]);
-    const neutral = settingsMessage(s, NOW, false);
+    const neutral = sectionMessage(s, "c", NOW, false);
     expect(neutral.content).toContain("Характер: нейтральный");
-    const maid = settingsMessage({ ...s, character: MAID }, NOW, false);
+    const maid = sectionMessage({ ...s, character: MAID }, "c", NOW, false);
     expect(maid.content).toContain("Характер: уставшая горничная");
     const ids = (m: typeof neutral) => (m.components ?? []).flatMap((r: any) => r.components.map((c: any) => c.custom_id));
-    expect(ids(neutral)).toContain("s_char");
+    expect(ids(neutral)).toContain("mn:tg:ch:c");
   });
 
 });
@@ -101,15 +102,15 @@ describe("характер: переключатель и действие в б
 
   it("по умолчанию нейтральный; кнопка переключает туда и обратно и сохраняет в базе", async () => {
     expect((await cmd("settings")).data.content).toContain("Характер: нейтральный");
-    expect((await click("s_char")).data.content).toContain("Характер: уставшая горничная");
+    expect((await click("mn:tg:ch:c")).data.content).toContain("Характер: уставшая горничная");
     expect((await w.settings()).character).toBe("maid");
-    expect((await click("s_char")).data.content).toContain("Характер: нейтральный");
+    expect((await click("mn:tg:ch:c")).data.content).toContain("Характер: нейтральный");
     expect((await w.settings()).character).toBe("neutral");
   });
 
   it("с характером «горничная» команды отвечают в новом тоне, с нейтральным — как раньше", async () => {
     expect((await cmd("list")).data.content).toBe("Открытых дел нет.");
-    await click("s_char");
+    await click("mn:tg:ch:c");
     const r = await cmd("list");
     expect(r.data.content).toContain("Открытых дел нет");
     expect(r.data.content).not.toBe("Открытых дел нет.");
@@ -117,7 +118,7 @@ describe("характер: переключатель и действие в б
 
   it("кнопка «Готово» отвечает «Готово: …» и с характером", async () => {
     const created = await w.create("завтра в 10 купить хлеб");
-    await click("s_char");
+    await click("mn:tg:ch:c");
     const r = await click(`done:${created.occId}`);
     expect(String(r.data.content).startsWith("Готово: Купить хлеб")).toBe(true);
   });

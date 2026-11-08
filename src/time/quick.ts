@@ -1,5 +1,5 @@
 // Быстрые варианты времени для кнопок и окна «На…».
-import { HOUR, addDaysWall, wallOf, wallToUtc } from "./tz.ts";
+import { HOUR, MINUTE, addDaysWall, wallOf, wallToUtc } from "./tz.ts";
 
 export interface QuickOption {
   key: string;
@@ -7,6 +7,7 @@ export interface QuickOption {
 }
 
 export const QUICK_OPTIONS: QuickOption[] = [
+  { key: "m15", label: "Через 15 минут" },
   { key: "h1", label: "Через час" },
   { key: "h3", label: "Через 3 часа" },
   { key: "eve", label: "Сегодня вечером, 19:00" },
@@ -22,6 +23,8 @@ export function quickDue(key: string, now: number, tz: string, morning = 9 * 60)
     return wallToUtc({ y: w.y, mo: w.mo, d: w.d, h: Math.floor(minutes / 60), mi: minutes % 60 }, tz);
   };
   switch (key) {
+    case "m15":
+      return now + 15 * MINUTE;
     case "h1":
       return now + HOUR;
     case "h3":

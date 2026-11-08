@@ -60,19 +60,33 @@ export function homeStats(items: OccView[], now: number, tz: string): HomeStats 
   };
 }
 
-function homeButtons(prefix: "mn" | "pn"): ActionRow[] {
+/** Главный экран: три крупные кнопки (добавить, сегодня, висит) и «Все дела / Неделя / Ещё». Счётчики — только у экрана в сообщении (панель их не знает). */
+function homeButtons(prefix: "mn" | "pn", st?: HomeStats): ActionRow[] {
+  const cnt = (n: number | undefined) => (n === undefined ? "" : ` ${n}`);
   return [
-    row(btn("➕ Добавить", `${prefix}:add`, 3), btn("📋 Дела", `${prefix}:ls:a:0`, 1), btn("🔥 Горит", `${prefix}:ls:h:0`), btn("🗓 Неделя", `${prefix}:wk`)),
-    row(btn("💡 Свет", `${prefix}:lt`), btn("🎭 Настроение", `${prefix}:mo`), btn("⚙ Настройки", `${prefix}:st`)),
+    row(btn("➕ Добавить дело", `${prefix}:add`, 3), btn(`📅 Сегодня${cnt(st?.today)}`, `${prefix}:ls:t:0`, 1), btn(`⏳ Висит${cnt(st?.hot)}`, `${prefix}:ls:h:0`, st && st.hot > 0 ? 4 : 2)),
+    row(btn("📋 Все дела", `${prefix}:ls:a:0`), btn("🗓 Неделя", `${prefix}:wk`), btn("⋯ Ещё", `${prefix}:more`)),
   ];
 }
 
 export function homeMessage(st: HomeStats): MessageBody {
-  const parts = [`открыто **${st.open}**`];
-  if (st.hot) parts.push(`горит **${st.hot}**`);
-  if (st.today) parts.push(`на сегодня **${st.today}**`);
+  const parts = [`на сегодня **${st.today}**`, `висит **${st.hot}**`];
   if (st.noDue) parts.push(`без срока **${st.noDue}**`);
-  return body(`**Meido — меню**\n${st.open === 0 ? "Открытых дел нет." : `Дел: ${parts.join(" · ")}.`}`, homeButtons("mn"));
+  return body(`**Meido — меню**\n${st.open === 0 ? "Открытых дел нет." : parts.join(" · ")}`, homeButtons("mn", st));
+}
+
+/** «Ещё»: то, что нужно реже (свет, настроение горничной, настройки). */
+export function moreMessage(prefix: "mn" | "pn" = "mn"): MessageBody {
+  return body("**Ещё**", [row(btn("💡 Свет", `${prefix}:lt`), btn("🎭 Настроение", `${prefix}:mo`), btn("⚙ Настройки", `${prefix}:st`)), row(btn("🏠 Меню", `${prefix}:home`))]);
+}
+
+/** Экран-справка (текст и «Назад»): слова Хару, подтверждения. */
+export function infoMessage(text: string, backId: string, backLabel = "◀ Назад"): MessageBody {
+  return body(text, [row(btn(backLabel, backId), btn("🏠 Меню", "mn:home"))]);
+}
+
+export function confirmResetMessage(): MessageBody {
+  return body("Сбросить настроение, отношение, серии и выученные слова к начальным?", [row(btn("Да, сбросить", "mn:ry", 4), btn("Нет, оставить", "mn:s:a"))]);
 }
 
 /** Постоянная панель в канале «бот»: текст не меняется (цифры в нём устарели бы), кнопки открывают экраны «только вам». */
@@ -84,7 +98,7 @@ export function panelMessage(): MessageBody {
 
 export type ListFilter = "a" | "h" | "t" | "n";
 export const PAGE_SIZE = 5;
-const FILTER_LABEL: Record<ListFilter, string> = { a: "Все", h: "Горит", t: "Сегодня", n: "Без срока" };
+const FILTER_LABEL: Record<ListFilter, string> = { a: "Все", h: "Висит", t: "Сегодня", n: "Без срока" };
 
 export const isFilter = (f: string): f is ListFilter => f === "a" || f === "h" || f === "t" || f === "n";
 
@@ -103,7 +117,7 @@ export function filterItems(items: OccView[], f: ListFilter, now: number, tz: st
   }
 }
 
-const STATE_SHORT: Record<string, string> = { draft: "без срока", planned: "", snoozed: "отложено до", fired: "ждёт «Готово»", overdue: "просрочено" };
+const STATE_SHORT: Record<string, string> = { draft: "без срока", planned: "", snoozed: "отложено до", fired: "ждёт «Готово»", overdue: "висит" };
 
 function line(o: OccView, n: number, now: number, tz: string): string {
   const rep = o.rule_recipe ? " ↻" : "";
@@ -144,7 +158,7 @@ export function cardMessage(o: OccView, f: ListFilter, p: number, now: number, t
   const st = STATE_SHORT[o.state] ?? o.state;
   lines.push(`${st ? `${st[0].toUpperCase()}${st.slice(1)}` : "Запланировано"}${when !== null ? `: ${formatWhen(when, now, tz)}` : ""}`);
   if (recipe) lines.push(`Повтор: ${describeRecipe(recipe, tz)}`);
-  lines.push(`Настойчивость: ${defaultLadder} · #${o.item_id}`);
+  lines.push(`Как часто напоминать: ${defaultLadder} · #${o.item_id}`);
   const ctx = `${o.id}:${f}:${p}`;
   const repeats = o.item_kind === "timer" || o.rule_recipe !== null;
   const rows: ActionRow[] = [
@@ -198,8 +212,8 @@ export function menuPhrase(a: { what: string; when: string; repeat: string }): {
 
 // ---------- настройки по разделам ----------
 
-export type Section = "q" | "m" | "l" | "c" | "a";
-export const isSection = (s: string): s is Section => s === "q" || s === "m" || s === "l" || s === "c" || s === "a";
+export type Section = "q" | "m" | "l" | "c" | "a" | "s";
+export const isSection = (s: string): s is Section => s === "q" || s === "m" || s === "l" || s === "c" || s === "a" || s === "s";
 
 const onOff = (v: boolean) => (v ? "вкл" : "выкл");
 
@@ -209,15 +223,21 @@ export function settingsHomeMessage(s: AppSettings, now: number): MessageBody {
     "**Настройки**",
     `🌙 Тишина: тихие часы ${onOff(s.quietEnabled)} (${fmtHHMM(s.quietFrom)}–${fmtHHMM(s.quietTo)}), отъезд: ${away}`,
     `📰 Сводки и свет: утром ${s.morning === null ? "выкл" : fmtHHMM(s.morning)}, вечером ${s.evening === null ? "выкл" : fmtHHMM(s.evening)}; свет: ${s.lightGroup ? `группа ${s.lightGroup}` : "выкл"}`,
-    `⚖ Настойчивость: ${describeSpec(s.defaultLadder)}`,
+    `🔁 Как часто напоминать: ${describeSpec(s.defaultLadder)}`,
     `🎭 Характер: ${CHARACTER_LABELS[s.character]}; настроение ${onOff(s.moodOn)}`,
-    `🤖 Модель и приём: понимание фраз ${onOff(s.llmOn)}`,
   ].join("\n");
   return body(text, [
-    row(btn("🌙 Тишина", "mn:s:q"), btn("📰 Сводки и свет", "mn:s:m"), btn("⚖ Настойчивость", "mn:s:l"), btn("🎭 Характер", "mn:s:c"), btn("🤖 Модель и приём", "mn:s:a")),
+    row(btn("🌙 Тишина", "mn:s:q"), btn("📰 Сводки и свет", "mn:s:m"), btn("🔁 Как часто напоминать", "mn:s:l"), btn("🎭 Характер", "mn:s:c"), btn("⋯ Ещё", "mn:s:a")),
     row(btn("🏠 Меню", "mn:home")),
   ]);
 }
+
+const SFX_NEXT = { kana: "cyrillic", cyrillic: "off", off: "kana" } as const;
+const KAO_NEXT = { auto: "on", on: "off", off: "auto" } as const;
+export const nextSfx = (v: keyof typeof SFX_NEXT) => SFX_NEXT[v];
+export const nextKaomoji = (v: keyof typeof KAO_NEXT) => KAO_NEXT[v];
+const SFX_WORD = { kana: "кана", cyrillic: "кириллица", off: "выкл" };
+const KAO_WORD = { auto: "на уровне 3", on: "вкл", off: "выкл" };
 
 export function sectionMessage(s: AppSettings, sec: Section, now: number, dmOn: boolean): MessageBody {
   const back = row(btn("◀ Настройки", "mn:st"), btn("🏠 Меню", "mn:home"));
@@ -225,9 +245,14 @@ export function sectionMessage(s: AppSettings, sec: Section, now: number, dmOn: 
     case "q": {
       const away = s.awayUntil > now ? `до ${formatWhen(s.awayUntil, now, s.tz)}` : "нет";
       return body(
-        [`**🌙 Тишина**`, `Тихие часы: ${onOff(s.quietEnabled)} (${fmtHHMM(s.quietFrom)}–${fmtHHMM(s.quietTo)}). В это время бот не напоминает, а копит до утра.`, `Я в отъезде: ${away}.`].join("\n"),
+        [`**🌙 Тишина**`, `Тихие часы: ${onOff(s.quietEnabled)} (${fmtHHMM(s.quietFrom)}–${fmtHHMM(s.quietTo)}). В это время бот не напоминает, а копит до утра.`, `Бот молчит (отъезд или выходной): ${away}.`].join("\n"),
         [
-          row(btn(s.quietEnabled ? "Тихие часы: выключить" : "Тихие часы: включить", "mn:tg:q:q", s.quietEnabled ? 3 : 2), btn("Время тишины…", "mn:md:qt:q"), btn("Я в отъезде…", "mn:md:aw:q")),
+          row(
+            btn(s.quietEnabled ? "Тихие часы: выключить" : "Тихие часы: включить", "mn:tg:q:q", s.quietEnabled ? 3 : 2),
+            btn("Время тишины…", "mn:md:qt:q"),
+            btn("Я в отъезде…", "mn:md:aw:q"),
+            btn("Выходной на 4 ч", "mn:tg:qh:q"),
+          ),
           back,
         ],
       );
@@ -240,14 +265,22 @@ export function sectionMessage(s: AppSettings, sec: Section, now: number, dmOn: 
           `Часовой пояс: ${s.tz}.`,
           `График света (Днепр): ${s.lightGroup ? `группа ${s.lightGroup}` : "выкл"}.`,
         ].join("\n"),
-        [row(btn("Сводки и пояс…", "mn:md:sm:m"), btn("Свет: группа…", "mn:md:lt:m")), back],
+        [
+          row(
+            btn(s.morning === null ? "Утро: включить" : "Утро: выключить", "mn:tg:sa:m", s.morning === null ? 2 : 3),
+            btn(s.evening === null ? "Вечер: включить" : "Вечер: выключить", "mn:tg:se:m", s.evening === null ? 2 : 3),
+            btn("Время и пояс…", "mn:md:sm:m"),
+          ),
+          row(btn("Свет: группа…", "mn:md:lt:m"), btn("Ссылки для телефона", "mn:pw"), btn("Новый ключ ссылок", "mn:pw:new", 4)),
+          back,
+        ],
       );
     case "l": {
       const preset = "preset" in s.defaultLadder ? s.defaultLadder.preset : "";
       const select: StringSelect = {
         type: 3,
         custom_id: "mn:ld",
-        placeholder: "Настойчивость по умолчанию",
+        placeholder: "Как часто напоминать",
         options: (["soft", "standard", "strong"] as const).map((k) => ({
           label: PRESET_LABELS[k][0].toUpperCase() + PRESET_LABELS[k].slice(1),
           value: k,
@@ -255,7 +288,7 @@ export function sectionMessage(s: AppSettings, sec: Section, now: number, dmOn: 
         })),
       };
       return body(
-        [`**⚖ Настойчивость**`, `Как часто бот напоминает, пока дело не закрыто: ${describeSpec(s.defaultLadder)}.`, "Для одного дела её можно поменять в его карточке («Изменить»)."].join("\n"),
+        [`**🔁 Как часто напоминать**`, `Как часто бот повторяет напоминание, пока дело не закрыто: ${describeSpec(s.defaultLadder)}.`, "Для одного дела можно поменять в его карточке («Изменить»)."].join("\n"),
         [row(select), row(btn("Свои числа…", "mn:md:ln:l")), back],
       );
     }
@@ -265,20 +298,63 @@ export function sectionMessage(s: AppSettings, sec: Section, now: number, dmOn: 
           "**🎭 Характер**",
           `Характер: ${CHARACTER_LABELS[s.character]}.`,
           `Настроение горничной: ${onOff(s.moodOn)} (меняется от того, как вы закрываете дела).`,
-          `Стиль речи: ${styleSummary(s.style)}. Подробно: /style.`,
+          `Стиль речи: ${styleSummary(s.style)}.`,
         ].join("\n"),
         [
           row(
             btn(s.character === "maid" ? "Характер: нейтральный" : "Характер: уставшая горничная", "mn:tg:ch:c"),
             btn(s.moodOn ? "Настроение: выключить" : "Настроение: включить", "mn:tg:mo:c", s.moodOn ? 3 : 2),
+            btn("Стиль речи…", "mn:s:s"),
           ),
           back,
         ],
       );
+    case "s": {
+      const lvl: StringSelect = {
+        type: 3,
+        custom_id: "mn:sv",
+        placeholder: "Сколько в речи аниме",
+        options: [
+          { label: "0 — обычный русский", value: "0", default: s.style.level === 0 },
+          { label: "1 — лёгкие вставки", value: "1", default: s.style.level === 1 },
+          { label: "2 — фансаб-стиль", value: "2", default: s.style.level === 2 },
+          { label: "3 — полный отаку", value: "3", default: s.style.level === 3 },
+        ],
+      };
+      const script: StringSelect = {
+        type: 3,
+        custom_id: "mn:sw",
+        placeholder: "Как писать японские слова",
+        options: [
+          { label: "Кириллицей (ара-ара)", value: "cyrillic", default: s.style.script === "cyrillic" },
+          { label: "Латиницей (ara ara)", value: "latin", default: s.style.script === "latin" },
+          { label: "Вперемешку", value: "mixed", default: s.style.script === "mixed" },
+        ],
+      };
+      return body(
+        [
+          "**🎭 Стиль речи**",
+          styleSummary(s.style),
+          "Подсказки перевода (слово в скобках) по умолчанию скрыты: включите, если хотите видеть значение новых слов.",
+          "Стиль работает, пока включено «Настроение».",
+        ].join("\n"),
+        [
+          row(
+            btn(`Обращения: ${onOff(s.style.honorifics)}`, "mn:tg:ho:s", s.style.honorifics ? 3 : 2),
+            btn(`Подсказки перевода: ${onOff(s.style.hints)}`, "mn:tg:hi:s", s.style.hints ? 3 : 2),
+            btn(`Манга-звуки: ${SFX_WORD[s.style.sfx]}`, "mn:tg:sx:s"),
+            btn(`Каомодзи: ${KAO_WORD[s.style.kaomoji]}`, "mn:tg:km:s"),
+          ),
+          row(lvl),
+          row(script),
+          row(btn("◀ Характер", "mn:s:c"), btn("🏠 Меню", "mn:home")),
+        ],
+      );
+    }
     default:
       return body(
         [
-          "**🤖 Модель и приём**",
+          "**⋯ Ещё**",
           `Понимание фраз моделью: ${onOff(s.llmOn)}. Если бот не понял время, он спросит языковую модель; такую запись стоит проверить.`,
           `Личка: ${onOff(dmOn)}. Канал «бот»: ${s.chBot ? "заведён" : "не создан (/setup)"}.`,
         ].join("\n"),
@@ -287,6 +363,7 @@ export function sectionMessage(s: AppSettings, sec: Section, now: number, dmOn: 
             btn(s.llmOn ? "Понимание моделью: выключить" : "Понимание моделью: включить", "mn:tg:llm:a", s.llmOn ? 3 : 2),
             btn(dmOn ? "Личка: выключить" : "Личка: включить", "mn:tg:dm:a", dmOn ? 3 : 2),
           ),
+          row(btn("Слова Хару", "mn:gl"), btn("Сбросить настроение…", "mn:rs", 4)),
           back,
         ],
       );

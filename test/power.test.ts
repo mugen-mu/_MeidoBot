@@ -291,8 +291,7 @@ describe("свет: команда /power (ссылки только хозяи�
     expect(r.data.content).toContain("света нет с");
   });
 
-  it("команда зарегистрирована с необязательным reset", () => {
-    const c = COMMANDS.find((x) => x.name === "power") as { options?: { name: string; required?: boolean }[] } | undefined;
-    expect(c?.options?.[0]).toMatchObject({ name: "reset", required: false });
+  it("/power убрана из подсказки Discord: ссылки — кнопка в ⚙ Настройки → Сводки и свет", () => {
+    expect(COMMANDS.find((x) => x.name === "power")).toBeUndefined();
   });
 });

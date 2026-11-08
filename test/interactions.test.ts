@@ -332,51 +332,52 @@ describe("списки, отмена, откладывание и отъезд �
 describe("настройки", () => {
   it("/settings показывает текущие значения; по умолчанию тихие часы выключены", async () => {
     const r = await cmd("settings");
-    expect(r.data.content).toContain("Тихие часы: выкл (23:00–07:00)");
+    expect(r.data.content).toContain("тихие часы выкл (23:00–07:00)");
     expect(r.data.content).toContain("утром 08:00, вечером 20:00");
+    expect(r.data.content).toContain("Как часто напоминать");
     expect(r.data.flags).toBe(64);
-    expect(flat(r)).toEqual(["s_lad", "s_q", "s_qt", "s_away", "s_summ", "s_ladn", "s_dm", "s_light", "s_char", "s_mood", "s_llm"]);
+    expect(flat(r)).toEqual(["mn:s:q", "mn:s:m", "mn:s:l", "mn:s:c", "mn:s:a", "mn:home"]);
   });
 
   it("переключатель тихих часов, время, сводки, отъезд, лестница по умолчанию, личка", async () => {
-    expect((await click("s_q")).data.content).toContain("Тихие часы: вкл");
-    expect((await click("s_q")).data.content).toContain("Тихие часы: выкл");
-    expect((await click("s_qt")).type).toBe(9);
+    expect((await click("mn:tg:q:q")).data.content).toContain("Тихие часы: вкл");
+    expect((await click("mn:tg:q:q")).data.content).toContain("Тихие часы: выкл");
+    expect((await click("mn:md:qt:q")).type).toBe(9);
     expect((await submit("m_quiet", { from: "22:30", to: "6:45" })).data.content).toContain("22:30–06:45");
     expect((await submit("m_quiet", { from: "25:00", to: "07:00" })).data.content).toContain("ЧЧ:ММ");
 
-    const s = await submit("m_summ", { morning: "07:30", evening: "выкл", weekly: "суббота 18:00", tz: "Europe/Warsaw" });
-    expect(s.data.content).toContain("утром 07:30, вечером выкл; итоги недели: суббота 18:00");
+    const s = await submit("m_summ:mn:m", { morning: "07:30", evening: "выкл", weekly: "суббота 18:00", tz: "Europe/Warsaw" });
+    expect(s.data.content).toContain("Утренняя сводка: 07:30; вечерняя: выкл; итоги недели: суббота 18:00");
     expect(s.data.content).toContain("Часовой пояс: Europe/Warsaw");
     expect((await submit("m_summ", { morning: "рано", evening: "20:00", weekly: "выкл", tz: "Nowhere/City" })).data.content).toContain("Часовой пояс");
 
-    expect((await submit("m_away", { days: "2" })).data.content).toContain("Я в отъезде: до");
+    expect((await submit("m_away", { days: "2" })).data.content).toContain("отъезд: до");
     expect((await submit("m_away", { days: "много" })).data.content).toContain("от 0 до 90");
 
-    expect((await click("s_lad", ["strong"])).data.content).toContain("по умолчанию: настойчиво");
+    expect((await click("mn:ld", ["strong"])).data.content).toContain("настойчиво");
     expect((await submit("m_ladn", { nums: "0 3 9" })).data.content).toContain("свои числа: 0, 3, 9 мин");
 
-    const dmOn = await click("s_dm");
-    expect(dmOn.data.content).toContain("личка: вкл");
+    const dmOn = await click("mn:tg:dm:a");
+    expect(dmOn.data.content).toContain("Личка: вкл");
     expect((await w.settings()).intake).toContain(`dm-${OWNER}`);
-    expect((await click("s_dm")).data.content).toContain("личка: выкл");
+    expect((await click("mn:tg:dm:a")).data.content).toContain("Личка: выкл");
     expect((await w.settings()).intake).not.toContain(`dm-${OWNER}`);
   });
 
   it("график света: окно, группа, «выкл», неверное значение", async () => {
-    expect((await cmd("settings")).data.content).toContain("График света (Днепр): выкл");
-    expect((await click("s_light")).type).toBe(9);
-    expect((await submit("m_light", { group: "3" })).data.content).toContain("График света (Днепр): группа 3");
+    expect((await cmd("settings")).data.content).toContain("свет: выкл");
+    expect((await click("mn:md:lt:m")).type).toBe(9);
+    expect((await submit("m_light", { group: "3" })).data.content).toContain("свет: группа 3");
     expect((await w.settings()).lightGroup).toBe("3");
     expect((await submit("m_light", { group: "3,1" })).data.content).toContain("группа 3.1");
     expect((await submit("m_light", { group: "9" })).data.content).toContain("Нужна группа");
     expect((await w.settings()).lightGroup).toBe("3.1");
-    expect((await submit("m_light", { group: "выкл" })).data.content).toContain("График света (Днепр): выкл");
+    expect((await submit("m_light", { group: "выкл" })).data.content).toContain("свет: выкл");
     expect((await w.settings()).lightGroup).toBeNull();
   });
 
   it("новое значение подхватывается cron: тихие часы из настроек действуют", async () => {
-    await click("s_q");
+    await click("mn:tg:q:q");
     await w.create("завтра в 2:30 дело");
     await w.run(kyiv(2026, 11, 8, 2, 30));
     expect(w.discord.posted.filter((p) => p.channel === CH_REMIND)).toHaveLength(0);
@@ -402,7 +403,9 @@ describe("описание команд для Discord", () => {
       }
       expect(c.integration_types).toContain(c.name === "setup" ? 0 : 1);
     }
-    expect(COMMANDS.map((c) => c.name)).toEqual(["remind", "every", "list", "week", "cancel", "snooze", "settings", "away", "power", "mood", "reset_mood", "style", "hints", "glossary", "quiet", "light", "menu", "setup", "Напомнить об этом"]);
+    expect(COMMANDS.map((c) => c.name)).toEqual(["remind", "list", "week", "menu", "settings", "setup", "Напомнить об этом"]);
+    // на виду пять команд; /setup — редкая, только на сервере (в описании «Редко»)
+    expect(COMMANDS.filter((c) => c.type === 1 && c.name !== "setup")).toHaveLength(5);
   });
 });
 

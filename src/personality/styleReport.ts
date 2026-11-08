@@ -18,7 +18,7 @@ export const levelText = (n: number): string => LEVEL_TEXT[n] ?? String(n);
 
 /** Одна строка для /settings. */
 export function styleSummary(s: StyleConfig): string {
-  return `уровень ${s.level}, письмо: ${SCRIPT_TEXT[s.script]}, манга-звуки: ${SFX_TEXT[s.sfx]}, обращения: ${s.honorifics ? "вкл" : "выкл"}, подсказки перевода: ${s.hints ? "вкл" : "выкл"} (/style, /hints, /glossary)`;
+  return `уровень ${s.level}, письмо: ${SCRIPT_TEXT[s.script]}, манга-звуки: ${SFX_TEXT[s.sfx]}, обращения: ${s.honorifics ? "вкл" : "выкл"}, подсказки перевода: ${s.hints ? "вкл" : "выкл"}`;
 }
 
 /** Живые примеры: настоящие фразы из пула, пропущенные через слой с текущими настройками (в базу ничего не пишется). */
@@ -46,8 +46,8 @@ export function styleReport(a: { style: StyleConfig; rand: () => number; changed
     "Так это звучит сейчас:",
     ...stylePreview(s, a.rand),
     "",
-    "Менять: `/style level:2`, `/style script:latin`, `/style sfx:off`; подсказки — `/hints`; слова — `/glossary`.",
-    "Стиль работает только когда включено «Настроение» в /settings; на серьёзных делах (здоровье, горе) и критичных он выключается сам, время и название дела всегда по-русски.",
+    "Менять: ⚙ Настройки → Характер → Стиль речи.",
+    "Стиль работает только когда включено «Настроение» (⚙ Настройки → Характер); на серьёзных делах (здоровье, горе) и критичных он выключается сам, время и название дела всегда по-русски.",
   ];
   return lines.join("\n");
 }
@@ -56,8 +56,8 @@ export function styleReport(a: { style: StyleConfig; rand: () => number; changed
 export function glossaryReport(a: { state: StyleState; style: StyleConfig }): string {
   const list = glossaryEntries(a.state, a.style.script === "latin" ? "latin" : "cyrillic");
   if (!list.length) {
-    return "Пока ни одного слова: Хару ещё не вставляла японских слов. Они появятся, когда включено «Настроение» в /settings, а уровень стиля больше 0 (/style).";
+    return "Пока ни одного слова: Хару ещё не вставляла японских слов. Они появятся, когда включено «Настроение», а уровень стиля больше 0 (⚙ Настройки → Характер).";
   }
   const lines = list.slice(0, 30).map((e) => `• **${e.word}** — ${e.meaning} _(${e.uses} раз)_`);
-  return [`**Слова Хару** — открыто ${list.length} из ${WORDS.length}`, ...lines, `-# Перевод в скобках показывается первые 2 раза, потом считается, что слово выучено (/hints off — не показывать совсем).`].join("\n");
+  return [`**Слова Хару** — открыто ${list.length} из ${WORDS.length}`, ...lines, `-# Перевод в скобках показывается первые 2 раза, потом считается, что слово выучено (выключить совсем: ⚙ Настройки → Характер → Стиль речи).`].join("\n");
 }

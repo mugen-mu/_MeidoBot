@@ -58,17 +58,17 @@ describe("настроение: выключено по умолчанию", () 
   });
 
   it("переключатель в /settings включает и выключает; в окне видна строка", async () => {
-    expect((await cmd("settings")).data.content).toContain("Настроение горничной: выкл");
-    expect((await click("s_mood")).data.content).toContain("Настроение горничной: вкл");
+    expect((await cmd("settings")).data.content).toContain("настроение выкл");
+    expect((await click("mn:tg:mo:c")).data.content).toContain("Настроение горничной: вкл");
     expect((await w.settings()).moodOn).toBe(true);
-    expect((await click("s_mood")).data.content).toContain("Настроение горничной: выкл");
+    expect((await click("mn:tg:mo:c")).data.content).toContain("Настроение горничной: выкл");
   });
 });
 
 describe("настроение: cron", () => {
   beforeEach(async () => {
     await w.repo().exec([]);
-    await click("s_mood");
+    await click("mn:tg:mo:c");
   });
 
   it("реплика под напоминанием; суть (название, срок) без изменений и читаема", async () => {
@@ -98,7 +98,7 @@ describe("настроение: cron", () => {
     expect(mood().miss_streak).toBe(1);
     expect(mood().current_mood).toBe("tsundere");
     const lastBody = w.discord.live(CH_REMIND)[0].body;
-    expect(lastBody.content as string).toContain("просрочено");
+    expect(lastBody.content as string).toContain("висит");
     expect(card(lastBody).length).toBeGreaterThan(3);
     await run(min(5 + 240)); // повтор «просрочено» — тот же пропуск
     expect(mood().miss_streak).toBe(1);
@@ -182,7 +182,7 @@ describe("настроение: команды", () => {
   });
 
   it("возвращение после паузы больше суток: одна реплика к ответу и симпатия +2", async () => {
-    await click("s_mood");
+    await click("mn:tg:mo:c");
     await cmd("list"); // создаёт состояние
     const later = NOW + 30 * 60 * MINUTE;
     const r = await cmd("list", [], later);

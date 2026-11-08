@@ -38,12 +38,17 @@ import {
   addModal,
   cardMessage,
   confirmDeleteMessage,
+  confirmResetMessage,
   homeMessage,
   homeStats,
+  infoMessage,
   isFilter,
   isSection,
   listMessage,
   menuPhrase,
+  moreMessage,
+  nextKaomoji,
+  nextSfx,
   panelMessage,
   resultMessage,
   sectionMessage,
@@ -62,13 +67,15 @@ import {
   listText,
   plainMessage,
   quietModal,
-  settingsMessage,
+  reminderButtons,
+  snoozeChoiceRow,
   snoozeQuestionMessage,
   snoozedMessage,
   specKey,
   splitModal,
   subtext,
   summModal,
+  summaryParts,
   weekText,
   whenModal,
 } from "./ui.ts";
@@ -238,7 +245,7 @@ async function onCommand(c: C): Promise<Reply> {
     case "away": {
       const days = opt(c, "days");
       if (days === undefined) {
-        return eph(c.s.awayUntil > c.now ? `Вы в отъезде до ${formatWhen(c.s.awayUntil, c.now, c.s.tz)}. Вернуться сейчас: /away days:0` : "Вы не в отъезде. Включить: /away days:3");
+        return eph(c.s.awayUntil > c.now ? `Вы в отъезде до ${formatWhen(c.s.awayUntil, c.now, c.s.tz)}. Вернуться сейчас: ⚙ Настройки → Тишина → «Я в отъезде…» (0).` : "Вы не в отъезде. Включить: ⚙ Настройки → Тишина → «Я в отъезде…».");
       }
       return eph(await setAway(c, Number(days)));
     }
@@ -299,8 +306,8 @@ function lightReply(c: C, wrap: (text: string) => MessageBody, first: Reply): Re
 /** «Только вам» (64) и без предпросмотра ссылок (4): Discord не должен сам открывать ссылки с ключом. */
 const powerReply = (text: string): Reply => msg({ ...plainMessage(text, true), flags: 68 });
 
-async function powerCommand(c: C): Promise<Reply> {
-  const reset = (opt(c, "reset") as unknown) === true;
+async function powerCommand(c: C, forceReset = false): Promise<Reply> {
+  const reset = forceReset || (opt(c, "reset") as unknown) === true;
   let key = c.meta.get("power_key");
   if (!key || reset) {
     key = newPowerKey();
@@ -321,7 +328,7 @@ async function powerCommand(c: C): Promise<Reply> {
       `${base}/power/${key}/off`,
       "Свет появился (зарядка подключилась):",
       `${base}/power/${key}/on`,
-      "Ключ в ссылках — как пароль: никому не показывайте и не пересылайте. Если ссылка утекла — /power reset:True, и впишите новые в приложение.",
+      "Ключ в ссылках — как пароль: никому не показывайте и не пересылайте. Если ссылка утекла — ⚙ Настройки → Сводки и свет → «Новый ключ», и впишите новые в приложение.",
       state,
     ].join("\n"),
   );
@@ -460,9 +467,9 @@ async function styleCommand(c: C): Promise<Reply> {
 /** /hints: подсказки перевода в скобках — включить, выключить или показать. */
 async function hintsCommand(c: C): Promise<Reply> {
   const mode = opt(c, "mode");
-  if (mode === undefined) return eph(`Подсказки перевода: ${c.s.style.hints ? "включены" : "выключены"}. Они показываются первые 2 раза у каждого слова. Менять: /hints mode:выключить.`);
+  if (mode === undefined) return eph(`Подсказки перевода: ${c.s.style.hints ? "включены" : "выключены"}. Они показываются первые 2 раза у каждого слова. Менять: ⚙ Настройки → Характер → Стиль речи.`);
   await c.repo.exec([setSetting("hints_on", mode === "on" ? "1" : "0")]);
-  return eph(mode === "on" ? "Подсказки перевода включены: новые слова будут с переводом в скобках (первые 2 раза)." : "Подсказки перевода выключены. Слова остаются в /glossary.");
+  return eph(mode === "on" ? "Подсказки перевода включены: новые слова будут с переводом в скобках (первые 2 раза)." : "Подсказки перевода выключены. Слова остаются в ⚙ Настройки → Ещё → «Слова Хару».");
 }
 
 /** /quiet: «горничная на выходном» — тот же режим, что «я в отъезде», но в часах. */
@@ -474,11 +481,11 @@ async function quiet(c: C, hours: string | number | undefined): Promise<string> 
   }
   const until = c.now + h * 60 * MINUTE;
   await c.repo.exec([setSetting("away_until", String(until))]);
-  return `Горничная на выходном до ${formatWhen(until, c.now, c.s.tz)}: напоминаний не будет, дела сохранятся. Вернуться раньше: /quiet hours:0`;
+  return `Горничная на выходном до ${formatWhen(until, c.now, c.s.tz)}: напоминаний не будет, дела сохранятся. Вернуться раньше: ⚙ Настройки → Тишина → «Я в отъезде…» (0).`;
 }
 
 async function settingsReply(c: C): Promise<Reply> {
-  return msg(settingsMessage(c.s, c.now, await dmOn(c)));
+  return msg({ ...settingsHomeMessage(c.s, c.now), flags: 64 });
 }
 
 const dmOn = async (c: C): Promise<boolean> => {
@@ -551,6 +558,24 @@ async function onComponent(c: C): Promise<Reply> {
       }
       return snoozeTo(c, occ, c.now + Number(b) * MINUTE);
     }
+    case "snzm": {
+      // «Отложить»: вместо трёх кнопок — быстрые варианты (текст и карточку Discord оставляет как есть)
+      const occ = await asOcc(c, a);
+      if (!occ || !isOpen(occ)) return gone();
+      return { type: 7, data: { components: [snoozeChoiceRow(occ.id)] } };
+    }
+    case "snzb": {
+      const occ = await asOcc(c, a);
+      if (!occ || !isOpen(occ)) return gone();
+      return { type: 7, data: { components: [{ type: 1, components: reminderButtons(occ) }] } };
+    }
+    case "sumall": {
+      // «Показать всё» под сводкой: полный список отдельным сообщением «только вам» (свет и прочее остаются в самой сводке)
+      const kind = a === "evening" || a === "return" ? a : "morning";
+      const items = await c.repo.openMain(100);
+      const parts = summaryParts(kind, { items, now: c.now, tz: c.s.tz, ownerId: c.owner ?? "", character: c.s.character, full: true });
+      return eph(parts.text);
+    }
     case "snzat":
       return { type: 9, data: whenModal(`m_snz:${a}`, "Отложить на…").data };
     case "edit": {
@@ -599,7 +624,7 @@ async function onComponent(c: C): Promise<Reply> {
     case "nosd": {
       const occ = await asOcc(c, a);
       if (!occ) return gone();
-      return update(plainMessage(`Сохранено без срока: **${occ.title}** · #${occ.item_id}. Назначить время позже: /snooze ${occ.item_id} завтра 10:00`));
+      return update(plainMessage(`Сохранено без срока: **${occ.title}** · #${occ.item_id}. Назначить время позже: /menu → Все дела → дело → «На…».`));
     }
     case "tdy": {
       const occ = await asOcc(c, a);
@@ -610,7 +635,7 @@ async function onComponent(c: C): Promise<Reply> {
     case "split":
       return { type: 9, data: splitModal(Number(a)).data };
     default:
-      return onSettingsComponent(c, kind, values);
+      return eph("Это действие бот не знает.");
   }
 }
 
@@ -621,46 +646,6 @@ async function snoozeTo(c: C, occ: OccView, target: number, resetCount = false):
   if (resetCount) ops.push(updateOcc(occ.id, { snooze_count: 0 }));
   await c.repo.exec(ops);
   return update(snoozedMessage({ occId: occ.id, title: occ.title, whenText: formatWhen(target, c.now, c.s.tz), itemId: occ.item_id }));
-}
-
-async function onSettingsComponent(c: C, kind: string, values: string[]): Promise<Reply> {
-  const redo = async (ops: Op[], dm?: boolean): Promise<Reply> => {
-    if (ops.length) await c.repo.exec(ops);
-    const cfg = await c.repo.loadConfig();
-    const cc = { ...c, s: cfg.settings, meta: cfg.meta };
-    return update(settingsMessage(cfg.settings, c.now, dm ?? (await dmOn(cc))));
-  };
-  switch (kind) {
-    case "s_lad": {
-      const p = values[0];
-      if (p !== "soft" && p !== "standard" && p !== "strong") return redo([]);
-      return redo([setSetting("default_ladder", JSON.stringify({ preset: p }))]);
-    }
-    case "s_q":
-      return redo([setSetting("quiet_enabled", c.s.quietEnabled ? "0" : "1")]);
-    case "s_qt":
-      return { type: 9, data: quietModal(c.s).data };
-    case "s_away":
-      return { type: 9, data: awayModal().data };
-    case "s_summ":
-      return { type: 9, data: summModal(c.s).data };
-    case "s_ladn":
-      return { type: 9, data: ladderNumsModal().data };
-    case "s_light":
-      return { type: 9, data: lightModal(c.s).data };
-    case "s_char":
-      return redo([setSetting("character", c.s.character === "maid" ? "neutral" : "maid")]);
-    case "s_mood":
-      return redo([setSetting("mood_on", c.s.moodOn ? "0" : "1")]);
-    case "s_llm":
-      return redo([setSetting("llm_on", c.s.llmOn ? "0" : "1")]);
-    case "s_dm": {
-      const t = await dmToggle(c);
-      return redo(t.ops, t.on);
-    }
-    default:
-      return eph("Это действие бот не знает.");
-  }
 }
 
 /** Включить или выключить приём дел в личке: какие записи сделать и каким станет состояние. */
@@ -822,6 +807,28 @@ async function onMenu(c: C, parts: string[], values: string[]): Promise<Reply> {
       const text = moodReport({ state: c.mood.state!, enabled: c.s.moodOn, greeting: c.mood.say("greeting") });
       return show({ ...moodBody(c, text), components: resultMessage("").components });
     }
+    case "more":
+      return show(moreMessage(panel ? "pn" : "mn"));
+    case "pw":
+      return powerCommand(c, arg[0] === "new");
+    case "gl": {
+      await c.mood.load();
+      return show(infoMessage(glossaryReport({ state: c.mood.styleState, style: c.s.style }), "mn:s:a"));
+    }
+    case "rs":
+      return show(confirmResetMessage());
+    case "ry": {
+      await c.repo.exec(resetOps(c.owner));
+      c.mood.state = null; // состояние сброшено: сессия больше ничего не пишет
+      return show(infoMessage("Готово: настроение, отношение, серии и выученные слова сброшены. Хару начинает с чистого листа.", "mn:s:a"));
+    }
+    case "sv":
+    case "sw": {
+      const v = values[0] ?? "";
+      const ok = route === "sv" ? ["0", "1", "2", "3"].includes(v) : ["cyrillic", "latin", "mixed"].includes(v);
+      if (ok) await c.repo.exec([setSetting(route === "sv" ? "style_level" : "style_script", v)]);
+      return sectionScreen("s", await c.repo.loadConfig());
+    }
     case "st":
       return show(settingsHomeMessage(c.s, c.now));
     case "s":
@@ -841,6 +848,27 @@ async function onMenu(c: C, parts: string[], values: string[]): Promise<Reply> {
           break;
         case "llm":
           ops.push(setSetting("llm_on", c.s.llmOn ? "0" : "1"));
+          break;
+        case "sa":
+          ops.push(setSetting("summary_morning", c.s.morning === null ? "08:00" : "off"));
+          break;
+        case "se":
+          ops.push(setSetting("summary_evening", c.s.evening === null ? "20:00" : "off"));
+          break;
+        case "qh":
+          await quiet(c, undefined);
+          break;
+        case "ho":
+          ops.push(setSetting("style_honorifics", c.s.style.honorifics ? "0" : "1"));
+          break;
+        case "hi":
+          ops.push(setSetting("hints_on", c.s.style.hints ? "0" : "1"));
+          break;
+        case "sx":
+          ops.push(setSetting("style_sfx", nextSfx(c.s.style.sfx)));
+          break;
+        case "km":
+          ops.push(setSetting("style_kaomoji", nextKaomoji(c.s.style.kaomoji)));
           break;
         case "dm":
           ops.push(...(await dmToggle(c)).ops);
@@ -982,7 +1010,7 @@ async function settingsUpdate(c: C, ops: Op[], sec?: Section): Promise<Reply> {
   const cfg = await c.repo.loadConfig();
   const dm = cfg.meta.get("dm_channel_id");
   const dmOnNow = !!dm && cfg.settings.intake.includes(dm);
-  return update(sec ? sectionMessage(cfg.settings, sec, c.now, dmOnNow) : settingsMessage(cfg.settings, c.now, dmOnNow));
+  return update(sec ? sectionMessage(cfg.settings, sec, c.now, dmOnNow) : settingsHomeMessage(cfg.settings, c.now));
 }
 
 async function editSubmit(c: C, id: string, v: Map<string, string | string[]>): Promise<Reply> {
@@ -1038,7 +1066,7 @@ async function splitSubmit(c: C, id: string, v: Map<string, string | string[]>):
   if (titles.length === 0) return eph("Не нашёл ни одного шага.");
   ops.push(...cancelItemOps(occ.item_id, c.now, "split"));
   await c.repo.exec(ops);
-  return update(plainMessage(`Разбито на шаги (${titles.length}): ${titles.join("; ")}. Время — ${formatWhen(target, c.now, c.s.tz)}, поменять: /snooze.`));
+  return update(plainMessage(`Разбито на шаги (${titles.length}): ${titles.join("; ")}. Время — ${formatWhen(target, c.now, c.s.tz)}, поменять: /menu → Все дела → дело.`));
 }
 
 async function summSubmit(c: C, v: Map<string, string | string[]>, sec?: Section): Promise<Reply> {

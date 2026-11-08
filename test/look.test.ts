@@ -211,7 +211,7 @@ beforeEach(async () => {
 
 describe("Х3: напоминание карточкой", () => {
   beforeEach(async () => {
-    await click("s_mood");
+    await click("mn:tg:mo:c");
   });
 
   it("суть остаётся обычным текстом с упоминанием и кнопками; реплика — в цветной карточке со спрайтом", async () => {
@@ -258,7 +258,7 @@ describe("Х3: напоминание карточкой", () => {
   });
 
   it("настроение выключено: карточек нет, текст как раньше", async () => {
-    await click("s_mood"); // выкл
+    await click("mn:tg:mo:c"); // выкл
     await w.create("через 5 минут оплатить счёт");
     await run(min(5));
     expect(w.discord.live(CH_REMIND)[0].body.embeds).toBeUndefined();
@@ -302,7 +302,7 @@ describe("Х3: /mood", () => {
 
 describe("Х3: реакции эмодзи на сообщения хозяина", () => {
   beforeEach(async () => {
-    await click("s_mood");
+    await click("mn:tg:mo:c");
     await run(min(0)); // первый запуск запоминает конец канала
   });
 
@@ -338,7 +338,7 @@ describe("Х3: реакции эмодзи на сообщения хозяин�
   });
 
   it("настроение выключено: реакций нет", async () => {
-    await click("s_mood"); // выкл
+    await click("mn:tg:mo:c"); // выкл
     w.discord.say(CH_BOT, OWNER, "завтра в 10 купить хлеб");
     await run(min(1));
     expect(w.discord.reactions).toHaveLength(0);
@@ -357,7 +357,7 @@ describe("Х3: реакции эмодзи на сообщения хозяин�
 
 describe("Х3: «ара-ара», «ганбатте» от хозяина", () => {
   beforeEach(async () => {
-    await click("s_mood");
+    await click("mn:tg:mo:c");
     await run(min(0));
   });
 
@@ -400,7 +400,7 @@ describe("Х3: «ара-ара», «ганбатте» от хозяина", () 
 
 describe("Х3: кино-момент в напоминании", () => {
   beforeEach(async () => {
-    await click("s_mood");
+    await click("mn:tg:mo:c");
     await cmd("style", [{ name: "level", value: 3 }]);
     await cmd("list");
   });
