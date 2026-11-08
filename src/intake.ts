@@ -1,7 +1,7 @@
 // Приём дела из текста: общий путь для /remind, /every, меню сообщения и обычного текста в канале «бот».
 import type { Repo } from "./db/repo.ts";
 import type { Source } from "./db/types.ts";
-import { confirmMessage, draftMessage } from "./discord/ui.ts";
+import { type Look, confirmMessage, draftMessage } from "./discord/ui.ts";
 import type { MessageBody } from "./discord/types.ts";
 import { describeSpec } from "./ladder.ts";
 import { newItemOps } from "./service.ts";
@@ -19,6 +19,8 @@ export interface CreateCtx {
   ai?: AiBinding;
   /** сколько ждать модель, мс (по умолчанию 2 с) */
   aiTimeoutMs?: number;
+  /** реплика горничной к подтверждению: вызывается с названием и «критично»; null — без реплики */
+  recorded?: (title: string, critical: boolean) => { line: string; look: Look | null } | null;
 }
 
 export type CreateResult =
@@ -72,7 +74,7 @@ export async function createFromText(
     const note = wasPast ? "Названное время уже прошло." : undefined;
     return { kind: "created", itemId, occId, draft: true, message: draftMessage({ occId, itemId, title: parsed.title, note }) };
   }
-  const preset = "preset" in settings.defaultLadder ? settings.defaultLadder.preset : "";
+  const rec = ctx.recorded?.(parsed.title, parsed.critical) ?? null;
   return {
     kind: "created",
     itemId,
@@ -85,8 +87,8 @@ export async function createFromText(
       whenText: formatWhen(parsed.due, now, settings.tz),
       recur: parsed.recipe ? describeRecipe(parsed.recipe, settings.tz) : null,
       lead: parsed.leadDays.length ? describeLead(parsed.leadDays) : null,
-      ladderText: parsed.timer ? "один раз на срабатывание" : describeSpec(settings.defaultLadder),
-      ladderKey: parsed.timer ? null : preset,
+      line: rec?.line ?? null,
+      look: rec?.look ?? null,
       note: viaModel ? MODEL_NOTE : undefined,
     }),
   };

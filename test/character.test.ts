@@ -10,12 +10,15 @@ const TZ = "Europe/Kyiv";
 const MAID: Character = "maid";
 
 describe("характер: помощники", () => {
-  it("значение настройки разбирается; всё непонятное — нейтральный", () => {
+  it("значение настройки разбирается; по умолчанию и всё непонятное — горничная (с 2026-11-08)", () => {
     expect(parseCharacter("maid")).toBe("maid");
     expect(parseCharacter("neutral")).toBe("neutral");
-    expect(parseCharacter(undefined)).toBe("neutral");
-    expect(parseCharacter("что-то")).toBe("neutral");
-    expect(readSettings([]).character).toBe("neutral");
+    expect(parseCharacter(undefined)).toBe("maid");
+    expect(parseCharacter("что-то")).toBe("maid");
+    expect(readSettings([]).character).toBe("maid");
+    expect(readSettings([]).moodOn).toBe(true);
+    expect(readSettings([{ key: "mood_on", value: "0" }]).moodOn).toBe(false);
+    expect(readSettings([{ key: "character", value: "neutral" }]).character).toBe("neutral");
     expect(readSettings([{ key: "character", value: "maid" }]).character).toBe("maid");
   });
 
@@ -63,7 +66,7 @@ describe("характер: тексты", () => {
   });
 
   it("окно настроек показывает характер и кнопку переключения", () => {
-    const s = readSettings([]);
+    const s = readSettings([{ key: "character", value: "neutral" }]);
     const neutral = settingsMessage(s, NOW, false);
     expect(neutral.content).toContain("Характер: нейтральный");
     const maid = settingsMessage({ ...s, character: MAID }, NOW, false);

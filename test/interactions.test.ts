@@ -94,9 +94,9 @@ describe("команды записи", () => {
     expect(r.type).toBe(4);
     expect(r.data.content).toContain("Записано: **Купить хлеб** — завтра, 10:00");
     expect(r.data.flags).toBe(64);
-    expect(flat(r).some((x) => x.startsWith("ok:"))).toBe(true);
     expect(flat(r).some((x) => x.startsWith("edit:"))).toBe(true);
-    expect(flat(r).some((x) => x.startsWith("lad:"))).toBe(true);
+    expect(flat(r).some((x) => x.startsWith("rm:"))).toBe(true);
+    expect(flat(r).some((x) => x.startsWith("ok:") || x.startsWith("lad:"))).toBe(false); // подтверждение упрощено (2026-11-08)
     expect(w.d1.q("SELECT title, source FROM items")).toEqual([{ title: "Купить хлеб", source: "slash" }]);
   });
 
@@ -231,8 +231,8 @@ describe("кнопки напоминания", () => {
 
   it("выбор настойчивости под «Записано» меняет лестницу этого дела", async () => {
     const r = await cmd("remind", { text: "завтра в 10 созвон" });
-    const occId = Number(flat(r)[0].split(":")[1]);
-    const u = await click(`lad:${occId}`, ["strong"]);
+    const occId = Number(flat(r).find((x) => x.startsWith("edit:"))!.split(":")[1]);
+    const u = await click(`lad:${occId}`, ["strong"]); // выбор в подтверждении убран, но у старых сообщений он работает
     expect(u.data.content).toContain("Настойчивость: настойчиво");
     expect(w.d1.q("SELECT ladder FROM items")).toEqual([{ ladder: '{"preset":"strong"}' }]);
     const ok = await click(`ok:${occId}`);
@@ -438,7 +438,7 @@ describe("подпись и Worker", () => {
     expect(await ping.json()).toEqual({ type: 1 });
     expect((await post({ type: 1 }, false)).status).toBe(401);
     const list = await post({ id: "1", type: 2, token: "t", member: { user: { id: OWNER } }, data: { name: "list", type: 1 } });
-    expect((await list.json()) as { data: { content: string } }).toMatchObject({ data: { content: "Открытых дел нет." } });
+    expect(((await list.json()) as { data: { content: string } }).data.content).toMatch(/^Открытых дел нет\./); // дальше короткая фраза горничной (характер включён по умолчанию)
     expect((await worker.fetch(new Request("https://meido.example/other"), env, ctx)).status).toBe(404);
     expect((await worker.fetch(new Request("https://meido.example/"), env, ctx)).status).toBe(200);
   });

@@ -1,0 +1,278 @@
+// Кнопочное меню: главный экран, дела постранично с карточкой, настройки по разделам. Здесь только вид (чистые функции);
+// действия по кнопкам — в interactions.ts (`onMenu`). Идентификаторы кнопок: `mn:…` (меню внутри сообщения «только вам»),
+// `pn:…` (постоянная панель в канале «бот»: нажатие открывает такой же экран отдельным сообщением «только вам»).
+import { CHARACTER_LABELS } from "../flavor.ts";
+import { PRESET_LABELS, describeSpec } from "../ladder.ts";
+import type { AppSettings } from "../settings.ts";
+import { describeRecipe, formatWhen } from "../time/format.ts";
+import { MINUTE, fmtHHMM, startOfDay } from "../time/tz.ts";
+import type { OccView } from "../db/types.ts";
+import { styleSummary } from "../personality/styleReport.ts";
+import { parseRecipe } from "../service.ts";
+import { describeWeekly } from "./ui.ts";
+import type { ActionRow, Button, MessageBody, StringSelect } from "./types.ts";
+
+const btn = (label: string, id: string, style: Button["style"] = 2, disabled = false): Button => ({
+  type: 2,
+  style,
+  label,
+  custom_id: id,
+  ...(disabled ? { disabled: true } : {}),
+});
+const row = (...components: ActionRow["components"]): ActionRow => ({ type: 1, components });
+const clip = (s: string, n: number) => (s.length > n ? `${s.slice(0, n - 1)}…` : s);
+const body = (content: string, components: ActionRow[]): MessageBody => ({ content, components, allowed_mentions: { parse: [] } });
+
+// ---------- общие куски ----------
+
+/** Нижняя строка кнопок результата: куда пойти дальше. */
+export function navRow(): ActionRow {
+  return row(btn("➕ Ещё дело", "mn:add"), btn("📋 К делам", "mn:ls:a:0"), btn("🏠 Меню", "mn:home"));
+}
+
+/** Добавить строку навигации к готовому сообщению (не больше 5 рядов). */
+export function withNav(b: MessageBody): MessageBody {
+  const rows = [...(b.components ?? [])];
+  if (rows.length >= 5) return b;
+  return { ...b, components: [...rows, navRow()] };
+}
+
+export const isBurning = (o: OccView) => o.state === "overdue" || o.state === "fired";
+const at = (o: OccView) => (o.state === "snoozed" && o.next_fire_at ? o.next_fire_at : o.due_at);
+
+// ---------- главный экран ----------
+
+export interface HomeStats {
+  open: number;
+  hot: number;
+  today: number;
+  noDue: number;
+}
+
+export function homeStats(items: OccView[], now: number, tz: string): HomeStats {
+  const t0 = startOfDay(now, tz);
+  const t1 = t0 + 24 * 60 * MINUTE;
+  return {
+    open: items.length,
+    hot: items.filter(isBurning).length,
+    today: items.filter((o) => !isBurning(o) && o.state !== "draft" && at(o) !== null && (at(o) as number) >= t0 && (at(o) as number) < t1).length,
+    noDue: items.filter((o) => o.state === "draft").length,
+  };
+}
+
+function homeButtons(prefix: "mn" | "pn"): ActionRow[] {
+  return [
+    row(btn("➕ Добавить", `${prefix}:add`, 3), btn("📋 Дела", `${prefix}:ls:a:0`, 1), btn("🔥 Горит", `${prefix}:ls:h:0`), btn("🗓 Неделя", `${prefix}:wk`)),
+    row(btn("💡 Свет", `${prefix}:lt`), btn("🎭 Настроение", `${prefix}:mo`), btn("⚙ Настройки", `${prefix}:st`)),
+  ];
+}
+
+export function homeMessage(st: HomeStats): MessageBody {
+  const parts = [`открыто **${st.open}**`];
+  if (st.hot) parts.push(`горит **${st.hot}**`);
+  if (st.today) parts.push(`на сегодня **${st.today}**`);
+  if (st.noDue) parts.push(`без срока **${st.noDue}**`);
+  return body(`**Meido — меню**\n${st.open === 0 ? "Открытых дел нет." : `Дел: ${parts.join(" · ")}.`}`, homeButtons("mn"));
+}
+
+/** Постоянная панель в канале «бот»: текст не меняется (цифры в нём устарели бы), кнопки открывают экраны «только вам». */
+export function panelMessage(): MessageBody {
+  return body("**Meido** — меню\nНажмите кнопку: экран откроется только для вас. Дело можно и просто написать сюда обычным текстом.", homeButtons("pn"));
+}
+
+// ---------- дела ----------
+
+export type ListFilter = "a" | "h" | "t" | "n";
+export const PAGE_SIZE = 5;
+const FILTER_LABEL: Record<ListFilter, string> = { a: "Все", h: "Горит", t: "Сегодня", n: "Без срока" };
+
+export const isFilter = (f: string): f is ListFilter => f === "a" || f === "h" || f === "t" || f === "n";
+
+export function filterItems(items: OccView[], f: ListFilter, now: number, tz: string): OccView[] {
+  const t0 = startOfDay(now, tz);
+  const t1 = t0 + 24 * 60 * MINUTE;
+  switch (f) {
+    case "h":
+      return items.filter(isBurning);
+    case "t":
+      return items.filter((o) => !isBurning(o) && o.state !== "draft" && at(o) !== null && (at(o) as number) >= t0 && (at(o) as number) < t1);
+    case "n":
+      return items.filter((o) => o.state === "draft");
+    default:
+      return items;
+  }
+}
+
+const STATE_SHORT: Record<string, string> = { draft: "без срока", planned: "", snoozed: "отложено до", fired: "ждёт «Готово»", overdue: "просрочено" };
+
+function line(o: OccView, n: number, now: number, tz: string): string {
+  const rep = o.rule_recipe ? " ↻" : "";
+  const when = at(o) === null ? "" : formatWhen(at(o) as number, now, tz);
+  const st = STATE_SHORT[o.state] ?? o.state;
+  const tail = [st, when].filter(Boolean).join(": ");
+  return `**${n}.** ${clip(o.title, 60)}${rep}${tail ? ` — ${tail}` : ""}`;
+}
+
+export function listMessage(items: OccView[], f: ListFilter, page: number, now: number, tz: string): MessageBody {
+  const all = items;
+  const shown = filterItems(all, f, now, tz);
+  const pages = Math.max(1, Math.ceil(shown.length / PAGE_SIZE));
+  const p = Math.min(Math.max(0, page), pages - 1);
+  const slice = shown.slice(p * PAGE_SIZE, p * PAGE_SIZE + PAGE_SIZE);
+  const head = `**${FILTER_LABEL[f]}** · дел: ${shown.length}${pages > 1 ? ` · страница ${p + 1} из ${pages}` : ""}`;
+  const text = slice.length ? `${head}\nНажмите номер, чтобы открыть дело.\n${slice.map((o, i) => line(o, i + 1, now, tz)).join("\n")}` : `${head}\nЗдесь пусто.`;
+  const rows: ActionRow[] = [];
+  if (slice.length) rows.push(row(...slice.map((o, i) => btn(String(i + 1), `mn:it:${o.id}:${f}:${p}`, 1))));
+  const count = (k: ListFilter) => filterItems(all, k, now, tz).length;
+  rows.push(row(...(["a", "h", "t", "n"] as const).map((k) => btn(`${FILTER_LABEL[k]} ${count(k)}`, `mn:ls:${k}:0`, k === f ? 1 : 2))));
+  rows.push(
+    row(
+      btn("◀", `mn:ls:${f}:${p - 1}`, 2, p === 0),
+      btn("▶", `mn:ls:${f}:${p + 1}`, 2, p >= pages - 1),
+      btn("➕ Добавить", "mn:add", 3),
+      btn("🏠 Меню", "mn:home"),
+    ),
+  );
+  return body(text, rows);
+}
+
+/** Карточка дела: подробности и действия. `f`/`p` — откуда пришли (кнопка «К списку» вернёт туда же). */
+export function cardMessage(o: OccView, f: ListFilter, p: number, now: number, tz: string, defaultLadder: string): MessageBody {
+  const recipe = parseRecipe(o);
+  const lines = [`**${o.title}**`];
+  const when = at(o);
+  const st = STATE_SHORT[o.state] ?? o.state;
+  lines.push(`${st ? `${st[0].toUpperCase()}${st.slice(1)}` : "Запланировано"}${when !== null ? `: ${formatWhen(when, now, tz)}` : ""}`);
+  if (recipe) lines.push(`Повтор: ${describeRecipe(recipe, tz)}`);
+  lines.push(`Настойчивость: ${defaultLadder} · #${o.item_id}`);
+  const ctx = `${o.id}:${f}:${p}`;
+  const repeats = o.item_kind === "timer" || o.rule_recipe !== null;
+  const rows: ActionRow[] = [
+    row(btn("✅ Готово", `mn:dn:${ctx}`, 3), btn("⏰ Через час", `mn:sz:${o.id}:h1:${f}:${p}`), btn("🌆 Вечером", `mn:sz:${o.id}:eve:${f}:${p}`), btn("🌅 Завтра", `mn:sz:${o.id}:tom:${f}:${p}`), btn("🕒 На…", `mn:sa:${ctx}`)),
+    row(
+      btn("✏ Изменить", `mn:ed:${ctx}`),
+      ...(repeats ? [btn("⛔ Остановить повтор", `mn:sp:${o.item_id}:${f}:${p}`)] : []),
+      btn("🗑 Удалить", `mn:dl:${o.item_id}:${o.id}:${f}:${p}`, 4),
+      btn("◀ К списку", `mn:ls:${f}:${p}`),
+    ),
+  ];
+  return body(lines.join("\n"), rows);
+}
+
+export function confirmDeleteMessage(title: string, itemId: number, occId: number, f: ListFilter, p: number): MessageBody {
+  return body(`Удалить **${title}** целиком? Повторяющееся дело удалится со всеми повторами.`, [
+    row(btn("🗑 Да, удалить", `mn:dy:${itemId}:${f}:${p}`, 4), btn("Нет, оставить", `mn:it:${occId}:${f}:${p}`)),
+  ]);
+}
+
+/** Результат действия с делом: короткая подпись и кнопки «куда дальше». */
+export function resultMessage(text: string, f: ListFilter = "a", p = 0): MessageBody {
+  return body(text, [row(btn("📋 К делам", `mn:ls:${f}:${p}`, 1), btn("➕ Ещё дело", "mn:add"), btn("🏠 Меню", "mn:home"))]);
+}
+
+// ---------- добавление ----------
+
+export const REPEAT_CHOICES = [
+  { value: "day", label: "Каждый день", phrase: "каждый день" },
+  { value: "wd", label: "По будням", phrase: "по будням" },
+  { value: "wk", label: "Каждую неделю", phrase: "каждую неделю" },
+  { value: "mo", label: "Каждый месяц", phrase: "каждый месяц" },
+  { value: "yr", label: "Каждый год (впишите дату выше)", phrase: "каждый год" },
+] as const;
+
+// ---------- настройки по разделам ----------
+
+export type Section = "q" | "m" | "l" | "c" | "a";
+export const isSection = (s: string): s is Section => s === "q" || s === "m" || s === "l" || s === "c" || s === "a";
+
+const onOff = (v: boolean) => (v ? "вкл" : "выкл");
+
+export function settingsHomeMessage(s: AppSettings, now: number): MessageBody {
+  const away = s.awayUntil > now ? `до ${formatWhen(s.awayUntil, now, s.tz)}` : "нет";
+  const text = [
+    "**Настройки**",
+    `🌙 Тишина: тихие часы ${onOff(s.quietEnabled)} (${fmtHHMM(s.quietFrom)}–${fmtHHMM(s.quietTo)}), отъезд: ${away}`,
+    `📰 Сводки и свет: утром ${s.morning === null ? "выкл" : fmtHHMM(s.morning)}, вечером ${s.evening === null ? "выкл" : fmtHHMM(s.evening)}; свет: ${s.lightGroup ? `группа ${s.lightGroup}` : "выкл"}`,
+    `⚖ Настойчивость: ${describeSpec(s.defaultLadder)}`,
+    `🎭 Характер: ${CHARACTER_LABELS[s.character]}; настроение ${onOff(s.moodOn)}`,
+    `🤖 Модель и приём: понимание фраз ${onOff(s.llmOn)}`,
+  ].join("\n");
+  return body(text, [
+    row(btn("🌙 Тишина", "mn:s:q"), btn("📰 Сводки и свет", "mn:s:m"), btn("⚖ Настойчивость", "mn:s:l"), btn("🎭 Характер", "mn:s:c"), btn("🤖 Модель и приём", "mn:s:a")),
+    row(btn("🏠 Меню", "mn:home")),
+  ]);
+}
+
+export function sectionMessage(s: AppSettings, sec: Section, now: number, dmOn: boolean): MessageBody {
+  const back = row(btn("◀ Настройки", "mn:st"), btn("🏠 Меню", "mn:home"));
+  switch (sec) {
+    case "q": {
+      const away = s.awayUntil > now ? `до ${formatWhen(s.awayUntil, now, s.tz)}` : "нет";
+      return body(
+        [`**🌙 Тишина**`, `Тихие часы: ${onOff(s.quietEnabled)} (${fmtHHMM(s.quietFrom)}–${fmtHHMM(s.quietTo)}). В это время бот не напоминает, а копит до утра.`, `Я в отъезде: ${away}.`].join("\n"),
+        [
+          row(btn(s.quietEnabled ? "Тихие часы: выключить" : "Тихие часы: включить", "mn:tg:q:q", s.quietEnabled ? 3 : 2), btn("Время тишины…", "mn:md:qt:q"), btn("Я в отъезде…", "mn:md:aw:q")),
+          back,
+        ],
+      );
+    }
+    case "m":
+      return body(
+        [
+          "**📰 Сводки и свет**",
+          `Утренняя сводка: ${s.morning === null ? "выкл" : fmtHHMM(s.morning)}; вечерняя: ${s.evening === null ? "выкл" : fmtHHMM(s.evening)}; итоги недели: ${describeWeekly(s)}.`,
+          `Часовой пояс: ${s.tz}.`,
+          `График света (Днепр): ${s.lightGroup ? `группа ${s.lightGroup}` : "выкл"}.`,
+        ].join("\n"),
+        [row(btn("Сводки и пояс…", "mn:md:sm:m"), btn("Свет: группа…", "mn:md:lt:m")), back],
+      );
+    case "l": {
+      const preset = "preset" in s.defaultLadder ? s.defaultLadder.preset : "";
+      const select: StringSelect = {
+        type: 3,
+        custom_id: "mn:ld",
+        placeholder: "Настойчивость по умолчанию",
+        options: (["soft", "standard", "strong"] as const).map((k) => ({
+          label: PRESET_LABELS[k][0].toUpperCase() + PRESET_LABELS[k].slice(1),
+          value: k,
+          default: k === preset,
+        })),
+      };
+      return body(
+        [`**⚖ Настойчивость**`, `Как часто бот напоминает, пока дело не закрыто: ${describeSpec(s.defaultLadder)}.`, "Для одного дела её можно поменять в его карточке («Изменить»)."].join("\n"),
+        [row(select), row(btn("Свои числа…", "mn:md:ln:l")), back],
+      );
+    }
+    case "c":
+      return body(
+        [
+          "**🎭 Характер**",
+          `Характер: ${CHARACTER_LABELS[s.character]}.`,
+          `Настроение горничной: ${onOff(s.moodOn)} (меняется от того, как вы закрываете дела).`,
+          `Стиль речи: ${styleSummary(s.style)}. Подробно: /style.`,
+        ].join("\n"),
+        [
+          row(
+            btn(s.character === "maid" ? "Характер: нейтральный" : "Характер: уставшая горничная", "mn:tg:ch:c"),
+            btn(s.moodOn ? "Настроение: выключить" : "Настроение: включить", "mn:tg:mo:c", s.moodOn ? 3 : 2),
+          ),
+          back,
+        ],
+      );
+    default:
+      return body(
+        [
+          "**🤖 Модель и приём**",
+          `Понимание фраз моделью: ${onOff(s.llmOn)}. Если бот не понял время, он спросит языковую модель; такую запись стоит проверить.`,
+          `Личка: ${onOff(dmOn)}. Канал «бот»: ${s.chBot ? "заведён" : "не создан (/setup)"}.`,
+        ].join("\n"),
+        [
+          row(
+            btn(s.llmOn ? "Понимание моделью: выключить" : "Понимание моделью: включить", "mn:tg:llm:a", s.llmOn ? 3 : 2),
+            btn(dmOn ? "Личка: выключить" : "Личка: включить", "mn:tg:dm:a", dmOn ? 3 : 2),
+          ),
+          back,
+        ],
+      );
+  }
+}

@@ -13,7 +13,7 @@ import {
 } from "./discord/ui.ts";
 import type { AiBinding } from "./llm.ts";
 import { createFromText, EMPTY_REPLY, EMPTY_SERIES_REPLY, messageTime, SECRET_REPLY } from "./intake.ts";
-import { MoodSession, canStyle, makeCtx } from "./personality/director.ts";
+import { MoodSession, canStyle, makeCtx, recordedLine } from "./personality/director.ts";
 import { maidEmbed, pickReaction, wantSprite } from "./personality/look.ts";
 import { isPolite, isSeriousTopic } from "./personality/moodEngine.ts";
 import { detectUserWord } from "./personality/userWords.ts";
@@ -293,7 +293,12 @@ export async function runCron(d: CronDeps): Promise<CronReport> {
               continue;
             }
           }
-          const r = await createFromText({ repo, settings: s, now, ai: d.ai }, m.content, "channel", { at: messageTime(m, now) });
+          const recordedFor = (title: string, critical: boolean) => {
+            if (!mood?.loaded) return null;
+            const line = recordedLine(mood, title, critical);
+            return line ? { line, look: { mood: mood.state!.mood, origin, sprite: wantSprite(mood.rand) } } : null;
+          };
+          const r = await createFromText({ repo, settings: s, now, ai: d.ai, recorded: (title, critical) => recordedFor(title, critical) }, m.content, "channel", { at: messageTime(m, now) });
           report.intake++;
           const reply =
             r.kind === "created"

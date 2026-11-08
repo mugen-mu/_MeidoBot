@@ -6,6 +6,7 @@ export interface Button {
   style: 1 | 2 | 3 | 4;
   label: string;
   custom_id: string;
+  disabled?: boolean;
 }
 
 export interface SelectOption {

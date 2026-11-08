@@ -5,7 +5,7 @@ import type { OccView, Op } from "../db/types.ts";
 import type { AiBinding } from "../llm.ts";
 import { EMPTY_REPLY, EMPTY_SERIES_REPLY, NOT_RECURRING_REPLY, SECRET_REPLY, createFromText } from "../intake.ts";
 import { tired } from "../flavor.ts";
-import { MoodSession, makeCtx, recordDone, resetOps } from "../personality/director.ts";
+import { MoodSession, makeCtx, recordDone, recordedLine, resetOps } from "../personality/director.ts";
 import { MOODS, type Mood, isMood } from "../personality/moodEngine.ts";
 import { MOOD_CONFIG } from "../personality/config.ts";
 import { moodReport } from "../personality/report.ts";
@@ -159,7 +159,22 @@ const publicHere = (c: C) => c.i.channel_id !== undefined && c.i.channel_id === 
 const out = (c: C, body: MessageBody): Reply => msg(publicHere(c) ? body : { ...body, flags: 64 });
 
 async function createReply(c: C, text: string, source: "slash" | "menu", extra: { body?: string; requireRecurring?: boolean } = {}): Promise<Reply> {
-  const r = await createFromText({ repo: c.repo, settings: c.s, now: c.now, ai: c.ai, aiTimeoutMs: 1500 }, text, source, extra);
+  const r = await createFromText(
+    {
+      repo: c.repo,
+      settings: c.s,
+      now: c.now,
+      ai: c.ai,
+      aiTimeoutMs: 1500,
+      recorded: (title, critical) => {
+        const line = c.s.moodOn ? recordedLine(c.mood, title, critical) : null;
+        return line && c.mood.state ? { line, look: { mood: c.mood.state.mood, origin: spriteOrigin(c), sprite: wantSprite(c.mood.rand, c.mood.cinema) } } : null;
+      },
+    },
+    text,
+    source,
+    extra,
+  );
   switch (r.kind) {
     case "created":
       return out(c, r.message);
@@ -463,8 +478,7 @@ function confirmFor(c: C, occ: OccView): MessageBody {
     whenText: occ.due_at ? formatWhen(occ.due_at, c.now, c.s.tz) : "без срока",
     recur: recipe ? describeRecipe(recipe, c.s.tz) : null,
     lead: leads.length ? describeLead(leads) : null,
-    ladderText: timer ? "один раз на срабатывание" : describeSpec(spec),
-    ladderKey: timer ? null : specKey(spec),
+    ladderText: occ.item_ladder ? (timer ? undefined : describeSpec(spec)) : undefined,
   });
 }
 

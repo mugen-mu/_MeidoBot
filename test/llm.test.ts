@@ -124,7 +124,6 @@ describe("проводка: createFromText", () => {
     expect(r.message.content).toContain("11.14.2026, 14:00");
     expect(r.message.content).toContain("языковая модель");
     const ids = (r.message.components as any[]).flatMap((x) => x.components.map((c: any) => c.custom_id));
-    expect(ids.some((i: string) => i.startsWith("ok"))).toBe(true);
     expect(ids.some((i: string) => i.startsWith("edit"))).toBe(true);
   });
 

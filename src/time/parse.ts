@@ -403,6 +403,8 @@ export function cleanTitle(raw: string): string {
   let s = raw.replace(/\s+/g, " ").trim();
   s = s.replace(/^(?:напомни(?:ть)?(?:\s+мне)?|напоминай(?:\s+мне)?)(?![\p{L}\p{N}])\s*[:,—-]?\s*/iu, "");
   s = s.replace(/^(?:что|чтобы)(?![\p{L}\p{N}])\s*/iu, "");
+  // «чтобы я записал ребёнка» -> «Записать ребёнка»: «я» убираем, глагол прошедшего времени ставим в начальную форму
+  s = s.replace(/^я\s+(\p{L}+?)(ал|ил|ел|ыл|ул|ял)(а)?(?![\p{L}\p{N}])/iu, (_m, stem: string, end: string) => `${stem}${end[0]}ть`);
   let tokens = s.split(" ").filter(Boolean);
   const junk = (t: string) => STOP.has(t.toLowerCase().replace(/[,.;:]+$/, "")) || /^[,.;:!?—-]+$/.test(t);
   while (tokens.length && junk(tokens[0])) tokens = tokens.slice(1);

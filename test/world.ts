@@ -31,6 +31,8 @@ export class World {
     if (opts.remind !== false) ops.push(setSetting("ch_remind", CH_REMIND));
     if (opts.today) ops.push(setSetting("ch_today", CH_TODAY));
     if (opts.intake) ops.push(setSetting("ch_bot", CH_BOT), setSetting("intake", JSON.stringify([CH_BOT])));
+    // с 2026-11-08 характер включён по умолчанию; старые тесты проверяют нейтральный тон — выключаем явно (settings перекрывает)
+    ops.push(setSetting("mood_on", "0"), setSetting("character", "neutral"));
     for (const [k, v] of Object.entries(opts.settings ?? {})) ops.push(setSetting(k, v));
     await this.repo().exec(ops);
   }

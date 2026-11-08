@@ -270,3 +270,9 @@ export function recordDone(m: MoodSession, occ: Pick<OccView, "kind" | "item_kin
   if (counts && m.rand() < m.cfg.randomPraiseChance) return m.say("done", vars, "proud");
   return m.say(counts && occ.state === "overdue" ? "done_late" : "done", vars);
 }
+
+/** Реплика к подтверждению «Записано …»: null на серьёзных темах и критичных делах (стиль там выключен) или когда пула нет. */
+export function recordedLine(m: MoodSession, title: string, critical: boolean | number): string | null {
+  if (!m.loaded || !canStyle(title, critical)) return null;
+  return m.say("recorded");
+}

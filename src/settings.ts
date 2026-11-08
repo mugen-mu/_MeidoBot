@@ -30,7 +30,7 @@ export interface AppSettings {
   lightGroup: string | null;
   /** характер бота: нейтральный (по умолчанию) или «уставшая горничная» */
   character: Character;
-  /** настроение горничной («Характер 2»): выкл по умолчанию — тон нейтральный, как раньше */
+  /** настроение горничной («Характер 2»): вкл по умолчанию (решение пользователя 2026-11-08; раньше было выкл) */
   moodOn: boolean;
   /** аниме-слой («Характер 2», Х2): уровень, письменность, манга-звуки, подсказки перевода */
   style: StyleConfig;
@@ -86,7 +86,7 @@ export function readSettings(rows: { key: string; value: string }[]): AppSetting
     intake,
     lightGroup: m.get("light") && m.get("light") !== "off" ? (m.get("light") as string) : null,
     character: parseCharacter(m.get("character")),
-    moodOn: m.get("mood_on") === "1",
+    moodOn: m.get("mood_on") !== "0",
     style: parseStyle(m),
     llmOn: m.get("llm_on") === "1",
   };

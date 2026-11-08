@@ -34,11 +34,13 @@ export type Situation =
   | "return_after_pause"
   | "idle_ping"
   | "chat_fallback"
-  | "thanks";
+  | "thanks"
+  /** дело записано (подтверждение «Записано …») */
+  | "recorded";
 
 export const SITUATIONS: Situation[] = [
   "reminder", "reminder_repeat", "missed_first", "missed", "done", "done_late", "streak_praise", "relief",
-  "greeting", "return_after_pause", "idle_ping", "chat_fallback", "thanks",
+  "greeting", "return_after_pause", "idle_ping", "chat_fallback", "thanks", "recorded",
 ];
 
 /** Если у настроения нет фраз для ситуации, берём ближайшую «родственную» из того же настроения. */

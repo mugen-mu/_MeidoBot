@@ -369,8 +369,9 @@ describe("cron: приём обычного текста из канала «б�
     expect(reply.body.content).toContain("Записано: **Купить хлеб** — завтра, 10:00");
     const rows = reply.body.components!;
     const ids = rows.flatMap((x) => x.components.map((c) => c.custom_id));
-    expect(ids.some((i) => i.startsWith("ok:"))).toBe(true);
     expect(ids.some((i) => i.startsWith("edit:"))).toBe(true);
+    expect(ids.some((i) => i.startsWith("rm:"))).toBe(true);
+    expect(ids.some((i) => i.startsWith("ok:") || i.startsWith("lad:"))).toBe(false); // подтверждение упрощено (2026-11-08)
     await w.run(NOW + 2 * MINUTE); // повторно не разбирается
     expect(w.d1.q("SELECT 1 FROM items")).toHaveLength(1);
   });

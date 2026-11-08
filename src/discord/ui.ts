@@ -128,34 +128,25 @@ export function confirmMessage(a: {
   whenText: string;
   recur?: string | null;
   lead?: string | null;
-  ladderText: string;
-  /** null — у таймера лестницы нет, выбор настойчивости не показываем */
-  ladderKey: string | null;
+  /** строка «Настойчивость» показывается, только если у дела она своя (выбор убран из подтверждения: он в «Изменить») */
+  ladderText?: string;
+  /** не используется (оставлен, чтобы вызовы не менялись) */
+  ladderKey?: string | null;
   /** строка-пояснение под записью (например, «время поняла модель») */
   note?: string;
+  /** реплика горничной (настроение): карточкой, если есть `look`, иначе мелким текстом под записью */
+  line?: string | null;
+  look?: Look | null;
 }): MessageBody {
-  const lines = [`Записано: **${a.title}** — ${a.whenText}`];
+  const lines = [`Записано: **${a.title}** — ${a.whenText} · #${a.itemId}`];
   if (a.recur) lines.push(`Повтор: ${a.recur}`);
   if (a.lead) lines.push(`Заранее: ${a.lead}`);
-  lines.push(`Настойчивость: ${a.ladderText} · #${a.itemId}`);
+  if (a.ladderText) lines.push(`Настойчивость: ${a.ladderText}`);
   if (a.note) lines.push(`-# ${a.note}`);
-  const rows: ActionRow[] = [];
-  if (a.ladderKey !== null) {
-    rows.push(
-      row({
-        type: 3,
-        custom_id: cid("lad", a.occId),
-        placeholder: "Настойчивость",
-        options: (["soft", "standard", "strong"] as const).map((k) => ({
-          label: PRESET_LABELS[k][0].toUpperCase() + PRESET_LABELS[k].slice(1),
-          value: k,
-          default: k === a.ladderKey,
-        })),
-      }),
-    );
-  }
-  rows.push(row(btn("Верно", cid("ok", a.occId), 3), btn("Изменить", cid("edit", a.occId)), btn("Отменить", cid("rm", a.itemId), 4)));
-  return { content: lines.join("\n"), allowed_mentions: { parse: [] }, components: rows };
+  if (a.line && !a.look) lines.push(subtext(a.line));
+  const rows: ActionRow[] = [row(btn("Изменить", cid("edit", a.occId)), btn("Отменить", cid("rm", a.itemId), 4))];
+  const embeds = a.line && a.look ? [maidEmbed({ mood: a.look.mood, text: a.line, origin: a.look.origin, sprite: a.look.sprite })] : undefined;
+  return { content: lines.join("\n"), ...(embeds ? { embeds } : {}), allowed_mentions: { parse: [] }, components: rows };
 }
 
 export function confirmedMessage(a: { title: string; whenText: string; itemId: number }): MessageBody {

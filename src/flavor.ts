@@ -3,7 +3,7 @@
 // сами напоминания и факты в сообщениях не меняются.
 export type Character = "neutral" | "maid";
 
-export const parseCharacter = (v: string | null | undefined): Character => (v === "maid" ? "maid" : "neutral");
+export const parseCharacter = (v: string | null | undefined): Character => (v === "neutral" ? "neutral" : "maid");
 
 export const CHARACTER_LABELS: Record<Character, string> = { neutral: "нейтральный", maid: "уставшая горничная" };
 
