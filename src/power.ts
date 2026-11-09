@@ -4,7 +4,7 @@
 import { type Repo, event, setMeta } from "./db/repo.ts";
 import type { Op } from "./db/types.ts";
 import type { DiscordApi } from "./discord/types.ts";
-import { type LightData, checkSchedule, fetchYasno } from "./light.ts";
+import { type LightData, YASNO_ATTEMPTS, checkSchedule, fetchYasno } from "./light.ts";
 import type { AppSettings } from "./settings.ts";
 import { MINUTE, fmtHHMM, wallOf } from "./time/tz.ts";
 
@@ -162,7 +162,7 @@ export async function announceOutage(d: PowerDeps & { meta: Map<string, string>;
   if (!d.ownerId || !d.s.chRemind) return null;
   let data: LightData | null = null;
   if (d.s.lightGroup) {
-    d.spend();
+    for (let i = 0; i < YASNO_ATTEMPTS; i++) d.spend();
     data = await fetchYasno(d.fetchFn ?? fetch);
   }
   await d.api.postMessage(d.s.chRemind, {

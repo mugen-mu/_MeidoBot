@@ -46,7 +46,10 @@ export function parseYasno(json: unknown): LightData {
   return out;
 }
 
-export async function fetchYasno(fetchFn: typeof fetch = fetch): Promise<LightData | null> {
+/** Сколько раз пробуем запросить Yasno за один раз (разовый сбой или таймаут не должен ломать сводку). Каждая попытка — подзапрос Cloudflare. */
+export const YASNO_ATTEMPTS = 2;
+
+async function fetchYasnoOnce(fetchFn: typeof fetch): Promise<LightData | null> {
   try {
     const res = await fetchFn(YASNO_URL, { headers: { accept: "application/json", "user-agent": "MeidoBot (personal, 0.1)" }, signal: AbortSignal.timeout(5000) });
     if (!res.ok) return null;
@@ -55,6 +58,16 @@ export async function fetchYasno(fetchFn: typeof fetch = fetch): Promise<LightDa
   } catch {
     return null;
   }
+}
+
+/** Запрос к Yasno с повтором: вторая попытка через паузу. null — не ответил ни разу. */
+export async function fetchYasno(fetchFn: typeof fetch = fetch, retryDelayMs = 800): Promise<LightData | null> {
+  for (let i = 0; i < YASNO_ATTEMPTS; i++) {
+    if (i > 0 && retryDelayMs > 0) await new Promise((r) => setTimeout(r, retryDelayMs));
+    const data = await fetchYasnoOnce(fetchFn);
+    if (data) return data;
+  }
+  return null;
 }
 
 /** «3» -> все подгруппы 3.x, «3.1» -> одна. */
@@ -74,7 +87,8 @@ export function lightLines(which: "today" | "tomorrow", group: string, data: Lig
   if (keys.length === 0) return [`График света: группа ${group} не найдена (проверьте номер в /settings).`];
   const describe = (d: LightDay): string => {
     if (d.status === "WaitingForSchedule" || d.date !== expectedDate) return "график ещё не опубликован";
-    if (d.status !== "ScheduleApplies") return `статус «${d.status}»`;
+    if (d.status === "EmergencyShutdowns") return "Yasno сейчас показывает «аварийные отключения» без часов, график не опубликован (проверьте сайт ДТЭК)";
+    if (d.status !== "ScheduleApplies") return `график не опубликован (статус Yasno «${d.status}»)`;
     return d.off.length ? `света не будет ${d.off.map(range).join(", ")}` : "отключений нет";
   };
   const days = keys.map((k) => data[k][which]);

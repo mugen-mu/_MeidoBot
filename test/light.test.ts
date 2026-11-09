@@ -79,6 +79,13 @@ describe("график света: разбор и подписи", () => {
     ).toBeNull();
     expect(await fetchYasno((async () => Response.json({})) as unknown as typeof fetch)).toBeNull();
   });
+
+  it("fetchYasno: первая попытка сорвалась, вторая прошла — данные есть", async () => {
+    let n = 0;
+    const flaky = (async () => (++n === 1 ? new Response("x", { status: 503 }) : Response.json(yasno()))) as unknown as typeof fetch;
+    expect(Object.keys((await fetchYasno(flaky, 0))!)).toEqual(["3.1", "3.2", "4.1"]);
+    expect(n).toBe(2);
+  });
 });
 
 describe("график света в сводках", () => {
@@ -115,5 +122,43 @@ describe("график света в сводках", () => {
     await w.run(kyiv(2026, 11, 7, 8, 0));
     expect(texts()[0]).toContain("Сводка на сегодня");
     expect(texts()[0]).toContain("не удалось получить данные");
+    expect(texts()[0]).toContain("Проверю ещё раз через 30 минут");
+  });
+
+  it("Yasno не ответил в сводке: через полчаса перепроверка и отдельное сообщение с графиком, потом тишина", async () => {
+    await w.repo().exec([setSetting("light", "3")]);
+    w.light = null;
+    await w.run(kyiv(2026, 11, 7, 8, 0));
+    const before = texts().length;
+    await w.run(kyiv(2026, 11, 7, 8, 10)); // рано: полчаса не прошло
+    expect(texts().length).toBe(before);
+    w.light = yasno();
+    await w.run(kyiv(2026, 11, 7, 8, 31));
+    const last = texts()[texts().length - 1];
+    expect(last).toContain("Yasno снова отвечает.");
+    expect(last).toContain("Свет сегодня (группа 3): света не будет 06:30–14:00, 17:00–21:00.");
+    const n = texts().length;
+    await w.run(kyiv(2026, 11, 7, 9, 5));
+    expect(texts().length).toBe(n);
+  });
+
+  it("Yasno молчит три проверки подряд: одно сообщение «больше не проверяю»", async () => {
+    await w.repo().exec([setSetting("light", "3")]);
+    w.light = null;
+    await w.run(kyiv(2026, 11, 7, 8, 0));
+    await w.run(kyiv(2026, 11, 7, 8, 31));
+    await w.run(kyiv(2026, 11, 7, 9, 2));
+    expect(texts().filter((t) => t.includes("больше не проверяю")).length).toBe(0);
+    await w.run(kyiv(2026, 11, 7, 9, 33));
+    expect(texts().filter((t) => t.includes("больше не проверяю")).length).toBe(1);
+    await w.run(kyiv(2026, 11, 7, 10, 5));
+    expect(texts().filter((t) => t.includes("больше не проверяю")).length).toBe(1);
+  });
+
+  it("«аварийные отключения» Yasno: понятный текст вместо сырого статуса", () => {
+    const d = { today: day("2026-11-07", "EmergencyShutdowns", []), tomorrow: day("2026-11-08", "EmergencyShutdowns", []) };
+    const data = parseYasno({ "3.1": d });
+    expect(lightLines("today", "3.1", data, "2026-11-07")[0]).toContain("«аварийные отключения» без часов");
+    expect(lightLines("today", "3.1", data, "2026-11-07")[0]).not.toContain("EmergencyShutdowns");
   });
 });
