@@ -1,5 +1,7 @@
 // Источники аниме (docs/RECON-ANIME.md): Shikimori — поиск, русские названия и расписание серий (время с точностью до минуты совпадает с AniList).
 // AniList из Cloudflare Worker не отвечает (403 «manually blocked», проба 2026-11-10), поэтому не используется. Любой сбой = null.
+import type { Voice } from "./core.ts";
+
 export type FetchFn = typeof fetch;
 
 const UA = "MeidoBot/1.0 (personal reminder bot)";
@@ -105,6 +107,65 @@ export async function fetchCalendar(fetchFn: FetchFn): Promise<Schedule[] | null
   for (const it of j as Record<string, any>[]) {
     const s = scheduleFrom(it?.anime ? { ...it.anime, next_episode_at: it.next_episode_at } : null, typeof it?.next_episode === "number" ? it.next_episode : undefined);
     if (s) out.push(s);
+  }
+  return out;
+}
+
+// ---------- озвучка AniLibria ----------
+
+/** Расписание недели у AniLibria. `include` оставляет только нужные поля: 5 КБ вместо 270 (Worker не парсит лишнее). */
+const VOICE_URL =
+  "https://anilibria.top/api/v1/anime/schedule/week?include=release.mal.id,release.fresh_at,release.is_ongoing,release.publish_day.value,next_release_episode_number";
+
+const asTime = (v: unknown): number | null => {
+  const t = typeof v === "string" ? Date.parse(v) : NaN;
+  return Number.isFinite(t) ? t : null;
+};
+
+/** Разбор ответа AniLibria: по тайтлу — когда вышла последняя озвученная серия и какая следующая. Склейка — по номеру MyAnimeList. */
+export function parseVoice(j: unknown): Voice[] | null {
+  if (!Array.isArray(j)) return null;
+  const out: Voice[] = [];
+  for (const it of j as Record<string, any>[]) {
+    const r = it?.release;
+    const mal = r?.mal?.id;
+    if (typeof mal !== "number") continue;
+    out.push({
+      mal,
+      freshAt: asTime(r.fresh_at),
+      nextEp: typeof it.next_release_episode_number === "number" ? it.next_release_episode_number : null,
+      ongoing: r.is_ongoing === true,
+    });
+  }
+  return out;
+}
+
+/** null — AniLibria не ответил (озвучка необязательна: молчим, повторим). */
+export async function fetchVoice(fetchFn: FetchFn): Promise<Voice[] | null> {
+  return parseVoice(await getJson(fetchFn, VOICE_URL, { headers: { "User-Agent": UA }, redirect: "follow" }));
+}
+
+// ---------- продолжение сезона ----------
+
+/** Продолжение, которое анонсировано или уже идёт. */
+export interface Sequel {
+  mal: number;
+  ru: string;
+  orig: string;
+  status: string;
+}
+
+/** Связанные тайтлы Shikimori: продолжения (relation «Sequel»), которые ещё не закончились. null — не ответил. */
+export async function fetchSequels(mal: number, fetchFn: FetchFn): Promise<Sequel[] | null> {
+  const j = await getJson(fetchFn, `${SHIKI}/${mal}/related`, { headers: { "User-Agent": UA }, redirect: "follow" });
+  if (!Array.isArray(j)) return null;
+  const out: Sequel[] = [];
+  for (const it of j as Record<string, any>[]) {
+    const x = it?.anime;
+    if (String(it?.relation) !== "Sequel" || !x || typeof x.id !== "number" || !KINDS.has(String(x.kind))) continue;
+    const status = String(x.status ?? "");
+    const ru = String(x.russian || x.name || "").trim();
+    if ((status === "anons" || status === "ongoing") && ru) out.push({ mal: x.id, ru, orig: String(x.name ?? ""), status });
   }
   return out;
 }

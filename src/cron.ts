@@ -593,7 +593,7 @@ export async function runCron(d: CronDeps): Promise<CronReport> {
     // 2б6. аниме: ночное обновление расписания и утреннее «посмотрели?»
     if (owner && s.chRemind) {
       const r = await runAnime({
-        repo, api, now, s, meta, owner, away, minuteOfDay, fetchFn: d.fetchFn ?? fetch, rand: d.rand,
+        repo, api, now, s, meta, owner, away, quiet: inQuietHours(s, minuteOfDay), minuteOfDay, fetchFn: d.fetchFn ?? fetch, rand: d.rand,
         room: room2, spend: (n) => repo.counter.spend(n),
       });
       ops2.push(...r.ops);

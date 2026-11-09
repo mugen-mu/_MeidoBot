@@ -33,6 +33,12 @@ export class World {
   /** Shikimori: календарь недели (массив); null — не отвечает */
   shikiCalendar: unknown[] | null = [];
   animeFetches = 0;
+  /** Shikimori: связанные тайтлы по номеру MAL (для продолжений); по умолчанию пусто */
+  shikiRelated: Record<number, unknown[]> = {};
+  relatedFetches = 0;
+  /** AniLibria: расписание недели (массив); null — не отвечает */
+  voice: unknown[] | null = [];
+  voiceFetches = 0;
 
   /** Репозиторий с новым счётчиком (как новый запуск Worker). */
   repo(limit = 50): Repo {
@@ -71,8 +77,17 @@ export class World {
         return this.water === null ? new Response("down", { status: 503 }) : Response.json(this.water);
       }
       const url = String(typeof input === "string" ? input : (input as { url?: string; href?: string })?.url ?? (input as { href?: string })?.href);
+      if (url.includes("anilibria")) {
+        this.voiceFetches++;
+        return this.voice === null ? new Response("down", { status: 503 }) : Response.json(this.voice);
+      }
       if (url.includes("shikimori")) {
         this.animeFetches++;
+        const rel = /\/api\/animes\/(\d+)\/related/.exec(url);
+        if (rel) {
+          this.relatedFetches++;
+          return Response.json(this.shikiRelated[Number(rel[1])] ?? []);
+        }
         if (url.includes("/api/calendar")) return this.shikiCalendar === null ? new Response("down", { status: 503 }) : Response.json(this.shikiCalendar);
         const one = /\/api\/animes\/(\d+)/.exec(url);
         if (one) return this.shikiById[Number(one[1])] ? Response.json(this.shikiById[Number(one[1])]) : new Response("none", { status: 404 });

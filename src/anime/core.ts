@@ -24,6 +24,15 @@ export interface Anime {
   asked_ep: number;
   added_at: number;
   updated_at: number;
+  // выкладка 2 (миграция 0007)
+  drop_reason: string | null;
+  last_move_at: number | null;
+  voice_lag: number | null;
+  voice_n: number;
+  voice_ep: number;
+  weekq_at: number | null;
+  seq_at: number | null;
+  start_asked: number;
 }
 
 /** До скольких тайтлов в «Смотрю» бот присылает уведомления (решение Ihor: «можно больше, но уведомления только по первым 5»). */
@@ -79,6 +88,7 @@ export function dayShort(ms: number, now: number, tz: string): string {
 
 export const clip = (s: string, n: number): string => (s.length > n ? `${s.slice(0, n - 1)}…` : s);
 
+/** liked: 0 нет отметки, 1 понравилось, 2 в восторге, -1 «так себе» (в списке без значка). */
 export const likeMark = (a: Anime): string => (a.liked === 2 ? "🔥 " : a.liked === 1 ? "❤ " : "");
 
 /** Хвост строки списка про серии: на какой я и что дальше. */
@@ -149,9 +159,141 @@ export function findOwn(rows: Anime[], query: string): Anime | null {
   return part.length === 1 ? part[0] : null;
 }
 
+// ---------- озвучка AniLibria ----------
+
+const HOUR_MS = 60 * MINUTE;
+const DAY_MS = 24 * HOUR_MS;
+
+/** Озвучка, пришедшая позже этого срока после выхода серии, в замер не идёт (это уже не «обычная» задержка). */
+export const VOICE_MAX_LAG = 72 * 60;
+
+/** Что видно у AniLibria про один тайтл: когда появилась последняя озвученная серия и какая следующая. */
+export interface Voice {
+  mal: number;
+  freshAt: number | null;
+  nextEp: number | null;
+  ongoing: boolean;
+}
+
+/**
+ * Один замер задержки озвучки (минуты): последняя озвученная серия — это серия перед «следующей» у AniLibria; сравниваем с тем,
+ * когда она вышла у нас. Берём только если серии совпадают, время выхода известно и разница похожа на правду.
+ */
+export function voiceObservation(a: Anime, v: Voice, now: number): number | null {
+  if (v.nextEp === null || v.freshAt === null) return null;
+  const ep = v.nextEp - 1;
+  const e = effective(a, now);
+  if (ep < 1 || ep !== e.airedEp || e.airedAt === null || a.voice_ep === ep) return null;
+  const lag = Math.round((v.freshAt - e.airedAt) / MINUTE);
+  return lag >= 0 && lag <= VOICE_MAX_LAG ? lag : null;
+}
+
+/** Новое среднее: старое значение весит как до трёх прежних замеров. */
+export const voiceAverage = (old: number | null, n: number, obs: number): number => (old === null || n <= 0 ? obs : Math.round((old * Math.min(n, 3) + obs) / (Math.min(n, 3) + 1)));
+
+const hoursWord = (h: number): string => {
+  if (!Number.isInteger(h)) return "часа";
+  const t = h % 100;
+  if (t >= 11 && t <= 14) return "часов";
+  const u = h % 10;
+  return u === 1 ? "час" : u >= 2 && u <= 4 ? "часа" : "часов";
+};
+
+/** «~40 мин», «~2,5 часа», «~5 часов» — с шагом в полчаса. */
+export function lagText(min: number): string {
+  if (min < 60) return `~${Math.max(10, Math.round(min / 10) * 10)} мин`;
+  const h = Math.round(min / 30) / 2;
+  return `~${String(h).replace(".", ",")} ${hoursWord(h)}`;
+}
+
+/** Строка про озвучку: только если мы её знаем (у тайтлов без AniLibria строки нет). */
+export const voiceLine = (a: Anime): string | null => (a.voice_lag === null ? null : `озвучка AniLibria обычно через ${lagText(a.voice_lag)}`);
+
+// ---------- «между прочим» ----------
+
+export const WEEK_DAY = 7; // воскресенье (wallOf().wd: 1 = пн … 7 = вс)
+/** Во сколько в воскресенье спрашивать (минут от полуночи): 19:10, окно три часа. */
+export const WEEKQ_AT = 19 * 60 + 10;
+export const WEEKQ_WINDOW = 180;
+export const WEEKQ_TTL = DAY_MS;
+const IDLE_ASK_EP = 7 * DAY_MS;
+const IDLE_CONTINUE = 21 * DAY_MS;
+const PLANNED_OLD = 180 * DAY_MS;
+const SEQ_RECHECK = 60 * DAY_MS;
+/** После вопроса «добавить продолжение?» про этот тайтл больше не ищем почти год. */
+export const SEQ_AFTER_ASK = 300 * DAY_MS;
+
+export type WeekKind = "ep" | "liked" | "cont" | "planned" | "seq";
+
+const movedAt = (a: Anime): number => a.last_move_at ?? a.added_at;
+const asked = (a: Anime, ago: number, now: number): boolean => a.weekq_at !== null && now - a.weekq_at < ago;
+const behind = (a: Anime, now: number): boolean => effective(a, now).airedEp > a.watched;
+const oldest = (xs: Anime[]): Anime | null => xs.sort((x, y) => movedAt(x) - movedAt(y) || x.id - y.id)[0] ?? null;
+
+export interface WeekPicks {
+  cont: Anime | null;
+  ep: Anime | null;
+  planned: Anime | null;
+  liked: Anime | null;
+  /** кого проверить на анонс продолжения (до трёх, самые любимые и свежие) */
+  seq: Anime[];
+}
+
+/** Кандидаты на вопрос недели по ситуации; порядок выбора решает вызывающий: cont → ep → seq → planned → liked. */
+export function weekPicks(rows: Anime[], now: number): WeekPicks {
+  const watching = rows.filter((a) => a.status === "watching" && a.notify === 1 && behind(a, now));
+  const idle = (a: Anime) => now - movedAt(a);
+  const done = rows.filter((a) => a.status === "done");
+  return {
+    cont: oldest(watching.filter((a) => idle(a) >= IDLE_CONTINUE && !asked(a, IDLE_CONTINUE, now))),
+    ep: oldest(watching.filter((a) => a.watched >= 1 && idle(a) >= IDLE_ASK_EP && idle(a) < IDLE_CONTINUE && !asked(a, IDLE_CONTINUE, now))),
+    planned: oldest(rows.filter((a) => a.status === "planned" && idle(a) >= PLANNED_OLD && !asked(a, PLANNED_OLD, now))),
+    liked: done.filter((a) => a.liked === 0 && a.weekq_at === null).sort((x, y) => y.updated_at - x.updated_at || y.id - x.id)[0] ?? null,
+    seq: done
+      .filter((a) => a.seq_at === null || now - a.seq_at >= SEQ_RECHECK)
+      .sort((x, y) => y.liked - x.liked || y.updated_at - x.updated_at)
+      .slice(0, 3),
+  };
+}
+
+/** Сколько недель тайтл не двигается, словами: «3 недели». */
+export function weeksText(ms: number): string {
+  const n = Math.max(1, Math.round(ms / (7 * DAY_MS)));
+  const u = n % 10;
+  const t = n % 100;
+  return `${n} ${t >= 11 && t <= 14 ? "недель" : u === 1 ? "неделю" : u >= 2 && u <= 4 ? "недели" : "недель"}`;
+}
+
+export const idleTime = (a: Anime, now: number): number => now - movedAt(a);
+
+const MONTH_GEN = ["", "января", "февраля", "марта", "апреля", "мая", "июня", "июля", "августа", "сентября", "октября", "ноября", "декабря"];
+
+/** «марта»: с какого месяца тайтл лежит без движения (для вопроса «ещё хочется?»). */
+export const sinceText = (a: Anime, tz: string): string => MONTH_GEN[wallOf(movedAt(a), tz).mo];
+
+export const DROP_REASON: Record<string, string> = { b: "bored", u: "busy", l: "long", n: "notmine" };
+export const DROP_LABEL: Record<string, string> = { bored: "скучно", busy: "не успеваю", long: "слишком длинный", notmine: "не моё" };
+
+// ---------- начало сезона ----------
+
+/**
+ * Когда сегодня выходит первая серия тайтла из «В планах» (UTC, мс), если про это ещё не писали.
+ * Ночная первая серия (раньше 06:00 по Киеву) тоже считается сегодняшней. null — сегодня не старт.
+ */
+export function seasonStart(a: Anime, now: number, tz: string): number | null {
+  if (a.status !== "planned" || a.start_asked) return null;
+  const e = effective(a, now);
+  const at = e.upcoming && e.upcoming.ep === 1 ? e.upcoming.at : e.airedEp === 1 ? e.airedAt : null;
+  if (at === null) return null;
+  const t0 = startOfDay(now, tz);
+  return at >= t0 - 6 * HOUR_MS && at < t0 + DAY_MS ? at : null;
+}
+
 // ---------- реплики Хару ----------
 
-type LineKind = "list" | "listEmpty" | "listPlanned" | "listDone" | "listDropped" | "card" | "ep" | "liked" | "dropped" | "added" | "ask" | "tonight" | "unclear";
+type LineKind =
+  | "list" | "listEmpty" | "listPlanned" | "listDone" | "listDropped" | "card" | "ep" | "liked" | "dropped" | "added" | "ask" | "tonight" | "unclear"
+  | "weekEp" | "weekLiked" | "weekCont" | "weekReason" | "weekPlanned" | "weekSeq" | "weekThanks" | "start";
 
 const LINES: Record<LineKind, string[]> = {
   list: ["Всё записано. Я ничего не пропускаю, даже когда очень хочется.", "Вот. Не благодарите, я просто стою рядом.", "Список у меня. Вы смотрите, а я помню."],
@@ -167,6 +309,14 @@ const LINES: Record<LineKind, string[]> = {
   ask: ["Спрашиваю один раз в день. Больше не буду. Наверное."],
   tonight: ["Хорошо, что вы всё ещё смотрите. Чай заварила.", "Не забудьте. Я не напоминаю, я констатирую."],
   unclear: ["Тут есть варианты. Выберите, я не телепат."],
+  weekEp: ["Я записала. Поправьте, если ошиблась. Я не ошибаюсь, но на всякий случай.", "Спрашиваю не из любопытства. Из порядка."],
+  weekLiked: ["Просто спросила. Просто.", "Мне не всё равно. Совсем чуть-чуть."],
+  weekCont: ["Не давлю. Просто напоминаю, что я помню.", "Я не осуждаю. Я наблюдаю."],
+  weekReason: ["Это только для меня, я никому не скажу."],
+  weekPlanned: ["«Потом» бывает слишком долгим. Я лишь прибираюсь."],
+  weekSeq: ["Я случайно услышала. Я не подслушивала, мимо проходила."],
+  weekThanks: ["Спасибо. Записала.", "Хорошо. Теперь знаю."],
+  start: ["Это «потом» наступило, господин. Я не напоминаю, я констатирую.", "Сегодня то, что вы записали на потом. Чай заварить?"],
 };
 
 /** Короткая реплика Хару: только при характере «горничная», без перебора (одна на сообщение). */

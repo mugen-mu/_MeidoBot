@@ -5,20 +5,23 @@ import { type Character } from "../flavor.ts";
 import { subtext, modal, selectLabel, textLabel } from "../discord/ui.ts";
 import type { ActionRow, Button, MessageBody } from "../discord/types.ts";
 import { MINUTE, startOfDay, wallOf, fmtHHMM } from "../time/tz.ts";
-import type { Candidate } from "./sources.ts";
+import type { Candidate, Sequel } from "./sources.ts";
 import {
   type Anime,
   type AnimeStatus,
   STATUS_CODE,
   STATUS_LABEL,
   STATUS_ORDER,
+  DROP_LABEL,
   clip,
   dayShort,
   effective,
   haru,
-  likeMark,
+    likeMark,
   noticeSet,
   progressText,
+  voiceLine,
+  weeksText,
   whenShort,
 } from "./core.ts";
 
@@ -77,7 +80,10 @@ export function animeCardMessage(a: Anime, code: string, p: number, now: number,
     else lines.push("Дата следующей серии не объявлена.");
     if (e.airedEp > a.watched && a.status === "watching") lines.push(`Вышла ${e.airedEp}-я, вы ещё не отметили.`);
   }
-  if (a.liked) lines.push(a.liked === 2 ? "Отметка: 🔥 в восторге" : "Отметка: ❤ понравилось");
+  if (a.liked) lines.push(a.liked === 2 ? "Отметка: 🔥 в восторге" : a.liked === 1 ? "Отметка: ❤ понравилось" : "Отметка: так себе");
+  const voice = a.status === "watching" || a.status === "planned" ? voiceLine(a) : null;
+  if (voice) lines.push(voice[0].toUpperCase() + voice.slice(1));
+  if (a.status === "dropped" && a.drop_reason) lines.push(`Причина: ${DROP_LABEL[a.drop_reason] ?? a.drop_reason}`);
   if (a.status === "watching") lines.push(`Уведомления: ${a.notify ? "вкл" : "выкл"}`);
   if (opts.note) lines.push(opts.note);
   const ctx = `${a.id}:${code}:${p}`;
@@ -173,6 +179,8 @@ export function eveningLines(rows: Anime[], now: number, tz: string, ch: Charact
   for (const { a, up } of list) {
     const w = wallOf(up.at, tz);
     out.push(`• ${fmtHHMM(w.h * 60 + w.mi)} ${clip(a.title_ru, 60)} — ${up.ep}-я серия`);
+    const voice = voiceLine(a);
+    if (voice) out.push(subtext(voice));
   }
   const line = haru("tonight", ch, rand);
   if (line) out.push(subtext(line));
@@ -197,4 +205,71 @@ export function weekAnimeText(rows: Anime[], now: number, tz: string): string | 
     else byDay.push({ day, items: [item] });
   }
   return `**🎬 Аниме:** ${byDay.map((d) => `${d.day} — ${d.items.join(", ")}`).join(" · ")}`;
+}
+
+// ---------- «между прочим» (раз в неделю, воскресенье вечером) ----------
+// Идентификаторы: an:wq:<вид>:<id>:<ответ>. Виды: e серия, l оценка, c продолжать ли, r причина «бросил», p давний план, q продолжение.
+
+export type WeekAsk =
+  | { kind: "ep"; a: Anime }
+  | { kind: "liked"; a: Anime }
+  | { kind: "cont"; a: Anime; idle: number }
+  | { kind: "planned"; a: Anime; since: string }
+  | { kind: "seq"; a: Anime; sequel: Sequel };
+
+const ps = "**Между прочим:**";
+const short = (a: Anime) => `«${clip(a.title_ru, 50)}»`;
+
+/** Вопрос недели: один, короткий, кнопками. */
+export function weekQuestion(q: WeekAsk, now: number, ch: Character, rand?: () => number): MessageBody {
+  const a = q.a;
+  switch (q.kind) {
+    case "ep":
+      return body(withHaru(`${ps} вы остановились на ${a.watched}-й серии ${short(a)}? Я записала. Поправьте, если ошиблась.`, haru("weekEp", ch, rand)), [
+        row(btn(`Да, на ${a.watched}-й`, `an:wq:e:${a.id}:0`, 3), btn(`Уже на ${a.watched + 1}-й`, `an:wq:e:${a.id}:1`), btn("Ещё ниже", `an:wq:e:${a.id}:2`)),
+      ]);
+    case "liked":
+      return body(withHaru(`${ps} ${short(a)} вам понравилось?`, haru("weekLiked", ch, rand)), [
+        row(btn("🔥 В восторге", `an:wq:l:${a.id}:2`, 3), btn("❤ Понравилось", `an:wq:l:${a.id}:1`), btn("Так себе", `an:wq:l:${a.id}:3`), btn("Не хочу оценивать", `an:wq:l:${a.id}:0`)),
+      ]);
+    case "cont":
+      return body(withHaru(`${ps} ${short(a)} не двигается уже ${weeksText(q.idle)}. Продолжаем?`, haru("weekCont", ch, rand)), [
+        row(btn("Продолжаю", `an:wq:c:${a.id}:c`, 3), btn("Поставить на паузу", `an:wq:c:${a.id}:p`), btn("Бросил", `an:wq:c:${a.id}:d`, 4)),
+      ]);
+    case "planned":
+      return body(withHaru(`${ps} ${short(a)} лежит в «В планах» ещё с ${q.since}. Всё ещё хочется?`, haru("weekPlanned", ch, rand)), [
+        row(btn("Ещё хочу", `an:wq:p:${a.id}:y`, 3), btn("Уже нет", `an:wq:p:${a.id}:n`)),
+      ]);
+    case "seq":
+      return body(withHaru(`${ps} у ${short(a)} ${q.sequel.status === "ongoing" ? "уже идёт" : "анонсировано"} продолжение: «${clip(q.sequel.ru, 70)}». Добавить в планы?`, haru("weekSeq", ch, rand)), [
+        row(btn("Добавить в планы", `an:wq:q:${q.sequel.mal}:y`, 3), btn("Не нужно", `an:wq:q:${q.sequel.mal}:n`)),
+      ]);
+  }
+}
+
+/** После «Бросил»: почему (тем же сообщением). */
+export function dropReasonMessage(a: Anime, ch: Character, rand?: () => number): MessageBody {
+  return body(withHaru(`Понимаю, ${short(a)} брошено. А почему?`, haru("weekReason", ch, rand)), [
+    row(
+      btn("Скучно", `an:wq:r:${a.id}:b`),
+      btn("Не успеваю", `an:wq:r:${a.id}:u`),
+      btn("Слишком длинный", `an:wq:r:${a.id}:l`),
+      btn("Не моё", `an:wq:r:${a.id}:n`),
+      btn("Пропустить", `an:wq:r:${a.id}:s`),
+    ),
+  ]);
+}
+
+/** Снять вопрос через сутки без ответа: текст остаётся, кнопки уходят. */
+export const weekExpiredBody = (): MessageBody => ({ components: [], allowed_mentions: { parse: [] } });
+
+// ---------- начало сезона ----------
+
+/** Утреннее сообщение в день старта тайтла из «В планах». */
+export function seasonStartMessage(a: Anime, at: number, now: number, tz: string, ch: Character, rand?: () => number): MessageBody {
+  const w = wallOf(at, tz);
+  const when = at > now ? ` (в ${fmtHHMM(w.h * 60 + w.mi)})` : " — уже вышла";
+  return body(withHaru(`**🎬 Начинается: ${clip(a.title_ru, 80)}**\nСегодня первая серия${when}. Вы планировали это посмотреть.`, haru("start", ch, rand)), [
+    row(btn("Смотрю", `an:ss:${a.id}:w`, 3), btn("Позже", `an:ss:${a.id}:l`), btn("Не буду", `an:ss:${a.id}:n`)),
+  ]);
 }

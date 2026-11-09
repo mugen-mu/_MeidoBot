@@ -10,12 +10,15 @@ import {
   type AnimePhrase,
   type AnimeStatus,
   CODE_STATUS,
+  DROP_REASON,
+  NOTICE_LIMIT,
   STATUS_CODE,
   STATUS_LABEL,
   effective,
   findOwn,
   haru,
   norm,
+  noticeSet,
   progressText,
 } from "./core.ts";
 import { type Candidate, type FetchFn, getShikiFull, searchShiki } from "./sources.ts";
@@ -30,6 +33,7 @@ import {
   animeModal,
   askPickMessage,
   candidatesMessage,
+  dropReasonMessage,
   epModal,
 } from "./ui.ts";
 
@@ -204,6 +208,10 @@ export async function handleAnimeButton(c: AnimeCtx, parts: string[]): Promise<R
     }
     case "sn":
       return handleAsk(c, parts);
+    case "wq":
+      return handleWeek(c, parts);
+    case "ss":
+      return handleStart(c, parts);
     default:
       return null;
   }
@@ -237,4 +245,96 @@ async function handleAsk(c: AnimeCtx, parts: string[]): Promise<Reply> {
   return update({ ...askPickMessage(items, c.now, c.tz), content: `Отмечено: ${a.title_ru}.\n${askPickMessage(items, c.now, c.tz).content}` });
 }
 
+// ---------- «между прочим» (an:wq:<вид>:<id>:<ответ>) ----------
 
+/** Ответ на вопрос недели обнуляет счётчик «без ответа», но не снимает паузу утренних вопросов. */
+const weekTouch = (): Op[] => [setMeta("anime_unanswered", "0")];
+
+async function handleWeek(c: AnimeCtx, parts: string[]): Promise<Reply> {
+  const kind = parts[2];
+  const val = parts[4] ?? "";
+  const clear = deleteMeta("anime_weekq");
+  const gone = update(text("Этот тайтл уже убран."));
+  const line = (k: "weekThanks" | "liked" | "dropped"): string => {
+    const l = haru(k, c.character, c.rand);
+    return l ? `\n${subtext(l)}` : "";
+  };
+  if (kind === "q") {
+    // продолжение сезона: parts[3] — номер MyAnimeList продолжения, а не наш id
+    if (val !== "y") {
+      await c.repo.exec([clear, ...weekTouch()]);
+      return update(text("Хорошо, не добавляю."));
+    }
+    await c.repo.exec([clear, ...weekTouch()]);
+    return update(await addCandidate(c, null, Number(parts[3]), "planned", null));
+  }
+  const a = await getAnime(c.repo, Number(parts[3]));
+  if (!a) return gone;
+  const name = `**${a.title_ru}**`;
+  switch (kind) {
+    case "e": {
+      if (val === "2") {
+        // «Ещё ниже»: окно с номером; ответ окна заменит вопрос карточкой
+        await c.repo.exec([clear]);
+        return { type: 9, data: epModal(a, code(a.status), 0).data };
+      }
+      let n = val === "1" ? a.watched + 1 : a.watched;
+      if (a.episodes && n > a.episodes) n = a.episodes;
+      const finished = a.episodes !== null && n >= a.episodes && a.src_status === "FINISHED" && a.status === "watching";
+      const patch: Partial<Pick<Anime, "status" | "watched">> = { watched: n };
+      if (finished) patch.status = "done";
+      await c.repo.exec([patchOp(a.id, patch, c.now), clear, ...weekTouch()]);
+      return update(text(`Записала: ${name} — серия ${n}.${finished ? " Досмотрели! Понравилось? Отметка — в карточке." : ""}${line("weekThanks")}`));
+    }
+    case "l": {
+      const liked = val === "2" ? 2 : val === "1" ? 1 : val === "3" ? -1 : 0;
+      await c.repo.exec([...(liked ? [patchOp(a.id, { liked }, c.now)] : []), clear, ...weekTouch()]);
+      return update(text(liked > 0 ? `Записала: ${name} — ${liked === 2 ? "🔥 в восторге" : "❤ понравилось"}.${line("liked")}` : liked < 0 ? `Записала: ${name} — так себе.` : "Хорошо, про это больше не спрашиваю."));
+    }
+    case "c": {
+      if (val === "d") {
+        // «Бросил»: статус меняем сразу, причину спрашиваем тем же сообщением (вопрос не снимаем, пока не ответят)
+        await c.repo.exec([patchOp(a.id, { status: "dropped" }, c.now), ...weekTouch()]);
+        return update(dropReasonMessage({ ...a, status: "dropped" }, c.character, c.rand));
+      }
+      if (val === "p") {
+        await c.repo.exec([patchOp(a.id, { notify: 0 }, c.now), clear, ...weekTouch()]);
+        return update(text(`Поставила ${name} на паузу: уведомления выключены. Включить их можно в карточке тайтла.`));
+      }
+      await c.repo.exec([patchOp(a.id, { last_move_at: c.now }, c.now), clear, ...weekTouch()]);
+      return update(text(`Хорошо, продолжаем ${name}.${line("weekThanks")}`));
+    }
+    case "r": {
+      const reason = DROP_REASON[val];
+      await c.repo.exec([...(reason ? [patchOp(a.id, { drop_reason: reason }, c.now)] : []), clear, ...weekTouch()]);
+      return update(text(reason ? `Записала причину.${line("dropped")}` : "Хорошо, не спрашиваю."));
+    }
+    case "p": {
+      if (val === "n") {
+        await c.repo.exec([deleteOp(a.id), clear, ...weekTouch()]);
+        return update(text(`Убрала ${name} из планов.`));
+      }
+      await c.repo.exec([patchOp(a.id, { last_move_at: c.now }, c.now), clear, ...weekTouch()]);
+      return update(text(`Хорошо, ${name} остаётся в планах.${line("weekThanks")}`));
+    }
+    default:
+      return update(text("Эта кнопка устарела."));
+  }
+}
+
+// ---------- начало сезона (an:ss:<id>:<w|l|n>) ----------
+
+async function handleStart(c: AnimeCtx, parts: string[]): Promise<Reply> {
+  const a = await getAnime(c.repo, Number(parts[2]));
+  if (!a) return update(text("Этот тайтл уже убран."));
+  const name = `**${a.title_ru}**`;
+  if (parts[3] === "n") {
+    await c.repo.exec([deleteOp(a.id), ...weekTouch()]);
+    return update(text(`Убрала ${name} из планов.`));
+  }
+  if (parts[3] !== "w") return update(text(`Хорошо, ${name} остаётся в планах.`));
+  await c.repo.exec([patchOp(a.id, { status: "watching", notify: 1, start_asked: 1 }, c.now), ...weekTouch()]);
+  const rows = (await listAnime(c.repo)).map((r) => (r.id === a.id ? { ...r, status: "watching" as const, notify: 1 } : r));
+  const noticed = noticeSet(rows).some((r) => r.id === a.id);
+  return update(text(`Записала: ${name} — смотрю. ${noticed ? "Буду сообщать о новых сериях." : `Уведомления идут только по первым ${NOTICE_LIMIT} тайтлам, этот пока без них.`}`));
+}

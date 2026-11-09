@@ -67,7 +67,7 @@ describe("аниме: разбор фразы", () => {
 });
 
 describe("аниме: состояние серий и показ", () => {
-  const base: Anime = { id: 1, mal_id: 1, anilist_id: 2, title_ru: "Т", title_orig: null, status: "watching", watched: 3, liked: 0, notify: 1, episodes: 12, src_status: "RELEASING", next_ep: 5, next_at: D0 + 3 * HOUR, aired_ep: 4, aired_at: null, asked_ep: 4, added_at: 0, updated_at: 0 };
+  const base: Anime = { id: 1, mal_id: 1, anilist_id: 2, title_ru: "Т", title_orig: null, status: "watching", watched: 3, liked: 0, notify: 1, episodes: 12, src_status: "RELEASING", next_ep: 5, next_at: D0 + 3 * HOUR, aired_ep: 4, aired_at: null, asked_ep: 4, added_at: 0, updated_at: 0, drop_reason: null, last_move_at: null, voice_lag: null, voice_n: 0, voice_ep: 0, weekq_at: null, seq_at: null, start_asked: 0 };
   it("пока серия не вышла — она «ближайшая», после срока — вышедшая", () => {
     expect(effective(base, D0)).toMatchObject({ airedEp: 4, upcoming: { ep: 5 } });
     expect(effective(base, D0 + 4 * HOUR)).toMatchObject({ airedEp: 5, airedAt: D0 + 3 * HOUR, upcoming: null });
