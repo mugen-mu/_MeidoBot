@@ -62,12 +62,12 @@ export function homeStats(items: OccView[], now: number, tz: string): HomeStats 
   };
 }
 
-/** Главный экран: три крупные кнопки (добавить, сегодня, висит) и «Все дела / Неделя / Ещё». Счётчики — только у экрана в сообщении (панель их не знает). */
+/** Главный экран: три крупные кнопки (добавить, сегодня, висит) и «Все дела / Неделя / Аниме / Свет / Ещё». Счётчики — только у экрана в сообщении (панель их не знает). */
 function homeButtons(prefix: "mn" | "pn", st?: HomeStats): ActionRow[] {
   const cnt = (n: number | undefined) => (n === undefined ? "" : ` ${n}`);
   return [
     row(btn("➕ Добавить дело", `${prefix}:add`, 3), btn(`📅 Сегодня${cnt(st?.today)}`, `${prefix}:ls:t:0`, 1), btn(`⏳ Висит${cnt(st?.hot)}`, `${prefix}:ls:h:0`, st && st.hot > 0 ? 4 : 2)),
-    row(btn("📋 Все дела", `${prefix}:ls:a:0`), btn("🗓 Неделя", `${prefix}:wk`), btn("🎬 Аниме", `${prefix}:an`), btn("⋯ Ещё", `${prefix}:more`)),
+    row(btn("📋 Все дела", `${prefix}:ls:a:0`), btn("🗓 Неделя", `${prefix}:wk`), btn("🎬 Аниме", `${prefix}:an`), btn("💡 Свет", `${prefix}:lt`), btn("⋯ Ещё", `${prefix}:more`)),
   ];
 }
 
@@ -77,9 +77,9 @@ export function homeMessage(st: HomeStats): MessageBody {
   return body(`**Meido — меню**\n${st.open === 0 ? "Открытых дел нет." : parts.join(" · ")}`, homeButtons("mn", st));
 }
 
-/** «Ещё»: то, что нужно реже (свет, настроение горничной, настройки). */
+/** «Ещё»: то, что нужно реже (настроение горничной, настройки). Свет — на главном экране (с 2026-11-09). */
 export function moreMessage(prefix: "mn" | "pn" = "mn"): MessageBody {
-  return body("**Ещё**", [row(btn("💡 Свет", `${prefix}:lt`), btn("🎭 Настроение", `${prefix}:mo`), btn("⚙ Настройки", `${prefix}:st`)), row(btn("🏠 Меню", `${prefix}:home`))]);
+  return body("**Ещё**", [row(btn("🎭 Настроение", `${prefix}:mo`), btn("⚙ Настройки", `${prefix}:st`)), row(btn("🏠 Меню", `${prefix}:home`))]);
 }
 
 /** Экран-справка (текст и «Назад»): слова Хару, подтверждения. */

@@ -51,17 +51,17 @@ describe("меню: главный экран и навигация", () => {
     expect(r.data.content).toContain("на сегодня **0**");
     expect(r.data.content).toContain("висит **0**");
     // главный экран: добавить, сегодня, висит; ниже — все дела, неделя, аниме, «Ещё»
-    expect(ids(r)).toEqual(["mn:add", "mn:ls:t:0", "mn:ls:h:0", "mn:ls:a:0", "mn:wk", "mn:an", "mn:more"]);
-    expect(labels(r)).toEqual(["➕ Добавить дело", "📅 Сегодня 0", "⏳ Висит 0", "📋 Все дела", "🗓 Неделя", "🎬 Аниме", "⋯ Ещё"]);
+    expect(ids(r)).toEqual(["mn:add", "mn:ls:t:0", "mn:ls:h:0", "mn:ls:a:0", "mn:wk", "mn:an", "mn:lt", "mn:more"]);
+    expect(labels(r)).toEqual(["➕ Добавить дело", "📅 Сегодня 0", "⏳ Висит 0", "📋 Все дела", "🗓 Неделя", "🎬 Аниме", "💡 Свет", "⋯ Ещё"]);
   });
 
-  it("«Ещё»: свет, настроение, настройки (на экране и из панели)", async () => {
+  it("«Ещё»: настроение, настройки (на экране и из панели); свет — на главном экране", async () => {
     const r = await click("mn:more");
     expect(r.type).toBe(7);
-    expect(ids(r)).toEqual(["mn:lt", "mn:mo", "mn:st", "mn:home"]);
+    expect(ids(r)).toEqual(["mn:mo", "mn:st", "mn:home"]);
     const p = await click("pn:more");
     expect(p.type).toBe(4);
-    expect(ids(p)).toEqual(["pn:lt", "pn:mo", "pn:st", "pn:home"]);
+    expect(ids(p)).toEqual(["pn:mo", "pn:st", "pn:home"]);
   });
 
   it("кнопка панели открывает тот же экран отдельным сообщением «только вам»", async () => {
