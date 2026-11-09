@@ -142,17 +142,24 @@ describe("график света в сводках", () => {
     expect(texts().length).toBe(n);
   });
 
-  it("Yasno молчит три проверки подряд: одно сообщение «больше не проверяю»", async () => {
+  it("Yasno долго молчит: сначала раз в полчаса, потом раз в час, без «сдаюсь»; когда ответит — сообщение с графиком", async () => {
     await w.repo().exec([setSetting("light", "3")]);
     w.light = null;
     await w.run(kyiv(2026, 11, 7, 8, 0));
-    await w.run(kyiv(2026, 11, 7, 8, 31));
-    await w.run(kyiv(2026, 11, 7, 9, 2));
+    const f0 = w.lightFetches;
+    await w.run(kyiv(2026, 11, 7, 8, 31)); // 1-я проверка
+    await w.run(kyiv(2026, 11, 7, 9, 2)); // 2-я
+    await w.run(kyiv(2026, 11, 7, 9, 33)); // 3-я, дальше раз в час
+    const f3 = w.lightFetches;
+    expect(f3 - f0).toBe(6); // 3 проверки по 2 попытки
+    await w.run(kyiv(2026, 11, 7, 10, 5)); // полчаса прошло, но теперь интервал час
+    expect(w.lightFetches).toBe(f3);
+    await w.run(kyiv(2026, 11, 7, 10, 34));
+    expect(w.lightFetches - f3).toBe(2);
     expect(texts().filter((t) => t.includes("больше не проверяю")).length).toBe(0);
-    await w.run(kyiv(2026, 11, 7, 9, 33));
-    expect(texts().filter((t) => t.includes("больше не проверяю")).length).toBe(1);
-    await w.run(kyiv(2026, 11, 7, 10, 5));
-    expect(texts().filter((t) => t.includes("больше не проверяю")).length).toBe(1);
+    w.light = yasno();
+    await w.run(kyiv(2026, 11, 7, 11, 35));
+    expect(texts()[texts().length - 1]).toContain("Yasno снова отвечает.");
   });
 
   it("«аварийные отключения» Yasno: понятный текст вместо сырого статуса", () => {

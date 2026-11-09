@@ -32,7 +32,9 @@ import { YASNO_ATTEMPTS, fetchYasno, lightLines, publishedFor, tomorrowDigest, t
 
 /** Повторная проверка света после сбоя Yasno в сводке: через сколько минут и сколько раз. */
 const LIGHT_RETRY_MIN = 30;
-const LIGHT_RETRY_MAX = 3;
+/** первые LIGHT_RETRY_FAST проверок — раз в LIGHT_RETRY_MIN минут, дальше раз в час, пока не получится (или не кончатся сутки) */
+const LIGHT_RETRY_FAST = 3;
+const LIGHT_RETRY_SLOW_MIN = 60;
 interface LightRetry { kind: "morning" | "evening"; date: string; at: number; n: number }
 function parseLightRetry(raw: string | undefined): LightRetry | null {
   if (!raw) return null;
@@ -417,7 +419,7 @@ export async function runCron(d: CronDeps): Promise<CronReport> {
           extra = light
             ? lightLines(kind === "evening" ? "tomorrow" : "today", s.lightGroup, light, localDate(kind === "evening" ? addDaysWall(now, 1, s.tz) : now, s.tz))
             : [`График света: не удалось получить данные (Yasno не отвечает). Проверю ещё раз через ${LIGHT_RETRY_MIN} минут.`];
-          // сбой — не конец: перепроверяем через полчаса (до LIGHT_RETRY_MAX раз) и пишем отдельным сообщением
+          // сбой — не конец: перепроверяем через полчаса (потом раз в час, пока не получится) и пишем отдельным сообщением
           if (!light) ops2.push(setMeta("light_retry", JSON.stringify({ kind, date: today, at: now + LIGHT_RETRY_MIN * MINUTE, n: 1 })));
           else if (parseLightRetry(meta.get("light_retry"))) ops2.push(deleteMeta("light_retry"));
           if (kind === "evening" && light && publishedFor("tomorrow", s.lightGroup, light, localDate(addDaysWall(now, 1, s.tz), s.tz))) {
@@ -501,7 +503,7 @@ export async function runCron(d: CronDeps): Promise<CronReport> {
       }
     }
 
-    // 2б4. сводка вышла без света (Yasno не ответил): проверяем снова через полчаса, до LIGHT_RETRY_MAX раз
+    // 2б4. сводка вышла без света (Yasno не ответил): проверяем снова: первые разы раз в полчаса, потом раз в час, пока не получится (или не кончатся сутки)
     {
       const retry = parseLightRetry(meta.get("light_retry"));
       if (retry && s.lightGroup && owner && s.chRemind && now >= retry.at && room2(4)) {
@@ -514,20 +516,18 @@ export async function runCron(d: CronDeps): Promise<CronReport> {
           const tmr = localDate(addDaysWall(now, 1, s.tz), s.tz);
           const text = data
             ? ["Yasno снова отвечает.", ...lightLines(retry.kind === "evening" ? "tomorrow" : "today", s.lightGroup, data, retry.kind === "evening" ? tmr : today)].join("\n")
-            : retry.n >= LIGHT_RETRY_MAX
-              ? "Yasno всё ещё не отвечает, больше не проверяю. График можно посмотреть кнопкой «💡 Свет» или командой /light позже."
-              : null;
+            : null;
           if (text) {
             try {
               await api.postMessage(s.chRemind, { content: `<@${owner}> ${text}`, allowed_mentions: { users: [owner] } });
               ops2.push(deleteMeta("light_retry"));
               if (data && retry.kind === "evening" && publishedFor("tomorrow", s.lightGroup, data, tmr)) ops2.push(setMeta("light_tmr", tmr));
-              report.notes.push(data ? "свет: повторная проверка удалась" : "свет: Yasno не отвечает, проверки закончены");
+              report.notes.push("свет: повторная проверка удалась");
             } catch (e) {
               if (!(e instanceof BudgetExceeded)) report.notes.push("свет: не удалось отправить повторную проверку");
             }
           } else {
-            ops2.push(setMeta("light_retry", JSON.stringify({ ...retry, at: now + LIGHT_RETRY_MIN * MINUTE, n: retry.n + 1 })));
+            ops2.push(setMeta("light_retry", JSON.stringify({ ...retry, at: now + (retry.n < LIGHT_RETRY_FAST ? LIGHT_RETRY_MIN : LIGHT_RETRY_SLOW_MIN) * MINUTE, n: retry.n + 1 })));
           }
         }
       }
