@@ -18,6 +18,9 @@ import { glossaryReport, styleReport } from "../personality/styleReport.ts";
 import { describeSpec, needsSnoozeQuestion, parseCustomSteps, parseSpec, type LadderSpec } from "../ladder.ts";
 import { fetchYasno, lightLines, normalizeGroup, nowLine } from "../light.ts";
 import { newPowerKey, readPower } from "../power.ts";
+import { type AnimeCtx, handleAddModal, handleAnimeButton, handleEpModal } from "../anime/handlers.ts";
+import { listAnime } from "../anime/store.ts";
+import { animeListMessage, weekAnimeText } from "../anime/ui.ts";
 import { detectSecret } from "../secrets.ts";
 import {
   cancelItemOps,
@@ -253,7 +256,7 @@ async function onCommand(c: C): Promise<Reply> {
       return eph(listText(open, c.now, c.s.tz, c.s.character));
     }
     case "week":
-      return eph(weekText(await c.repo.openMain(100), c.now, c.s.tz, c.s.character));
+      return eph(await weekWithAnime(c));
     case "cancel": {
       const item = await c.repo.getItem(Number(opt(c, "id")));
       if (!item || item.archived_at) return eph("Такого дела нет (или оно уже закрыто). Номера — в /list.");
@@ -562,6 +565,7 @@ async function onComponent(c: C): Promise<Reply> {
   const [kind, a, b] = parts;
   const values = (c.i.data?.values as string[] | undefined) ?? [];
   if (kind === "mn" || kind === "pn") return onMenu(c, parts, values);
+  if (kind === "an") return (await handleAnimeButton(animeCtx(c), parts)) ?? eph("Эта кнопка устарела.");
   switch (kind) {
     case "done": {
       const occ = await asOcc(c, a);
@@ -721,6 +725,18 @@ async function menuCommand(c: C): Promise<Reply> {
   return eph(pinned ? "Панель поставлена в канал «бот» и закреплена." : "Панель поставлена в канал «бот». Закрепить не вышло (нет права «Закреплять сообщения») — закрепите вручную: ••• → Закрепить.");
 }
 
+/** Аниме: общий контекст для кнопок и окон. */
+const animeCtx = (c: C): AnimeCtx => ({ repo: c.repo, now: c.now, tz: c.s.tz, character: c.s.character, fetchFn: c.fetchFn ?? fetch, rand: c.rand });
+
+/** Неделя: дела и строка про аниме (что выходит). */
+async function weekWithAnime(c: C): Promise<string> {
+  const base = weekText(await c.repo.openMain(100), c.now, c.s.tz, c.s.character);
+  const anime = weekAnimeText(await listAnime(c.repo), c.now, c.s.tz);
+  return anime ? `${base}
+
+${anime}` : base;
+}
+
 /** Добавить строку навигации к ответу-обновлению (если это обновление сообщения). */
 function navReply(r: Reply): Reply {
   if (r.type !== 7) return r;
@@ -819,7 +835,9 @@ async function onMenu(c: C, parts: string[], values: string[]): Promise<Reply> {
     case "add":
       return { type: 9, data: addModal(panel ? "pn" : "mn").data };
     case "wk":
-      return show(resultMessage(weekText(await c.repo.openMain(100), c.now, c.s.tz, c.s.character)));
+      return show(resultMessage(await weekWithAnime(c)));
+    case "an":
+      return show(animeListMessage(await listAnime(c.repo), "watching", 0, c.now, c.s.tz, c.s.character, c.rand));
     case "lt": {
       if (!c.s.lightGroup) return show(resultMessage("Группа света не задана: ⚙ Настройки → 📰 Сводки и свет → «Свет: группа…»."));
       // долгий запрос к Yasno: сначала «ждём», потом правка этого же сообщения
@@ -999,6 +1017,10 @@ async function onModal(c: C): Promise<Reply> {
       await c.repo.exec(rescheduleOps(occ, w.due, c.now));
       return nav(update(confirmFor(c, { ...occ, due_at: w.due })));
     }
+    case "m_anadd":
+      return handleAddModal(animeCtx(c), { name: str(v.get("name")), st: str(v.get("st")), ep: str(v.get("ep")) });
+    case "m_anep":
+      return handleEpModal(animeCtx(c), Number(id), parts[2] ?? "w", Math.max(0, Number.parseInt(parts[3] ?? "0", 10) || 0), str(v.get("ep")));
     case "m_edit":
       return nav(await editSubmit(c, id, v));
     case "m_split":

@@ -22,6 +22,11 @@ import { maidEmbed, pickReaction, wantSprite } from "./personality/look.ts";
 import { isPolite, isSeriousTopic } from "./personality/moodEngine.ts";
 import { detectUserWord } from "./personality/userWords.ts";
 import { announceOutage } from "./power.ts";
+import { parseAnimePhrase } from "./anime/core.ts";
+import { runAnime } from "./anime/cron.ts";
+import { handlePhrase } from "./anime/handlers.ts";
+import { listAnime } from "./anime/store.ts";
+import { eveningLines } from "./anime/ui.ts";
 import { handleReply } from "./reply.ts";
 import { fetchYasno, lightLines, publishedFor, tomorrowDigest, type LightData } from "./light.ts";
 import { MOOD_CONFIG } from "./personality/config.ts";
@@ -308,6 +313,20 @@ export async function runCron(d: CronDeps): Promise<CronReport> {
               continue;
             }
           }
+          // аниме: «бот смотрю фрирен», «аниме хочу блич», «бот бросил ДжоДжо» — коллекция, а не дело
+          const animePhrase = parseAnimePhrase(m.content);
+          if (animePhrase && room2(6)) {
+            repo.counter.spend(2);
+            report.intake++;
+            try {
+              const reply = await handlePhrase({ repo, now, tz: s.tz, character: s.character, fetchFn: d.fetchFn ?? fetch, rand: d.rand }, animePhrase);
+              await api.postMessage(ch, reply);
+            } catch (e) {
+              if (e instanceof BudgetExceeded) break;
+              report.notes.push("аниме: не удалось ответить на фразу");
+            }
+            continue;
+          }
           const recordedFor = async (title: string, critical: boolean) => {
             if (!mood?.loaded) return null;
             const line = await recordedLine(mood, title, critical);
@@ -392,6 +411,11 @@ export async function runCron(d: CronDeps): Promise<CronReport> {
         if (s.waterWords.length) extra = [...extra, ...waterSummaryLines(parseWaterState(meta.get("water_state")), now, s.tz)];
         if (s.gasWords.length) extra = [...extra, ...gasSummaryLines(parseGasState(meta.get("gas_state")), now, s.tz)];
         if (extra.length) extra = ["🏠 Коммуналка:", ...extra];
+        // аниме: вечером — что выходит сегодня (реплику Хару даёт общая реплика сводки)
+        if (kind === "evening" && room2(2)) {
+          const lines = eveningLines(await listAnime(repo), now, s.tz, "neutral");
+          if (lines.length) extra = [...extra, ...lines];
+        }
         const parts = summaryParts(kind, { items: list, now, tz: s.tz, ownerId: owner as string, extra, character: s.character });
         content = parts.text;
         if (parts.truncated) more = summaryMoreRow(kind);
@@ -564,6 +588,17 @@ export async function runCron(d: CronDeps): Promise<CronReport> {
       if (JSON.stringify(st) + JSON.stringify(outbox) !== before) {
         ops2.push(setMeta("gas_state", JSON.stringify(st)), outbox.length ? setMeta("gas_outbox", JSON.stringify(outbox)) : deleteMeta("gas_outbox"));
       }
+    }
+
+    // 2б6. аниме: ночное обновление расписания и утреннее «посмотрели?»
+    if (owner && s.chRemind) {
+      const r = await runAnime({
+        repo, api, now, s, meta, owner, away, minuteOfDay, fetchFn: d.fetchFn ?? fetch, rand: d.rand,
+        room: room2, spend: (n) => repo.counter.spend(n),
+      });
+      ops2.push(...r.ops);
+      report.notes.push(...r.notes);
+      if (!r.healthy) healthy = false;
     }
 
     // 2в. панель «Горит»: правим одно сообщение, раз в 5 минут и только если изменилась

@@ -67,7 +67,7 @@ function homeButtons(prefix: "mn" | "pn", st?: HomeStats): ActionRow[] {
   const cnt = (n: number | undefined) => (n === undefined ? "" : ` ${n}`);
   return [
     row(btn("➕ Добавить дело", `${prefix}:add`, 3), btn(`📅 Сегодня${cnt(st?.today)}`, `${prefix}:ls:t:0`, 1), btn(`⏳ Висит${cnt(st?.hot)}`, `${prefix}:ls:h:0`, st && st.hot > 0 ? 4 : 2)),
-    row(btn("📋 Все дела", `${prefix}:ls:a:0`), btn("🗓 Неделя", `${prefix}:wk`), btn("⋯ Ещё", `${prefix}:more`)),
+    row(btn("📋 Все дела", `${prefix}:ls:a:0`), btn("🗓 Неделя", `${prefix}:wk`), btn("🎬 Аниме", `${prefix}:an`), btn("⋯ Ещё", `${prefix}:more`)),
   ];
 }
 

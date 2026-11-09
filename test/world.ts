@@ -27,6 +27,12 @@ export class World {
   gasHome: string | null = null;
   gasDocx: Uint8Array | null = null;
   gasFetches = 0;
+  /** Shikimori: ответ на поиск (массив) и на «один тайтл» по номеру; null — не отвечает */
+  shikiSearch: unknown[] | null = [];
+  shikiById: Record<number, unknown> = {};
+  /** Shikimori: календарь недели (массив); null — не отвечает */
+  shikiCalendar: unknown[] | null = [];
+  animeFetches = 0;
 
   /** Репозиторий с новым счётчиком (как новый запуск Worker). */
   repo(limit = 50): Repo {
@@ -65,6 +71,13 @@ export class World {
         return this.water === null ? new Response("down", { status: 503 }) : Response.json(this.water);
       }
       const url = String(typeof input === "string" ? input : (input as { url?: string; href?: string })?.url ?? (input as { href?: string })?.href);
+      if (url.includes("shikimori")) {
+        this.animeFetches++;
+        if (url.includes("/api/calendar")) return this.shikiCalendar === null ? new Response("down", { status: 503 }) : Response.json(this.shikiCalendar);
+        const one = /\/api\/animes\/(\d+)/.exec(url);
+        if (one) return this.shikiById[Number(one[1])] ? Response.json(this.shikiById[Number(one[1])]) : new Response("none", { status: 404 });
+        return this.shikiSearch === null ? new Response("down", { status: 503 }) : Response.json(this.shikiSearch);
+      }
       if (url.includes("grmu.com.ua")) {
         this.gasFetches++;
         const isFile = url.endsWith(".docx");
