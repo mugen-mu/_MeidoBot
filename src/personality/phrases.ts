@@ -68,7 +68,10 @@ export type Situation =
   | "source_week"
   // этап 5: календарь сюрпризов — сезонное «между прочим» и «Год с Хару» (фразы берутся у родственных ситуаций, пока своего пула нет)
   | "seasonal"
-  | "year_with";
+  | "year_with"
+  // объявления про свет («Света нет с …», «Свет вернулся в …»): фраза Хару первой
+  | "power_off"
+  | "power_on";
 
 export const SITUATIONS: Situation[] = [
   "reminder", "reminder_repeat", "missed_first", "missed", "done", "done_late", "streak_praise", "relief",
@@ -76,7 +79,7 @@ export const SITUATIONS: Situation[] = [
   "summary_morning", "summary_evening", "summary_weekly", "empty_list", "empty_today", "holiday", "birthday_soon",
   "draft", "cancelled", "stopped", "snoozed", "deleted", "reply_unknown", "reply_past", "reply_closed",
   "snooze_5", "good_streak", "achieve_tail", "achieve_week_clean", "achieve_week_ontime",
-  "tail_clear", "tail_review", "source_down", "source_week", "seasonal", "year_with",
+  "tail_clear", "tail_review", "source_down", "source_week", "seasonal", "year_with", "power_off", "power_on",
 ];
 
 /** Если у настроения нет фраз для ситуации, берём ближайшую «родственную» из того же настроения. */
@@ -105,6 +108,8 @@ export const FALLBACK_SITUATION: Partial<Record<Situation, Situation>> = {
   source_week: "summary_weekly",
   seasonal: "greeting",
   year_with: "summary_weekly",
+  power_off: "reminder",
+  power_on: "done",
 };
 
 export type Phrases = Record<string, Partial<Record<Situation, string[]>>>;
@@ -116,6 +121,7 @@ import { REACTION_PHRASES } from "./phrases.reactions.ts";
 import { STAGE2_PHRASES } from "./phrases.stage2.ts";
 import { STAGE3_PHRASES } from "./phrases.stage3.ts";
 import { STAGE4_PHRASES } from "./phrases.stage4.ts";
+import { POWER_PHRASES } from "./phrases.stage5.ts";
 
 const key = (t: string): string => t.toLowerCase().replace(/[^\p{L}]+/gu, " ").trim();
 
@@ -147,9 +153,9 @@ export function mergePools(primary: Phrases, fallback: Phrases, minPrimary = 8):
 
 /** Запасной набор: свои фразы и фразы для сводок/пустого списка/праздников (у них основного пула нет). */
 const FALLBACK_BANK: Phrases = Object.fromEntries(
-  [...new Set([...Object.keys(BASE_PHRASES), ...Object.keys(EXTRA_PHRASES), ...Object.keys(REACTION_PHRASES), ...Object.keys(STAGE2_PHRASES), ...Object.keys(STAGE3_PHRASES), ...Object.keys(STAGE4_PHRASES)])].map((m) => [
+  [...new Set([...Object.keys(BASE_PHRASES), ...Object.keys(EXTRA_PHRASES), ...Object.keys(REACTION_PHRASES), ...Object.keys(STAGE2_PHRASES), ...Object.keys(STAGE3_PHRASES), ...Object.keys(STAGE4_PHRASES), ...Object.keys(POWER_PHRASES)])].map((m) => [
     m,
-    { ...BASE_PHRASES[m], ...EXTRA_PHRASES[m], ...REACTION_PHRASES[m], ...STAGE2_PHRASES[m], ...STAGE3_PHRASES[m], ...STAGE4_PHRASES[m] },
+    { ...BASE_PHRASES[m], ...EXTRA_PHRASES[m], ...REACTION_PHRASES[m], ...STAGE2_PHRASES[m], ...STAGE3_PHRASES[m], ...STAGE4_PHRASES[m], ...POWER_PHRASES[m] },
   ]),
 );
 

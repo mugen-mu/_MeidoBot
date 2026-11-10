@@ -6,6 +6,10 @@ import type { Op } from "./db/types.ts";
 import type { DiscordApi } from "./discord/types.ts";
 import { type LightData, YASNO_ATTEMPTS, checkSchedule, fetchYasno } from "./light.ts";
 import type { AppSettings } from "./settings.ts";
+import { voiceText } from "./discord/ui.ts";
+import { QUIET_META_KEY, isQuietNow } from "./personality/day.ts";
+import { MoodSession, makeCtx } from "./personality/director.ts";
+import type { Situation } from "./personality/phrases.ts";
 import { MINUTE, fmtHHMM, wallOf } from "./time/tz.ts";
 
 /** Моргание короче этого времени в канал не пишется: сообщение «пропал» уходит, только если света нет дольше. */
@@ -95,6 +99,24 @@ export function onMessage(a: { ownerId: string; now: number; offMs: number; tz: 
   return `<@${a.ownerId}> Свет вернулся в ${hhmm(a.now, a.tz)}, не было ${fmtOffTime(a.offMs)}`;
 }
 
+/**
+ * Фраза Хару к объявлению про свет (просьба Ihor 2026-11-10): готовая из пула, без модели (объявление идёт и из запроса телефона, и из cron, ждать модель нельзя).
+ * Нет характера (выключен в /settings), «тихий день» или пула нет — null: остаются одни факты. Состояние (память «не повторять») сохраняется здесь же.
+ */
+export async function powerLine(d: { repo: Repo; now: number; ownerId: string | null; s: AppSettings; meta: Map<string, string> }, situation: Situation): Promise<string | null> {
+  if (!d.s.moodOn || !d.ownerId) return null;
+  const m = new MoodSession({ repo: d.repo, userId: d.ownerId, ctx: makeCtx(d.now, d.s), rand: Math.random, style: d.s.style, live: null });
+  if (isQuietNow(d.meta.get(QUIET_META_KEY), d.now)) m.silent = true;
+  await m.load();
+  const line = m.say(situation);
+  const ops = m.ops();
+  if (ops.length) await d.repo.exec(ops);
+  return line;
+}
+
+/** Фраза Хару первой после упоминания, дальше факты: «@вы Фраза. Свет вернулся …». */
+const withPhrase = (text: string, ownerId: string, line: string | null): string => (line ? text.replace(`<@${ownerId}> `, () => `<@${ownerId}> ${voiceText(line)} `) : text);
+
 /** Подпись сверки с графиком; null — группа в настройках не задана, ничего не пишем. */
 export function scheduleNote(at: number, s: AppSettings, data: LightData | null): string | null {
   if (!s.lightGroup) return null;
@@ -141,8 +163,9 @@ export async function handlePower(request: Request, d: PowerDeps): Promise<Respo
   if (r.ops.length) await d.repo.exec(r.ops);
   if (r.action === "restored" && owner && s.chRemind) {
     try {
+      const line = await powerLine({ repo: d.repo, now: d.now, ownerId: owner, s, meta }, "power_on");
       await d.api.postMessage(s.chRemind, {
-        content: onMessage({ ownerId: owner, now: d.now, offMs: r.offMs as number, tz: s.tz }),
+        content: withPhrase(onMessage({ ownerId: owner, now: d.now, offMs: r.offMs as number, tz: s.tz }), owner, line),
         allowed_mentions: { users: [owner] },
       });
     } catch {
@@ -165,8 +188,9 @@ export async function announceOutage(d: PowerDeps & { meta: Map<string, string>;
     for (let i = 0; i < YASNO_ATTEMPTS; i++) d.spend();
     data = await fetchYasno(d.fetchFn ?? fetch);
   }
+  const line = await powerLine({ repo: d.repo, now: d.now, ownerId: d.ownerId, s: d.s, meta: d.meta }, "power_off");
   await d.api.postMessage(d.s.chRemind, {
-    content: offMessage({ ownerId: d.ownerId, since: p.since, tz: d.s.tz, schedule: scheduleNote(p.since, d.s, data) }),
+    content: withPhrase(offMessage({ ownerId: d.ownerId, since: p.since, tz: d.s.tz, schedule: scheduleNote(p.since, d.s, data) }), d.ownerId, line),
     allowed_mentions: { users: [d.ownerId] },
   });
   // отметка «сообщили» ставится, только пока свет всё ещё считается пропавшим (гонка с запросом «появился»)
