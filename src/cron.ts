@@ -32,6 +32,7 @@ import { eveningLines } from "./anime/ui.ts";
 import { handleReply } from "./reply.ts";
 import { YASNO_ATTEMPTS, fetchYasno, groupsFor, lightFullText, lightLines, publishedFor, tomorrowDigest, type LightData } from "./light.ts";
 import { isLightQuestion, lightAskMessage } from "./lightAsk.ts";
+import { isWeatherQuestion, weatherAskMessage } from "./weatherAsk.ts";
 import { detectSecret } from "./secrets.ts";
 import { withSound } from "./sound.ts";
 import { choreMetaKey, choreParsed, choresDue, periodKey } from "./chores.ts";
@@ -416,6 +417,17 @@ ${n.text}` } : n;
             } catch (e) {
               if (e instanceof BudgetExceeded) break;
               report.notes.push("свет: не удалось ответить на вопрос в канале");
+            }
+            continue;
+          }
+          // погода текстом: «какой прогноз на завтра» — честный ответ «погоду пока не читаю», а не дело (живая проверка 2026-11-10); без модели
+          if (isWeatherQuestion(m.content) && !detectSecret(m.content).secret && room2(3)) {
+            report.intake++;
+            try {
+              await api.postMessage(ch, weatherAskMessage(m.content));
+            } catch (e) {
+              if (e instanceof BudgetExceeded) break;
+              report.notes.push("погода: не удалось ответить на вопрос в канале");
             }
             continue;
           }

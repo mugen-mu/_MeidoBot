@@ -131,13 +131,13 @@ describe("слой в работе: cron и словарь", () => {
     expect(g).toMatch(/• \*\*[^*]+\*\* — /u);
   });
 
-  it("манга-звук идёт отдельной мелкой строкой (каждая строка с «-# »)", async () => {
+  it("манга-звук идёт в той же строке, что и фраза, курсивом (один слой, без мелкой строки «-# »)", async () => {
     await w.create("через 5 минут оплатить счёт");
     await run(min(5));
-    const lines = (w.discord.live(CH_REMIND)[0].body.embeds![0].description as string).split("\n");
-    expect(lines.length).toBe(2); // фраза и манга-звук (rand=0: звук выпал)
-    // в карточке звук отдельной строкой курсивом; какой именно — зависит от настроения дня (этап 2: усталая в «ворчливый» день звучит как цундере)
-    expect(lines[1]).toMatch(/^\*[ぁ-ヿー…!！?？~]+\*$/u);
+    const content = w.discord.live(CH_REMIND)[0].body.content as string;
+    expect(content).not.toMatch(/\n-# /);
+    // фраза и манга-звук (rand=0: звук выпал) — в первой строке; звук курсивом; какой именно — зависит от настроения дня (этап 2: усталая в «ворчливый» день звучит как цундере)
+    expect(content.split("\n")[0]).toMatch(/\*[ぁ-ヿー…!！?？~]+\*/u);
   });
 
   it("уровень 0: в напоминании ни японских слов, ни манга-звука, слов в словаре нет", async () => {
@@ -146,9 +146,9 @@ describe("слой в работе: cron и словарь", () => {
     await run(min(5));
     const body = w.discord.live(CH_REMIND)[0].body;
     expect(body.content as string).not.toMatch(/[぀-ヿ]/u);
-    const d = body.embeds![0].description as string;
-    expect(d).not.toMatch(/[぀-ヿ]/u);
-    expect(d.split("\n").length).toBe(1);
+    expect(body.embeds).toBeUndefined();
+    expect((body.content as string).split("\n")[0]).not.toMatch(/\*[^*]+\*(?!\*)/u); // без манга-звука
+    expect(body.content as string).toContain("**Оплатить счёт**");
     expect(JSON.parse(row().style_data).words).toEqual({});
   });
 

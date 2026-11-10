@@ -49,8 +49,8 @@ describe("характер: тексты", () => {
     expect(panelText([], NOW, TZ, MAID)).toContain("Ничего не висит");
     expect(weekText([], NOW, TZ, MAID)).toContain("дел нет");
     const d = doneMessage("купить хлеб", MAID, 2).content ?? "";
-    expect(d.startsWith("Готово: купить хлеб")).toBe(true);
-    expect(d.length).toBeGreaterThan("Готово: купить хлеб".length);
+    expect(d.endsWith("**купить хлеб** — готово")).toBe(true); // фраза горничной первой, суть хвостом
+    expect(d.length).toBeGreaterThan("**купить хлеб** — готово".length);
   });
 
   it("сводки: упоминание, заголовок и факты те же, добавляется только пара слов; итоги недели тоже", () => {
@@ -120,6 +120,6 @@ describe("характер: переключатель и действие в б
     const created = await w.create("завтра в 10 купить хлеб");
     await click("mn:tg:ch:c");
     const r = await click(`done:${created.occId}`);
-    expect(String(r.data.content).startsWith("Готово: Купить хлеб")).toBe(true);
+    expect(String(r.data.content)).toMatch(/Готово: Купить хлеб|\*\*Купить хлеб\*\* — готово/);
   });
 });

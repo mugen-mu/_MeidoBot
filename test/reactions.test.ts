@@ -38,10 +38,9 @@ describe("запасные фразы и черновик", () => {
     for (const mood of MOODS) for (const sit of ["stopped", "reply_past", "reply_closed"] as const) expect(PHRASES[mood][sit] ?? PHRASES[mood].cancelled).toBeTruthy();
   });
 
-  it("draftMessage: реплика отдельной строкой, «#N» остаётся последним номером для Reply, кнопки на месте", () => {
+  it("draftMessage: фраза и вопрос одной строкой, «#N» остаётся последним номером для Reply, кнопки на месте", () => {
     const m = draftMessage({ occId: 5, itemId: 9, title: "Купить хлеб", line: "Дело есть, времени нет. *вздох*" });
-    expect(m.content).toContain("**Купить хлеб** — когда напомнить? · #9");
-    expect(m.content).toContain("-# Дело есть, времени нет. *вздох*");
+    expect(m.content).toBe("Дело есть, времени нет. *вздох* **Купить хлеб** — когда напомнить? · #9");
     expect([...(m.content ?? "").matchAll(/#(\d+)/g)].at(-1)![1]).toBe("9");
     expect(m.components).toHaveLength(2);
     expect(draftMessage({ occId: 5, itemId: 9, title: "Купить хлеб" }).content).toBe("**Купить хлеб** — когда напомнить? · #9");
@@ -111,9 +110,12 @@ describe("в боте", () => {
     w.discord.say(CH_REMIND, OWNER, "отмени", { ref: msg, at: min(6) });
     await runCronAt(min(7), f.ai);
     const reply = w.discord.live(CH_REMIND).at(-1)!;
-    expect(reply.body.content).toContain("Отменено: **Оплатить счёт**.");
-    expect(reply.body.content).toContain("-# Убрала. Одним делом меньше");
-    expect(w.discord.edits.at(-1)!.body.content).toContain("-# Убрала.");
+    // один слой: фраза первой, суть («Оплатить счёт» + «отменено») хвостом в той же строке
+    expect(reply.body.content).toContain("Убрала. Одним делом меньше");
+    expect(reply.body.content).toContain("**Оплатить счёт** — отменено.");
+    expect(reply.body.content).not.toContain("-# ");
+    expect(w.discord.edits.at(-1)!.body.content).toContain("Убрала.");
+    expect(w.discord.edits.at(-1)!.body.content).toContain("**Оплатить счёт** — отменено");
   });
 
   it("Reply «не понял»: модель недоступна — подсказка на месте и готовая фраза под ней", async () => {
@@ -123,15 +125,17 @@ describe("в боте", () => {
     w.discord.say(CH_REMIND, OWNER, "абракадабра", { ref: msg, at: min(6) });
     await runCronAt(min(7), boom);
     const text = w.discord.live(CH_REMIND).at(-1)!.body.content as string;
-    expect(text).toContain("Не понял. Ответьте, например");
-    expect(text).toContain("-# ");
+    expect(text).toContain("Ответьте, например, «через 15 минут»"); // подсказка на месте (смысл)
+    expect(text).not.toContain("-# "); // а фраза Хару — тем же обычным текстом, без второй мелкой строки
+    expect(text.startsWith("Не понял. Ответьте")).toBe(false); // её «не поняла» не дублируется обычным «Не понял.»
   });
 
   it("черновик «когда напомнить?» с репликой Хару; кнопки времени на месте", async () => {
     const f = fakeAi("Дело есть, времени нет. Классика.");
     const r = await call({ type: 2, data: { name: "remind", type: 1, options: [{ name: "text", value: "купить хлеб" }] } }, f.ai);
     expect(r.data.content).toContain("когда напомнить?");
-    expect(r.data.content).toContain("-# Дело есть, времени нет");
+    expect(r.data.content).toContain("Дело есть, времени нет. Классика. **Купить хлеб** — когда напомнить?");
+    expect(r.data.content).not.toContain("-# ");
     expect(JSON.stringify(r.data.components)).toContain("Через час");
   });
 
@@ -139,12 +143,12 @@ describe("в боте", () => {
     const f = fakeAi();
     const created = (await w.create("завтра в 10 купить хлеб")) as { itemId: number };
     const r = await call({ type: 3, data: { custom_id: `rm:${created.itemId}` }, message: { id: "m1" } }, f.ai);
-    expect(JSON.stringify(r)).toContain("Отменено: Купить хлеб");
-    expect(JSON.stringify(r)).toContain("-# Убрала. Одним делом меньше");
+    expect(JSON.stringify(r)).toContain("Убрала. Одним делом меньше, одним вздохом больше. **Купить хлеб** — отменено");
     const w2 = new World();
     await w2.seed({ settings: { mood_on: "0" } });
     const c2 = (await w2.create("завтра в 10 купить хлеб")) as { itemId: number };
     const r2 = await call({ type: 3, data: { custom_id: `rm:${c2.itemId}` }, message: { id: "m1" } }, f.ai, w2);
+    expect(JSON.stringify(r2)).toContain("Отменено: Купить хлеб"); // без фразы — прежняя обычная строка, смысл тот же
     expect(JSON.stringify(r2)).not.toContain("-# ");
   });
 
@@ -152,7 +156,6 @@ describe("в боте", () => {
     const f = fakeAi("Стёрла. Хоть что-то в списке закончилось.");
     const created = (await w.create("завтра в 10 купить хлеб")) as { itemId: number };
     const r = await call({ type: 3, data: { custom_id: `mn:dy:${created.itemId}:a:0` }, message: { id: "m1" } }, f.ai);
-    expect(JSON.stringify(r)).toContain("Удалено: **Купить хлеб**");
-    expect(JSON.stringify(r)).toContain("-# Стёрла.");
+    expect(JSON.stringify(r)).toContain("Стёрла. Хоть что-то в списке закончилось. **Купить хлеб** — удалено");
   });
 });

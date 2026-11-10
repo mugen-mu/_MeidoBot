@@ -7,7 +7,7 @@ import { QUICK_OPTIONS } from "../time/quick.ts";
 import { MINUTE, civilDay, fmtHHMM, startOfDay, wallOf } from "../time/tz.ts";
 import type { OccView } from "../db/types.ts";
 import { type Mood } from "../personality/moodEngine.ts";
-import { maidEmbed } from "../personality/look.ts";
+import { embedText, spriteCard } from "../personality/look.ts";
 import { styleSummary } from "../personality/styleReport.ts";
 import { parseRecipe } from "../service.ts";
 import { TAIL_DAYS, isTail } from "../tail.ts";
@@ -86,13 +86,38 @@ export function reminderMessage(a: {
     content = lines.join("\n");
   }
   const body: MessageBody = { content, components: [row(...buttons)], allowed_mentions: { users: [ownerId] } };
-  if (a.flavor && a.look) body.embeds = [maidEmbed({ mood: a.look.mood, text: a.flavor, origin: a.look.origin, sprite: a.look.sprite })];
-  else if (a.flavor) body.content += `
-${subtext(a.flavor)}`;
+  // один слой: фраза Хару сразу после упоминания и перед названием («@вы Пора. **Дело**»), дальше суть; со спрайтом — ещё карточка-миниатюра без текста
+  if (a.flavor) {
+    body.content = content.replace(mention, () => `${mention} ${voiceText(a.flavor!)}`);
+    const card = spriteCard(a.look);
+    if (card) body.embeds = card;
+  }
   return body;
 }
 
-/** Текст ответа бота плюс (если есть) мелкая реплика Хару на новой строке. */
+/**
+ * Один слой ответа (отзыв владельца 2026-11-10): ответ строится вокруг фразы Хару, а не «обычная строка + мелкая фраза под ней».
+ * Есть фраза — она идёт первой обычным текстом, суть (название, время, итог) — хвостом в той же строке: «Убрала. … **Дело** — отменено».
+ * Нет фразы (тихий день, серьёзная тема, характер выключен) — прежняя обычная строка `plain`: смысл всегда на месте.
+ */
+export const voice = (plain: string, line: string | null | undefined, tail: string): string => (line ? `${voiceText(line)} ${tail}` : plain);
+
+/** Фраза Хару обычным текстом, без «-# »: короткая (с манга-звуком) — одной строкой, монолог из трёх строк и больше — как есть; манга-звук курсивом. */
+export const voiceText = (line: string): string => {
+  const parts = embedText(line)
+    .split("\n")
+    .map((l) => l.trim())
+    .filter(Boolean);
+  return parts.join(parts.length >= 3 ? "\n" : " ");
+};
+
+/** Фраза шапкой над текстом (длинные сообщения: разбор, итоги): первой строкой обычным шрифтом, дальше сам текст. */
+export const headVoice = (line: string | null | undefined, text: string): string => (line ? `${voiceText(line)}\n${text}` : text);
+
+/** Хвост «суть»: `**Название** — итог`. */
+export const factTail = (title: string, result: string): string => `**${title}** — ${result}`;
+
+/** Текст ответа бота плюс (если есть) мелкая реплика Хару на новой строке. Только для сообщений, где суть — целый блок (списки, подсказки); короткие ответы — через `voice`. */
 export const withLine = (text: string, line: string | null | undefined): string => (line ? `${text}\n${subtext(line)}` : text);
 
 /** Мелкий серый текст Discord («-# …»): каждая строка отдельно, чтобы манга-звук второй строкой тоже был мелким. */
@@ -104,11 +129,9 @@ export const subtext = (text: string): string =>
 
 /** После закрытия кнопкой «Готово» сообщение остаётся записью, без кнопок. */
 export function doneMessage(title: string, ch: Character = "neutral", seed = 0, line: string | null = null, look: Look | null = null): MessageBody {
-  if (line && look) {
-    return { content: `Готово: ${title}`, embeds: [maidEmbed({ mood: look.mood, text: line, origin: look.origin, sprite: look.sprite })], components: [], allowed_mentions: { parse: [] } };
-  }
   const extra = line ?? tired(ch, "done", seed); // реплика настроения главнее прежнего «характера»
-  return { content: `Готово: ${title}${extra ? `\n${subtext(extra)}` : ""}`, components: [], allowed_mentions: { parse: [] } };
+  const embeds = line ? spriteCard(look) : undefined;
+  return { content: voice(`Готово: ${title}`, extra, factTail(title, "готово")), ...(embeds ? { embeds } : {}), components: [], allowed_mentions: { parse: [] } };
 }
 
 /** Обычный текст плюс (для характера «горничная») короткая фраза через пробел. */
@@ -116,7 +139,7 @@ const withTired = (text: string, extra: string | null): string => (extra ? `${te
 
 export function snoozedMessage(a: { occId: number; title: string; whenText: string; itemId: number; line?: string | null }): MessageBody {
   return {
-    content: withLine(`Отложено: **${a.title}** — до ${a.whenText} · #${a.itemId}`, a.line),
+    content: voice(`Отложено: **${a.title}** — до ${a.whenText} · #${a.itemId}`, a.line, factTail(a.title, `отложено до ${a.whenText} · #${a.itemId}`)),
     allowed_mentions: { parse: [] },
     components: [row(btn("Готово", cid("done", a.occId), 3), btn("Изменить", cid("edit", a.occId)))],
   };
@@ -145,14 +168,13 @@ export function confirmMessage(a: {
   line?: string | null;
   look?: Look | null;
 }): MessageBody {
-  const lines = [`Записано: **${a.title}** — ${a.whenText} · #${a.itemId}`];
+  const lines = [voice(`Записано: **${a.title}** — ${a.whenText} · #${a.itemId}`, a.line, factTail(a.title, `записано: ${a.whenText} · #${a.itemId}`))];
   if (a.recur) lines.push(`Повтор: ${a.recur}`);
   if (a.lead) lines.push(`Заранее: ${a.lead}`);
   if (a.ladderText) lines.push(`Настойчивость: ${a.ladderText}`);
   if (a.note) lines.push(`-# ${a.note}`);
-  if (a.line && !a.look) lines.push(subtext(a.line));
   const rows: ActionRow[] = [row(btn("Изменить", cid("edit", a.occId)), btn("Отменить", cid("rm", a.itemId), 4))];
-  const embeds = a.line && a.look ? [maidEmbed({ mood: a.look.mood, text: a.line, origin: a.look.origin, sprite: a.look.sprite })] : undefined;
+  const embeds = a.line ? spriteCard(a.look) : undefined;
   return { content: lines.join("\n"), ...(embeds ? { embeds } : {}), allowed_mentions: { parse: [] }, components: rows };
 }
 
@@ -163,7 +185,7 @@ export function confirmedMessage(a: { title: string; whenText: string; itemId: n
 export function draftMessage(a: { occId: number; itemId: number; title: string; note?: string; line?: string | null }): MessageBody {
   return {
     // «#N» остаётся в конце строки с названием/пояснением: по нему находится дело при Reply; реплика — отдельной строкой ниже
-    content: withLine(`**${a.title}** — когда напомнить?${a.note ? `\n${a.note}` : ""} · #${a.itemId}`, a.line),
+    content: voice(`**${a.title}** — когда напомнить?${a.note ? `\n${a.note}` : ""} · #${a.itemId}`, a.line, `**${a.title}** — когда напомнить?${a.note ? ` ${a.note}` : ""} · #${a.itemId}`),
     allowed_mentions: { parse: [] },
     components: [
       row(
@@ -180,7 +202,7 @@ export function draftMessage(a: { occId: number; itemId: number; title: string; 
 
 export function snoozeQuestionMessage(a: { occId: number; itemId: number; title: string; count: number; line?: string | null }): MessageBody {
   return {
-    content: withLine(`Откладываешь «${a.title}» в ${a.count}-й раз. Что делаем?`, a.line),
+    content: voice(`Откладываешь «${a.title}» в ${a.count}-й раз. Что делаем?`, a.line, `Откладываешь «${a.title}» в ${a.count}-й раз. Что делаем?`),
     allowed_mentions: { parse: [] },
     components: [
       row(
@@ -343,12 +365,12 @@ export function reviewMessage(a: { tail: OccView[]; soon: OccView[]; frozenRecen
   }
   if (a.frozenRecent > 0) text += `\n🧊 Заморожено за неделю: ${a.frozenRecent}. Вернуть: «⋯ Ещё» → «🧊 Заморожено».`;
   else if (a.frozenTotal > 0) text += `\n🧊 Всего заморожено: ${a.frozenTotal} (в «⋯ Ещё» → «🧊 Заморожено»).`;
-  return { content: withLine(text, a.line), allowed_mentions: { parse: [] }, components: [row(btn("🧹 Разобрать", "pn:ls:r:0", 1))] };
+  return { content: headVoice(a.line, text), allowed_mentions: { parse: [] }, components: [row(btn("🧹 Разобрать", "pn:ls:r:0", 1))] };
 }
 
 /** «Висит» = 0 (B9): раз в неделю тёплая строка вместо разбора. */
 export const calmMessage = (line?: string | null): MessageBody => ({
-  content: withLine("**Висит**\nНичего не висит — хорошая неделя.", line),
+  content: voice("**Висит**\nНичего не висит — хорошая неделя.", line, "**Висит** — ничего, хорошая неделя."),
   allowed_mentions: { parse: [] },
 });
 

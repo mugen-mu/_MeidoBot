@@ -2,7 +2,7 @@
 // Идентификаторы: an:ls:<статус>:<стр> список; an:it:<id>:<статус>:<стр> карточка; an:ep/epm/lk/nt/st/dl/dy — действия карточки;
 // an:ad добавить; an:pk:<mal>:<статус>:<серия> выбор из вариантов; an:sn:… ответы на «посмотрели?».
 import { type Character } from "../flavor.ts";
-import { subtext, modal, selectLabel, textLabel } from "../discord/ui.ts";
+import { headVoice, voiceText, modal, selectLabel, textLabel } from "../discord/ui.ts";
 import type { ActionRow, Button, MessageBody } from "../discord/types.ts";
 import { MINUTE, startOfDay, wallOf, fmtHHMM } from "../time/tz.ts";
 import type { Candidate, Sequel } from "./sources.ts";
@@ -28,7 +28,7 @@ import {
 const btn = (label: string, id: string, style: Button["style"] = 2, disabled = false): Button => ({ type: 2, style, label, custom_id: id, ...(disabled ? { disabled: true } : {}) });
 const row = (...components: ActionRow["components"]): ActionRow => ({ type: 1, components });
 const body = (content: string, components: ActionRow[]): MessageBody => ({ content, components, allowed_mentions: { parse: [] } });
-const withHaru = (text: string, line: string | null): string => (line ? `${text}\n${subtext(line)}` : text);
+const withHaru = (text: string, line: string | null): string => (line ? `${text}\n${voiceText(line)}` : text);
 
 export const ANIME_PAGE = 5;
 
@@ -180,10 +180,10 @@ export function eveningLines(rows: Anime[], now: number, tz: string, ch: Charact
     const w = wallOf(up.at, tz);
     out.push(`• ${fmtHHMM(w.h * 60 + w.mi)} ${clip(a.title_ru, 60)} — ${up.ep}-я серия`);
     const voice = voiceLine(a);
-    if (voice) out.push(subtext(voice));
+    if (voice) out.push(voiceText(voice));
   }
   const line = haru("tonight", ch, rand);
-  if (line) out.push(subtext(line));
+  if (line) out.push(voiceText(line));
   return out;
 }
 

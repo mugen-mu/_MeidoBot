@@ -214,7 +214,7 @@ describe("Х3: напоминание карточкой", () => {
     await click("mn:tg:mo:c");
   });
 
-  it("суть остаётся обычным текстом с упоминанием и кнопками; реплика — в цветной карточке со спрайтом", async () => {
+  it("один слой: упоминание, фраза Хару и название в тексте, кнопки прежние; рядом только карточка-спрайт без текста", async () => {
     await call({ type: 2, data: { name: "list", type: 1, options: [] } }); // любой вызов запоминает адрес Worker
     expect(w.d1.q<{ value: string }>("SELECT value FROM meta WHERE key = 'public_origin'")[0].value).toBe(ORIGIN);
     await w.create("через 5 минут оплатить счёт");
@@ -224,31 +224,33 @@ describe("Х3: напоминание карточкой", () => {
     expect(body.content).toContain("**Оплатить счёт**");
     expect(body.content).toContain("Срок:");
     expect(body.allowed_mentions).toEqual({ users: [OWNER] });
+    const first = String(body.content).split("\n")[0];
+    expect(first.indexOf("**Оплатить счёт**")).toBeGreaterThan(`<@${OWNER}> `.length + 3); // между упоминанием и названием — фраза
+    expect(body.content).not.toMatch(/\n-# /);
     const e = card(body);
     expect(e.color).toBe(MOOD_COLOR[mood().current_mood as keyof typeof MOOD_COLOR]);
     expect(e.thumbnail.url).toBe(`${ORIGIN}/sprites/${mood().current_mood}.jpg`);
-    expect(e.description.length).toBeGreaterThan(3);
+    expect(e.description).toBeUndefined(); // фраза не дублируется в карточке
     const ids = body.components![0].components.map((c: any) => c.custom_id);
     expect(ids.some((i: string) => i.startsWith("done:"))).toBe(true);
   });
 
-  it("спрайт редкий: при «неудачной» случайности карточка без картинки, но с цветом", async () => {
+  it("спрайт редкий: при «неудачной» случайности карточки нет вовсе, фраза всё равно в тексте", async () => {
     await call({ type: 2, data: { name: "list", type: 1, options: [] } });
     await w.create("через 5 минут оплатить счёт");
     await run(min(5), () => 0.5);
-    const e = card(w.discord.live(CH_REMIND)[0].body);
-    expect(e).toBeDefined();
-    expect(e.thumbnail).toBeUndefined();
-    expect(typeof e.color).toBe("number");
+    const body = w.discord.live(CH_REMIND)[0].body;
+    expect(body.embeds).toBeUndefined();
+    expect(String(body.content).split("\n")[0].length).toBeGreaterThan(`<@${OWNER}> **Оплатить счёт**`.length + 3);
   });
 
-  it("без записанного адреса Worker (cron раньше любой команды) — цвет есть, картинки нет", async () => {
+  it("без записанного адреса Worker (cron раньше любой команды) — карточки нет, фраза в тексте", async () => {
     await w.repo().exec([op("DELETE FROM meta WHERE key = 'public_origin'")]);
     await w.create("через 5 минут оплатить счёт");
     await run(min(5));
-    const e = card(w.discord.live(CH_REMIND)[0].body);
-    expect(e.thumbnail).toBeUndefined();
-    expect(typeof e.color).toBe("number");
+    const body = w.discord.live(CH_REMIND)[0].body;
+    expect(body.embeds).toBeUndefined();
+    expect(String(body.content).split("\n")[0].length).toBeGreaterThan(`<@${OWNER}> **Оплатить счёт**`.length + 3);
   });
 
   it("серьёзная тема и критичное дело: без карточки (обычный нейтральный текст)", async () => {
@@ -264,12 +266,14 @@ describe("Х3: напоминание карточкой", () => {
     expect(w.discord.live(CH_REMIND)[0].body.embeds).toBeUndefined();
   });
 
-  it("«Готово»: реплика в карточке, текст «Готово: …» остаётся; прежняя карточка при обновлении убирается", async () => {
+  it("«Готово»: фраза и «готово» в одной строке текста; прежняя карточка при обновлении убирается", async () => {
     const a = await w.create("через 5 минут оплатить счёт");
     await run(min(5));
     const r = await click(`done:${a.occId}`, min(6));
-    expect(String(r.data.content).startsWith("Готово: Оплатить счёт")).toBe(true);
-    expect(r.data.embeds).toHaveLength(1);
+    expect(String(r.data.content)).toContain("**Оплатить счёт** — готово");
+    expect(String(r.data.content).length).toBeGreaterThan("**Оплатить счёт** — готово".length + 3);
+    expect(r.data.embeds).toHaveLength(1); // карточка-спрайт
+    expect(r.data.embeds[0].description).toBeUndefined();
     expect(r.data.components).toEqual([]);
     const gone = await click("done:99999");
     expect(gone.type).toBe(7);
@@ -408,8 +412,10 @@ describe("Х3: кино-момент в напоминании", () => {
   it("при выпавшем шансе: длинная реплика со спрайтом; второй раз в те же сутки — обычная фраза", async () => {
     await w.create("через 5 минут оплатить счёт");
     await run(min(5));
-    const first = card(w.discord.live(CH_REMIND)[0].body);
-    expect(first.description.split("\n").length).toBeGreaterThanOrEqual(3);
+    const body0 = w.discord.live(CH_REMIND)[0].body;
+    const first = card(body0);
+    expect(String(body0.content).split("\n").length).toBeGreaterThanOrEqual(3); // монолог целиком в тексте
+    expect(first.description).toBeUndefined();
     expect(first.thumbnail).toBeDefined();
     const cin = JSON.parse(mood().style_data).cin;
     expect(cin).toBe(min(5));

@@ -27,17 +27,19 @@ describe("подтверждение записи", () => {
     for (const mood of ["tired", "tsundere", "yandere", "sulking", "proud", "sleepy"]) expect(PHRASES[mood].recorded?.length).toBeGreaterThanOrEqual(4);
   });
 
-  it("настроение включено: реплика в карточке, суть обычным текстом, кнопки только «Изменить» и «Отменить»", async () => {
+  it("настроение включено: один слой — фраза первой, суть хвостом в той же строке; кнопки только «Изменить» и «Отменить»", async () => {
     const r = await remind("завтра в 10 купить хлеб");
-    expect(r.data.content).toContain("Записано: **Купить хлеб** — завтра, 10:00");
-    expect(r.data.embeds).toHaveLength(1);
-    expect(String(r.data.embeds[0].description).length).toBeGreaterThan(5);
+    const first = String(r.data.content).split("\n")[0];
+    expect(first).toContain("**Купить хлеб** — записано: завтра, 10:00");
+    expect(first.indexOf("**Купить хлеб**")).toBeGreaterThan(5); // перед названием — фраза Хару
+    expect(r.data.content).not.toMatch(/\n-# /); // мелкой второй строки нет
+    expect((r.data.embeds ?? []).every((e: { description?: string }) => e.description === undefined)).toBe(true); // карточка бывает только со спрайтом и без текста
     expect(ids(r).map((i) => i.split(":")[0])).toEqual(["edit", "rm"]);
   });
 
   it("серьёзная тема (врач, невролог): без реплики, суть та же", async () => {
     const r = await remind("в понедельник в 11 записать ребёнка к неврологу");
-    expect(r.data.content).toContain("Записано: **Записать ребёнка к неврологу**");
+    expect(r.data.content).toContain("Записано: **Записать ребёнка к неврологу**"); // без фразы — прежняя строка
     expect(r.data.embeds).toBeUndefined();
   });
 

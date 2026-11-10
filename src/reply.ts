@@ -4,7 +4,7 @@ import type { Repo } from "./db/repo.ts";
 import { OPEN_STATES, type OccView, type Op } from "./db/types.ts";
 import type { DiscordApi, IncomingMessage, MessageBody } from "./discord/types.ts";
 import { messageTime } from "./intake.ts";
-import { doneMessage, plainMessage, snoozedMessage, withLine } from "./discord/ui.ts";
+import { doneMessage, factTail, plainMessage, snoozedMessage, voice } from "./discord/ui.ts";
 import { SNOOZE_TEASE_AT } from "./ladder.ts";
 import { type MoodSession, reactionLine, recordDone } from "./personality/director.ts";
 import type { Situation } from "./personality/phrases.ts";
@@ -38,6 +38,9 @@ export function parseReply(text: string, ctx: { at: number; tz: string; defaultT
 }
 
 export const REPLY_UNKNOWN = "Не понял. Ответьте, например, «через 15 минут», «на час», «завтра 10:30», «готово» или «отмени».";
+// с фразой Хару «Не понял.» не повторяем: она уже сказала это своими словами, остаётся подсказка
+export const REPLY_UNKNOWN_HINT = "Ответьте, например, «через 15 минут», «на час», «завтра 10:30», «готово» или «отмени».";
+export const REPLY_PAST_HINT = "Время уже прошло. Ответьте, например, «через 15 минут» или «завтра 10:30».";
 export const REPLY_PAST = "Это время уже прошло. Ответьте, например, «через 15 минут» или «завтра 10:30».";
 export const REPLY_CLOSED = "Это дело уже закрыто.";
 
@@ -54,25 +57,25 @@ export interface ReplyResult {
  * (и под правкой сообщения «Отменено»/«Отложено»).
  */
 export function applyReply(occ: OccView, action: ReplyAction, s: AppSettings, now: number, doneLine: string | null = null): ReplyResult {
-  if (!OPEN_STATES.includes(occ.state)) return { ops: [], edit: null, text: withLine(REPLY_CLOSED, doneLine) };
+  if (!OPEN_STATES.includes(occ.state)) return { ops: [], edit: null, text: voice(REPLY_CLOSED, doneLine, "Это дело уже закрыто.") };
   switch (action.kind) {
     case "done":
       return { ops: doneOps(occ, now), edit: doneMessage(occ.title, s.character, occ.id, doneLine), text: `Готово: **${occ.title}**.` };
     case "cancel":
-      return { ops: cancelItemOps(occ.item_id, now), edit: plainMessage(withLine(`Отменено: ${occ.title}`, doneLine)), text: withLine(`Отменено: **${occ.title}**.`, doneLine) };
+      return { ops: cancelItemOps(occ.item_id, now), edit: plainMessage(voice(`Отменено: ${occ.title}`, doneLine, factTail(occ.title, "отменено"))), text: voice(`Отменено: **${occ.title}**.`, doneLine, `${factTail(occ.title, "отменено")}.`) };
     case "snooze": {
       const whenText = formatWhen(action.due, now, s.tz);
       const draft = occ.state === "draft";
       return {
         ops: draft ? rescheduleOps(occ, action.due, now) : snoozeOps(occ, action.due, now),
         edit: draft ? null : snoozedMessage({ occId: occ.id, title: occ.title, whenText, itemId: occ.item_id, line: doneLine }),
-        text: withLine(`Отложено: **${occ.title}**. Напомню: ${whenText}.`, doneLine),
+        text: voice(`Отложено: **${occ.title}**. Напомню: ${whenText}.`, doneLine, `${factTail(occ.title, `отложено, напомню: ${whenText}`)}.`),
       };
     }
     case "past":
-      return { ops: [], edit: null, text: withLine(REPLY_PAST, doneLine) };
+      return { ops: [], edit: null, text: voice(REPLY_PAST, doneLine, REPLY_PAST_HINT) };
     default:
-      return { ops: [], edit: null, text: withLine(REPLY_UNKNOWN, doneLine) };
+      return { ops: [], edit: null, text: voice(REPLY_UNKNOWN, doneLine, REPLY_UNKNOWN_HINT) };
   }
 }
 

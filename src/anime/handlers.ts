@@ -4,7 +4,7 @@ import { type Repo, deleteMeta, setMeta } from "../db/repo.ts";
 import type { Op } from "../db/types.ts";
 import type { MessageBody } from "../discord/types.ts";
 import type { Character } from "../flavor.ts";
-import { subtext } from "../discord/ui.ts";
+import { headVoice, voiceText } from "../discord/ui.ts";
 import {
   type Anime,
   type AnimePhrase,
@@ -63,7 +63,7 @@ function savedMessage(a: Anime, c: AnimeCtx, kind: "added" | "changed"): Message
   const where = `**${a.title_ru}** — ${STATUS_LABEL[a.status]}${a.watched ? `, серия ${a.watched}` : ""}`;
   const more = a.status === "watching" || a.status === "planned" ? `\n${progressText(a, c.now, c.tz)}${e.upcoming || a.src_status === "FINISHED" ? "" : ". Напомню, когда появится дата."}` : "";
   const line = haru(kind === "added" ? "added" : a.status === "dropped" ? "dropped" : "ep", c.character, c.rand);
-  return { content: `Записала: ${where}.${more}${line ? `\n${subtext(line)}` : ""}`, components: nav(a), allowed_mentions: { parse: [] } };
+  return { content: `Записала: ${where}.${more}${line ? `\n${voiceText(line)}` : ""}`, components: nav(a), allowed_mentions: { parse: [] } };
 }
 
 /** Добавить тайтл: название и расписание — полным запросом Shikimori; не вышло — по данным поиска, расписание догонит ночь. */
@@ -124,7 +124,7 @@ async function setEpisode(c: AnimeCtx, a: Anime, n: number, cd: string, page: nu
   await c.repo.exec([patchOp(a.id, patch, c.now), ...touchOps()]);
   const fresh = { ...a, ...patch } as Anime;
   const note = patch.status === "done" ? "Досмотрели! Понравилось? Нажмите отметку." : haru("ep", c.character, c.rand) ?? undefined;
-  return update(animeCardMessage(fresh, patch.status === "done" ? "d" : cd, patch.status === "done" ? 0 : page, c.now, c.tz, c.character, { note: note ? (patch.status === "done" ? note : subtext(note)) : undefined, rand: c.rand }));
+  return update(animeCardMessage(fresh, patch.status === "done" ? "d" : cd, patch.status === "done" ? 0 : page, c.now, c.tz, c.character, { note: note ? (patch.status === "done" ? note : voiceText(note)) : undefined, rand: c.rand }));
 }
 
 /** Кнопки `an:…` (кроме открытия экрана из меню). Возвращает ответ Discord или null, если кнопка не наша. */
@@ -161,7 +161,7 @@ export async function handleAnimeButton(c: AnimeCtx, parts: string[]): Promise<R
       const liked = a.liked === v ? 0 : v;
       await c.repo.exec([patchOp(a.id, { liked }, c.now)]);
       const line = liked ? haru("liked", c.character, c.rand) : null;
-      return update(animeCardMessage({ ...a, liked }, parts[4] ?? "w", pageOf(parts[5]), c.now, c.tz, c.character, { note: line ? subtext(line) : undefined, rand: c.rand }));
+      return update(animeCardMessage({ ...a, liked }, parts[4] ?? "w", pageOf(parts[5]), c.now, c.tz, c.character, { note: line ? voiceText(line) : undefined, rand: c.rand }));
     }
     case "nt": {
       const a = await getAnime(c.repo, Number(parts[2]));
@@ -178,7 +178,7 @@ export async function handleAnimeButton(c: AnimeCtx, parts: string[]): Promise<R
       if (status === "done" && a.episodes) patch.watched = a.episodes;
       await c.repo.exec([patchOp(a.id, patch, c.now), ...touchOps()]);
       const line = status === "dropped" ? haru("dropped", c.character, c.rand) : null;
-      return update(animeCardMessage({ ...a, ...patch } as Anime, parts[4] ?? "w", pageOf(parts[5]), c.now, c.tz, c.character, { note: line ? subtext(line) : undefined, rand: c.rand }));
+      return update(animeCardMessage({ ...a, ...patch } as Anime, parts[4] ?? "w", pageOf(parts[5]), c.now, c.tz, c.character, { note: line ? voiceText(line) : undefined, rand: c.rand }));
     }
     case "dl": {
       const a = await getAnime(c.repo, Number(parts[2]));
@@ -257,7 +257,7 @@ async function handleWeek(c: AnimeCtx, parts: string[]): Promise<Reply> {
   const gone = update(text("Этот тайтл уже убран."));
   const line = (k: "weekThanks" | "liked" | "dropped"): string => {
     const l = haru(k, c.character, c.rand);
-    return l ? `\n${subtext(l)}` : "";
+    return l ? `\n${voiceText(l)}` : "";
   };
   if (kind === "q") {
     // продолжение сезона: parts[3] — номер MyAnimeList продолжения, а не наш id

@@ -20,7 +20,12 @@ import { NOW } from "./helpers.ts";
 import { CH_REMIND, OWNER, World } from "./world.ts";
 
 const min = (n: number) => NOW + n * MINUTE;
-const card = (b: { embeds?: { description?: string }[] }): string => b.embeds?.[0]?.description ?? "";
+const card = (b: { embeds?: { description?: string }[] }): string => b.embeds?.[0]?.description ?? ""; // карточка (/mood и т. п.)
+// фраза Хару в коротких ответах теперь в тексте сообщения (один слой, 2026-11-10), а не в карточке
+const said = (b: { content?: string }): string => {
+  const first = String(b.content ?? "").split("\n")[0];
+  return first.replace(/^<@\d+>\s*/, "").replace(/\s*\*\*[^*]+\*\*.*$/, "");
+};
 const answer = (text: string) => ({ choices: [{ message: { content: text } }] });
 /** заглушка Workers AI: считает вызовы и запоминает запросы */
 function fakeAi(text: string | (() => string) = "Ну вот, чай остыл, а вы всё медлите. *вздыхает*") {
@@ -303,7 +308,7 @@ describe("в боте: cron, кнопки, настройки", () => {
     const f = fakeAi("Хозяин, чай остыл, а дело ждёт. *вздыхает*");
     await w.create("через 5 минут оплатить счёт");
     await run(min(5), f.ai);
-    expect(card(w.discord.live(CH_REMIND)[0].body)).toContain("чай остыл");
+    expect(said(w.discord.live(CH_REMIND)[0].body)).toContain("чай остыл");
     expect(f.calls).toHaveLength(1);
   });
 
@@ -311,7 +316,7 @@ describe("в боте: cron, кнопки, настройки", () => {
     const boom: AiBinding = { run: async () => { throw new Error("нет"); } };
     await w.create("через 5 минут оплатить счёт");
     await run(min(5), boom);
-    expect(card(w.discord.live(CH_REMIND)[0].body).length).toBeGreaterThan(3);
+    expect(said(w.discord.live(CH_REMIND)[0].body).length).toBeGreaterThan(3);
   });
 
   it("выключатель «Живые реплики»: выкл — модель не зовётся", async () => {

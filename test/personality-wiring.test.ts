@@ -10,7 +10,12 @@ import { CH_BOT, CH_REMIND, OWNER, World } from "./world.ts";
 const min = (n: number) => NOW + n * MINUTE;
 const STYLE = /\n-# /;
 /** реплика горничной: с этапа Х3 лежит в карточке (embed), а не в тексте сообщения */
-const card = (b: { embeds?: { description?: string; color?: number }[] }): string => b.embeds?.[0]?.description ?? "";
+const card = (b: { embeds?: { description?: string; color?: number }[] }): string => b.embeds?.[0]?.description ?? ""; // карточка (/mood и т. п.)
+// фраза Хару в коротких ответах теперь в тексте сообщения (один слой, 2026-11-10), а не в карточке
+const said = (b: { content?: string }): string => {
+  const first = String(b.content ?? "").split("\n")[0];
+  return first.replace(/^<@\d+>\s*/, "").replace(/\s*\*\*[^*]+\*\*.*$/, "");
+};
 
 let w: World;
 let pending: Promise<unknown>[];
@@ -78,10 +83,9 @@ describe("настроение: cron", () => {
     const c = body.content as string;
     expect(c).toContain("**Оплатить счёт**");
     expect(c).toContain("Срок:");
-    expect(c).not.toMatch(STYLE); // реплика не под текстом, а в цветной карточке
-    expect(body.embeds).toHaveLength(1);
-    expect(typeof body.embeds![0].color).toBe("number");
-    expect(card(body).length).toBeGreaterThan(3);
+    expect(c).not.toMatch(STYLE); // один слой: реплика не мелкой строкой под текстом
+    expect(said(body).length).toBeGreaterThan(3); // а в первой строке: упоминание, фраза, название
+    expect(body.embeds).toBeUndefined(); // карточка только со спрайтом, а адреса картинок в этом тесте нет
     expect(body.components).toHaveLength(1); // кнопки как были
   });
 
@@ -99,7 +103,7 @@ describe("настроение: cron", () => {
     expect(mood().current_mood).toBe("tsundere");
     const lastBody = w.discord.live(CH_REMIND)[0].body;
     expect(lastBody.content as string).toContain("висит");
-    expect(card(lastBody).length).toBeGreaterThan(3);
+    expect(said(lastBody).length).toBeGreaterThan(3);
     await run(min(5 + 240)); // повтор «просрочено» — тот же пропуск
     expect(mood().miss_streak).toBe(1);
   });
@@ -117,8 +121,8 @@ describe("настроение: cron", () => {
     const a = await w.create("через 5 минут оплатить счёт");
     await run(min(5));
     const r = await click(`done:${a.occId}`, min(6));
-    expect(String(r.data.content).startsWith("Готово: Оплатить счёт")).toBe(true);
-    expect(card(r.data).length).toBeGreaterThan(3);
+    expect(String(r.data.content)).toContain("**Оплатить счёт** — готово"); // смысл на месте
+    expect(String(r.data.content).length).toBeGreaterThan("**Оплатить счёт** — готово".length + 3); // и фраза Хару перед ним
     expect(mood().done_streak).toBe(1);
 
     const b = await w.create("через 5 минут позвонить", min(10));
@@ -186,9 +190,10 @@ describe("настроение: команды", () => {
     await cmd("list"); // создаёт состояние
     const later = NOW + 30 * 60 * MINUTE;
     const r = await cmd("list", [], later);
-    expect(String(r.data.content)).toMatch(STYLE);
+    const lines1 = String(r.data.content).split("\n").length;
+    expect(String(r.data.content)).not.toMatch(STYLE); // фраза возвращения — шапкой обычным текстом
     expect(mood().affection).toBeGreaterThan(50 - 1); // спад к 50 + 2
     const r2 = await cmd("list", [], later + MINUTE);
-    expect(String(r2.data.content)).not.toMatch(STYLE);
+    expect(String(r2.data.content).split("\n").length).toBeLessThan(lines1); // второй раз — без фразы
   });
 });

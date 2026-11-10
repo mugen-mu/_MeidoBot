@@ -34,7 +34,12 @@ import { CH_BOT, CH_REMIND, OWNER, World } from "./world.ts";
 
 const DAY = 86_400_000;
 const min = (n: number) => NOW + n * MINUTE;
-const card = (b: { embeds?: { description?: string }[] }): string => b.embeds?.[0]?.description ?? "";
+const card = (b: { embeds?: { description?: string }[] }): string => b.embeds?.[0]?.description ?? ""; // карточка (/mood и т. п.)
+// фраза Хару в коротких ответах теперь в тексте сообщения (один слой, 2026-11-10), а не в карточке
+const said = (b: { content?: string }): string => {
+  const first = String(b.content ?? "").split("\n")[0];
+  return first.replace(/^<@\d+>\s*/, "").replace(/\s*\*\*[^*]+\*\*.*$/, "");
+};
 const has = (m: Mood, s: Situation) => poolFor(m, s).length > 0;
 const days = (n: number, from = "2026-01-01"): string[] => Array.from({ length: n }, (_, i) => new Date(Date.parse(from) + i * DAY).toISOString().slice(0, 10));
 /** день с нужной окраской (ищем среди дат) */
@@ -357,12 +362,12 @@ describe("пятое откладывание", () => {
     setOcc(occId, { snooze_count: 3 });
     const at = min(6);
     const four = await submit(`m_snz:${occId}`, { quick: "tom", text: "" }, at);
-    const fourLine = String(four.data.content).split("\n-# ")[1] ?? "";
+    const fourLine = String(four.data.content).split(" **")[0];
     const anyPool = (sit: "snoozed" | "snooze_5") => Object.keys(PHRASES).some((m) => fromPool(fourLine, PHRASES[m][sit] ?? []));
     expect(anyPool("snooze_5")).toBe(false);
     expect(anyPool("snoozed")).toBe(true);
     const five = await submit(`m_snz:${occId}`, { quick: "tom", text: "" }, at);
-    const fiveLine = String(five.data.content).split("\n-# ")[1] ?? "";
+    const fiveLine = String(five.data.content).split(" **")[0];
     expect(w.occ(occId).snooze_count).toBe(5);
     expect(fiveLine.length).toBeGreaterThan(3);
     expect(["tired", "tsundere", "proud", "sulking", "sleepy"].some((m) => fromPool(fiveLine, PHRASES[m].snooze_5 ?? []))).toBe(true);
@@ -374,11 +379,12 @@ describe("пятое откладывание", () => {
     setOcc(occId, { snooze_count: 2 });
     const third = await click(`snz:${occId}:15`, min(6));
     expect(String(third.data.content)).toContain("3-й раз");
-    expect(String(third.data.content)).not.toContain("\n-# ");
+    expect(String(third.data.content).startsWith("Откладываешь")).toBe(true); // без фразы
     setOcc(occId, { snooze_count: 4 });
     const fifth = await click(`snz:${occId}:15`, min(6));
     expect(String(fifth.data.content)).toContain("5-й раз");
-    expect(String(fifth.data.content)).toContain("\n-# ");
+    expect(String(fifth.data.content).startsWith("Откладываешь")).toBe(false); // фраза впереди, вопрос тот же
+    expect(String(fifth.data.content)).toContain("Откладываешь «Оплатить счёт» в 5-й раз. Что делаем?");
   });
 
   it("серьёзное дело или слово-флаг: пятое откладывание без шуток", async () => {
@@ -386,7 +392,7 @@ describe("пятое откладывание", () => {
     await run(min(5));
     setOcc(occId, { snooze_count: 4 });
     const r = await submit(`m_snz:${occId}`, { quick: "tom", text: "" }, min(6));
-    expect(String(r.data.content)).not.toContain("\n-# ");
+    expect(String(r.data.content)).toMatch(/^Отложено:/); // серьёзное — обычная строка без фразы
   });
 });
 
@@ -462,7 +468,7 @@ describe("«тихий день»", () => {
     await w.repo().exec([setMeta("quiet_day_until", String(min(0) + QUIET_DAY_MS))]);
     await w.create("через 5 минут оплатить счёт", min(0) + QUIET_DAY_MS + 60 * MINUTE);
     await run(min(0) + QUIET_DAY_MS + 65 * MINUTE);
-    expect(w.discord.live(CH_REMIND)[0].body.embeds).toHaveLength(1);
+    expect(said(w.discord.live(CH_REMIND)[0].body).length).toBeGreaterThan(3); // фраза Хару в тексте снова есть
   });
 
   it("«хватит тихого дня» снимает тишину досрочно; ответ — голосом Хару", async () => {
@@ -513,12 +519,12 @@ describe("яндере и серьёзные темы в боте", () => {
     await cmd("mood", [{ name: "set", value: "yandere" }]);
     const { occId } = await w.create("через 5 минут оплатить счёт");
     await run(min(5));
-    const first = card(w.discord.live(CH_REMIND)[0].body);
+    const first = said(w.discord.live(CH_REMIND)[0].body);
     expect(fromPool(first, PHRASES.yandere.reminder ?? [])).toBe(false);
     expect(first.length).toBeGreaterThan(3);
     for (const m of [10, 20, 40, 120]) await run(min(5 + m));
     expect(w.occ(occId).state).toBe("overdue");
-    const missed = card(w.discord.live(CH_REMIND)[0].body);
+    const missed = said(w.discord.live(CH_REMIND)[0].body);
     expect(fromPool(missed, PHRASES.yandere.missed ?? []) || fromPool(missed, PHRASES.yandere.missed_first ?? [])).toBe(true);
   });
 
@@ -529,9 +535,9 @@ describe("яндере и серьёзные темы в боте", () => {
     await run(min(5));
     const bodies = w.discord.live(CH_REMIND).map((m) => m.body);
     expect(bodies).toHaveLength(3);
-    const withCard = bodies.filter((b) => b.embeds && b.embeds.length);
-    expect(withCard).toHaveLength(1);
-    expect(String(withCard[0].content)).toContain("Купить хлеб");
+    const voiced = bodies.filter((b) => said(b).length > 3);
+    expect(voiced).toHaveLength(1);
+    expect(String(voiced[0].content)).toContain("Купить хлеб");
   });
 });
 
@@ -541,7 +547,7 @@ describe("достижения в боте", () => {
     await run(min(5));
     setOcc(occId, { state: "overdue", due_at: min(5) - 9 * DAY, base_at: min(5) - 9 * DAY });
     const r = await click(`done:${occId}`, min(6));
-    const line = card(r.data);
+    const line = said(r.data);
     expect(["tired", "tsundere", "proud", "sulking", "sleepy", "yandere"].some((m) => fromPool(line, PHRASES[m].achieve_tail ?? []))).toBe(true);
     expect(style().ac?.any).toBe(dayNumber(localDate(min(6), "Europe/Kyiv")));
   });
@@ -553,7 +559,7 @@ describe("достижения в боте", () => {
       const { occId } = await w.create("через 5 минут оплатить счёт", t0);
       await run(t0 + 5 * MINUTE);
       const r = await click(`done:${occId}`, t0 + 6 * MINUTE);
-      lines.push(card(r.data));
+      lines.push(said(r.data));
     }
     expect(style().ot?.n).toBe(3);
     const isStreak = (s: string) => Object.keys(PHRASES).some((m) => fromPool(s, PHRASES[m].good_streak ?? []));

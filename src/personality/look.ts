@@ -66,6 +66,16 @@ export function maidEmbed(a: { mood: Mood; text: string; origin?: string | null;
   return e;
 }
 
+/**
+ * Карточка только со спрайтом (одна фраза = одно место, 2026-11-10): сама фраза идёт в тексте сообщения, карточка — цветная полоска с миниатюрой
+ * и без текста. Нет спрайта (не выпал шанс или нет адреса картинок) — карточки нет совсем.
+ */
+export function spriteCard(look: { mood: Mood; origin?: string | null; sprite?: boolean } | null | undefined): Embed[] | undefined {
+  if (!look?.sprite) return undefined;
+  const url = spriteUrl(look.origin, look.mood);
+  return url ? [{ color: MOOD_COLOR[look.mood], thumbnail: { url } }] : undefined;
+}
+
 /** Показывать ли спрайт в этот раз: редко (по шансу) или всегда (`always`). */
 export const wantSprite = (rand: () => number, always = false): boolean => always || rand() < LOOK.spriteChance;
 
