@@ -23,6 +23,7 @@ import { type AnimeCtx, handleAddModal, handleAnimeButton, handleEpModal } from 
 import { listAnime } from "../anime/store.ts";
 import { animeListMessage, weekAnimeText } from "../anime/ui.ts";
 import { detectSecret } from "../secrets.ts";
+import { META_KEY as PASSPORT_KEY, SILENT_BOT_TEXT, parsePassport, statusText } from "../sources.ts";
 import {
   cancelItemOps,
   doneOps,
@@ -66,6 +67,7 @@ import {
   resultMessage,
   sectionMessage,
   settingsHomeMessage,
+  statusMessage,
   withNav,
 } from "./menu.ts";
 import type { DiscordApi, MessageBody } from "./types.ts";
@@ -902,6 +904,42 @@ async function onMenu(c: C, parts: string[], values: string[]): Promise<Reply> {
     }
     case "more":
       return show(moreMessage(panel ? "pn" : "mn", (await c.repo.frozenCount(0)).total));
+    case "ss": {
+      // «Состояние» (этап 4): паспорт источников; всё берём из меты, которая уже прочитана, — лишних подзапросов нет
+      const text = statusText(parsePassport(c.meta.get(PASSPORT_KEY)), { light: !!c.s.lightGroup, water: c.s.waterWords.length > 0, gas: c.s.gasWords.length > 0 }, c.now, c.s.tz);
+      return show(statusMessage(text, panel ? "pn" : "mn"));
+    }
+    case "sq": {
+      // текст «если бот молчит» в канал «бот» (A8): один раз пишем и пробуем закрепить; повторное нажатие правит то же сообщение
+      const pfx = panel ? "pn" : "mn";
+      const back = (t: string): Reply => show(infoMessage(t, `${pfx}:ss`, "◀ К состоянию"));
+      const ch = c.s.chBot;
+      if (!ch) return back("Канала «бот» ещё нет: выполните /setup на сервере.");
+      const body = { content: SILENT_BOT_TEXT, allowed_mentions: { parse: [] as string[] } };
+      const oldId = c.meta.get("silent_msg_id");
+      if (oldId) {
+        try {
+          await c.api.editMessage(ch, oldId, body);
+          return back("Текст в канале «бот» обновлён. Если он закреплён, закреплённым и останется.");
+        } catch {
+          /* сообщения нет (удалено) — напишем заново */
+        }
+      }
+      let sent: { id: string };
+      try {
+        sent = await c.api.postMessage(ch, body);
+      } catch {
+        return back("Не получилось написать в канал «бот»: проверьте, что у бота есть право писать туда.");
+      }
+      await c.repo.exec([setMeta("silent_msg_id", sent.id)]);
+      let pinned = true;
+      try {
+        await c.api.pinMessage(ch, sent.id);
+      } catch {
+        pinned = false;
+      }
+      return back(pinned ? "Текст поставлен в канал «бот» и закреплён." : "Текст поставлен в канал «бот». Закрепить не вышло (нет права «Закреплять сообщения»): закрепите вручную — ••• → Закрепить.");
+    }
     case "pw":
       return powerCommand(c, arg[0] === "new");
     case "gl": {

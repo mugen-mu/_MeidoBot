@@ -33,6 +33,22 @@ import { YASNO_ATTEMPTS, fetchYasno, groupsFor, lightFullText, lightLines, publi
 import { isLightQuestion, lightAskMessage } from "./lightAsk.ts";
 import { detectSecret } from "./secrets.ts";
 import { withSound } from "./sound.ts";
+import { choreMetaKey, choreParsed, choresDue, periodKey } from "./chores.ts";
+import {
+  META_KEY as PASSPORT_KEY,
+  type SourceId,
+  isBroken,
+  lastKnownLightLines,
+  lightLastOf,
+  lightNoticeDue,
+  markSaid,
+  parseLightLast,
+  parsePassport,
+  recordSource,
+  staleStamp,
+  weekSourceLines,
+} from "./sources.ts";
+import { OPEN_STATES } from "./db/types.ts";
 
 /** Повторная проверка света после сбоя Yasno в сводке: через сколько минут и сколько раз. */
 const LIGHT_RETRY_MIN = 30;
@@ -51,7 +67,7 @@ function parseLightRetry(raw: string | undefined): LightRetry | null {
 }
 import { MOOD_CONFIG } from "./personality/config.ts";
 import { planFire } from "./ladder.ts";
-import { freezeOps, ladderFor, nextSeriesOps, scrubOps } from "./service.ts";
+import { freezeOps, ladderFor, newItemOps, nextSeriesOps, scrubOps } from "./service.ts";
 import { calmMessage, reviewMessage } from "./discord/ui.ts";
 import { freezeCandidates, isTail, shouldNoteTail, soonFrozen } from "./tail.ts";
 import { type AppSettings, inQuietHours } from "./settings.ts";
@@ -255,6 +271,36 @@ export async function runCron(d: CronDeps): Promise<CronReport> {
   // ---------- 2. остальное: приём текста, сводки, панель, сторож ----------
   const ops2: Op[] = [];
   const room2 = (n = 1) => repo.counter.can(n + 2); // ещё нужны: запись ops2 и пинг сторожу
+  // паспорт источников (этап 4): итоги чтений копим в памяти, одной записью пишем в конце запуска — подзапросов не добавляет
+  let passport = parsePassport(meta.get(PASSPORT_KEY));
+  let passportDirty = false;
+  const note = (id: SourceId, ok: boolean): void => {
+    passport = recordSource(passport, id, ok, now);
+    passportDirty = true;
+  };
+  /** Чтение Yasno с учётом подзапросов и записью в паспорт. */
+  const readYasno = async (): Promise<LightData | null> => {
+    repo.counter.spend(YASNO_ATTEMPTS);
+    const r = await fetchYasno(d.fetchFn ?? fetch);
+    note("light", r !== null);
+    return r;
+  };
+  /** Строка Хару перед сообщением о сломанном источнике (A5): только если характер включён и не «тихий день»; из готовых фраз, без модели. */
+  const haruLine = async (sit: "source_down" | "source_week"): Promise<string | null> => {
+    if (!mood || mood.silent || !room2(3)) return null;
+    try {
+      await mood.load();
+      return mood.say(sit);
+    } catch (e) {
+      if (e instanceof BudgetExceeded) return null;
+      throw e;
+    }
+  };
+  const voiced = async <T extends { text: string }>(n: T): Promise<T> => {
+    const line = await haruLine("source_down");
+    return line ? { ...n, text: `${line}\n${n.text}` } : n;
+  };
+  const enabledSources = { light: !!s.lightGroup, water: s.waterWords.length > 0, gas: s.gasWords.length > 0 };
   /** Реакция-эмодзи по настроению на сообщение хозяина (этап Х3): редко, на серьёзные темы — никогда; сбой реакции не страшен. */
   const react = async (ch: string, messageId: string, always: boolean, text = ""): Promise<void> => {
     if (!mood?.loaded || mood.silent || !room2(1) || isSeriousTopic(text)) return;
@@ -328,8 +374,7 @@ export async function runCron(d: CronDeps): Promise<CronReport> {
             let text: string;
             if (!s.lightGroup) text = "Группа света не задана: /settings → «Свет: группа…» → впишите номер (например, 3).";
             else {
-              repo.counter.spend(YASNO_ATTEMPTS);
-              text = lightFullText(now, s.tz, s.lightGroup, await fetchYasno(d.fetchFn ?? fetch));
+              text = lightFullText(now, s.tz, s.lightGroup, await readYasno());
             }
             try {
               await api.postMessage(ch, lightAskMessage(text, m.content));
@@ -448,6 +493,29 @@ export async function runCron(d: CronDeps): Promise<CronReport> {
       ops2.push(setMeta("last_freeze", today));
     }
 
+    // 2а2. дела-сопровождение (этап 4, A9, A10): копия базы раз в месяц, зависимости и модели раз в квартал, ключи раз в год.
+    // Обычные дела: приходят в «почту» вечером, не исчезают без «Готово». Прежнее такое же дело ещё открыто — новое не копится.
+    if (owner && s.choresOn && !away && minuteOfDay >= 10 * 60 && meta.get("chores_day") !== today && room2(5)) {
+      let all = true;
+      const openSql = OPEN_STATES.map((x) => `'${x}'`).join(",");
+      for (const c of choresDue(now, s.tz, (k) => meta.get(k))) {
+        if (!room2(4)) {
+          all = false;
+          break;
+        }
+        const open = await repo.first<{ x: number }>(
+          `SELECT 1 AS x FROM occurrences o JOIN items i ON i.id = o.item_id WHERE i.title = ? AND o.kind = 'main' AND o.state IN (${openSql}) LIMIT 1`,
+          c.title,
+        );
+        if (!open) {
+          ops2.push(...newItemOps({ parsed: choreParsed(c, now, s.tz), source: "menu", settings: s, now, body: c.body }).ops, event(now, "chore_created", null, c.id));
+          report.notes.push(`дело-сопровождение: ${c.id}`);
+        }
+        ops2.push(setMeta(choreMetaKey(c.id), periodKey(now, s.tz)));
+      }
+      if (all) ops2.push(setMeta("chores_day", today));
+    }
+
     // 2б. возвращение из отъезда и сводки
     if (awayEnded) ops2.push(setSetting("away_until", "0"));
     const summaries: ("morning" | "evening" | "weekly" | "return")[] = [];
@@ -474,17 +542,27 @@ export async function runCron(d: CronDeps): Promise<CronReport> {
           now - 7 * 24 * 60 * MINUTE,
         );
         weeklyDone = row?.n ?? 0;
-        content = weeklyText({ doneCount: row?.n ?? 0, items: list, now, tz: s.tz, ownerId: owner as string, character: s.character });
+        const broken = weekSourceLines(passport, now, s.tz, enabledSources);
+        const brokenLine = broken.length ? await haruLine("source_week") : null;
+        content = weeklyText({ doneCount: row?.n ?? 0, items: list, now, tz: s.tz, ownerId: owner as string, character: s.character, sources: broken, sourcesLine: brokenLine });
       } else {
         let extra: string[] = [];
         if (s.lightGroup && room2(3)) {
           if (light === undefined) {
-            repo.counter.spend(YASNO_ATTEMPTS);
-            light = await fetchYasno(d.fetchFn ?? fetch);
+            light = await readYasno();
           }
-          extra = light
-            ? lightLines(kind === "evening" ? "tomorrow" : "today", s.lightGroup, light, localDate(kind === "evening" ? addDaysWall(now, 1, s.tz) : now, s.tz))
-            : [`График света: не удалось получить данные (Yasno не отвечает). Проверю ещё раз через ${LIGHT_RETRY_MIN} минут.`];
+          const which = kind === "evening" ? "tomorrow" : "today";
+          const forDate = localDate(kind === "evening" ? addDaysWall(now, 1, s.tz) : now, s.tz);
+          if (light) extra = lightLines(which, s.lightGroup, light, forDate);
+          else {
+            // Yasno молчит: если знаем график с прошлого чтения — показываем его с пометкой «данные от …» (A7), иначе честно «не удалось»
+            const last = parseLightLast(meta.get("light_last"));
+            const known = lastKnownLightLines(last, which, s.lightGroup, forDate);
+            extra = known && last
+              ? [`💡 Yasno не отвечает, показываю последнее известное (${staleStamp(last.at, now, s.tz)}). Проверю ещё раз через ${LIGHT_RETRY_MIN} минут.`, ...known]
+              : [`График света: не удалось получить данные (Yasno не отвечает). Проверю ещё раз через ${LIGHT_RETRY_MIN} минут.`];
+          }
+          if (light) ops2.push(setMeta("light_last", JSON.stringify(lightLastOf(light, s.lightGroup, now))));
           // сбой — не конец: перепроверяем через полчаса (потом раз в час, пока не получится) и пишем отдельным сообщением
           if (!light) ops2.push(setMeta("light_retry", JSON.stringify({ kind, date: today, at: now + LIGHT_RETRY_MIN * MINUTE, n: 1 })));
           else if (parseLightRetry(meta.get("light_retry"))) ops2.push(deleteMeta("light_retry"));
@@ -499,11 +577,16 @@ export async function runCron(d: CronDeps): Promise<CronReport> {
         // «Коммуналка»: свет, вода (газ — позже) одним блоком; про воду — только если что-то идёт или скоро будет
         if (s.waterWords.length) extra = [...extra, ...waterSummaryLines(parseWaterState(meta.get("water_state")), now, s.tz)];
         if (s.gasWords.length) extra = [...extra, ...gasSummaryLines(parseGasState(meta.get("gas_state")), now, s.tz)];
+        // источник давно молчит: сводка не делает вид, что всё тихо, а называет возраст данных (A7)
+        const stale = (id: "water" | "gas", label: string): string => `${label}: источник не отвечает, ${passport[id]?.ok !== undefined ? staleStamp(passport[id]!.ok!, now, s.tz) : "данных пока нет"}.`;
+        if (s.waterWords.length && isBroken(passport.water)) extra.push(stale("water", "Вода"));
+        if (s.gasWords.length && isBroken(passport.gas)) extra.push(stale("gas", "Газ"));
         if (extra.length) extra = ["🏠 Коммуналка:", ...extra];
         // аниме: вечером — что выходит сегодня (реплику Хару даёт общая реплика сводки)
         if (kind === "evening" && room2(2)) {
           const lines = eveningLines(await listAnime(repo), now, s.tz, "neutral");
           if (lines.length) extra = [...extra, ...lines];
+          if (isBroken(passport.shikimori)) extra = [...extra, `🎬 Расписание аниме: Shikimori не отвечает, ${passport.shikimori?.ok !== undefined ? staleStamp(passport.shikimori.ok, now, s.tz) : "данных пока нет"}.`];
         }
         const parts = summaryParts(kind, { items: list, now, tz: s.tz, ownerId: owner as string, extra, character: s.character, tailNote });
         content = parts.text;
@@ -602,8 +685,7 @@ export async function runCron(d: CronDeps): Promise<CronReport> {
         s.lightGroup && owner && s.chRemind && !away && meta.get("last_evening") === today && meta.get("light_tmr") !== tmr &&
         Math.floor(now / MINUTE) % 10 === 0 && room2(4)
       ) {
-        repo.counter.spend(YASNO_ATTEMPTS);
-        const data = await fetchYasno(d.fetchFn ?? fetch);
+        const data = await readYasno();
         if (data && publishedFor("tomorrow", s.lightGroup, data, tmr)) {
           try {
             await api.postMessage(s.chRemind, {
@@ -627,8 +709,7 @@ export async function runCron(d: CronDeps): Promise<CronReport> {
         if (stale) {
           ops2.push(deleteMeta("light_retry"));
         } else {
-          repo.counter.spend(YASNO_ATTEMPTS);
-          const data = await fetchYasno(d.fetchFn ?? fetch);
+          const data = await readYasno();
           const tmr = localDate(addDaysWall(now, 1, s.tz), s.tz);
           const text = data
             ? ["Yasno снова отвечает.", ...lightLines(retry.kind === "evening" ? "tomorrow" : "today", s.lightGroup, data, retry.kind === "evening" ? tmr : today)].join("\n")
@@ -655,8 +736,7 @@ export async function runCron(d: CronDeps): Promise<CronReport> {
       s.lightGroup && owner && s.chRemind && !away && meta.get("light_today_wait") === today &&
       Math.floor(now / MINUTE) % 10 === 5 && room2(4)
     ) {
-      repo.counter.spend(YASNO_ATTEMPTS);
-      const data = await fetchYasno(d.fetchFn ?? fetch);
+      const data = await readYasno();
       if (data && publishedFor("today", s.lightGroup, data, today)) {
         try {
           await api.postMessage(s.chRemind, {
@@ -668,6 +748,21 @@ export async function runCron(d: CronDeps): Promise<CronReport> {
         } catch (e) {
           if (!(e instanceof BudgetExceeded)) report.notes.push("свет: не удалось отправить график на сегодня");
         }
+      }
+    }
+
+    // 2б5а. свет не читается давно (этап 4, A4): одно сообщение сразу (голосом Хару), дальше раз в неделю в итоге
+    if (owner && s.chRemind && !away && s.lightGroup && lightNoticeDue(passport.light, now) && room2(5)) {
+      const line = await haruLine("source_down");
+      const facts = "💡 Yasno не отвечает уже несколько часов, поэтому не могу прочитать график света. В сводках показываю последний известный с пометкой «данные от…», а как только Yasno заработает, пришлю свежий. Проверить самим: app.yasno.ua.";
+      try {
+        await api.postMessage(s.chRemind, { content: line ? `${line}\n${facts}` : facts, allowed_mentions: { parse: [] } });
+        passport = markSaid(passport, "light");
+        passportDirty = true;
+        ops2.push(event(now, "source_down", null, "light"));
+        report.notes.push("свет: сообщение о долгом сбое Yasno");
+      } catch (e) {
+        if (!(e instanceof BudgetExceeded)) report.notes.push("свет: не удалось сообщить о долгом сбое");
       }
     }
 
@@ -714,10 +809,12 @@ export async function runCron(d: CronDeps): Promise<CronReport> {
           st = r.state;
           outbox.push(...r.notices);
           next = String(now + WATER_CHECK_EVERY);
+          note("water", true);
         } else {
+          note("water", false);
           const r = failWater(st);
           st = r.state;
-          if (r.notice) outbox.push(r.notice);
+          if (r.notice) outbox.push(await voiced(r.notice));
           next = String(now + WATER_RETRY_AFTER);
           report.notes.push("вода: лента водоканала не прочиталась");
         }
@@ -757,10 +854,12 @@ export async function runCron(d: CronDeps): Promise<CronReport> {
           st = r.state;
           outbox.push(...r.notices);
           next = String(now + GAS_CHECK_EVERY);
+          note("gas", true);
         } else {
+          note("gas", false);
           const r = failGas(st);
           st = r.state;
-          if (r.notice) outbox.push(r.notice);
+          if (r.notice) outbox.push(await voiced(r.notice));
           next = String(now + GAS_RETRY_AFTER);
           report.notes.push("газ: график не прочитался");
         }
@@ -781,7 +880,7 @@ export async function runCron(d: CronDeps): Promise<CronReport> {
     if (owner && s.chRemind) {
       const r = await runAnime({
         repo, api, now, s, meta, owner, away, quiet: inQuietHours(s, minuteOfDay), minuteOfDay, fetchFn: d.fetchFn ?? fetch, rand: d.rand,
-        room: room2, spend: (n) => repo.counter.spend(n),
+        room: room2, spend: (n) => repo.counter.spend(n), note, voice: () => haruLine("source_down"),
       });
       ops2.push(...r.ops);
       report.notes.push(...r.notes);
@@ -823,6 +922,7 @@ export async function runCron(d: CronDeps): Promise<CronReport> {
     ops2.push(event(now, "cron_error", null, String((e as Error).message).slice(0, 200)));
   }
   if (mood?.loaded) ops2.push(...mood.ops());
+  if (passportDirty) ops2.push(setMeta(PASSPORT_KEY, JSON.stringify(passport)));
   if (ops2.length) await repo.exec(ops2);
 
   // ---------- 3. пинг сторожу: раз в 10 минут ----------

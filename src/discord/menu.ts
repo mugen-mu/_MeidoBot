@@ -84,7 +84,7 @@ export function homeMessage(st: HomeStats): MessageBody {
  */
 export function moreMessage(prefix: "mn" | "pn" = "mn", frozen = 0): MessageBody {
   return body("**Ещё**", [
-    row(btn("🎭 Настроение", `${prefix}:mo`), btn("⚙ Настройки", `${prefix}:st`), ...(frozen > 0 ? [btn(`🧊 Заморожено ${frozen}`, `${prefix}:ls:z:0`)] : [])),
+    row(btn("🎭 Настроение", `${prefix}:mo`), btn("⚙ Настройки", `${prefix}:st`), btn("🩺 Состояние", `${prefix}:ss`), ...(frozen > 0 ? [btn(`🧊 Заморожено ${frozen}`, `${prefix}:ls:z:0`)] : [])),
     row(btn("🏠 Меню", `${prefix}:home`)),
   ]);
 }
@@ -103,6 +103,11 @@ export function recentMessage(items: { id: number; title: string }[], prefix: "m
 /** Экран-справка (текст и «Назад»): слова Хару, подтверждения. */
 export function infoMessage(text: string, backId: string, backLabel = "◀ Назад"): MessageBody {
   return body(text, [row(btn(backLabel, backId), btn("🏠 Меню", "mn:home"))]);
+}
+
+/** «Состояние» (этап 4): паспорт источников и кнопка «закрепить текст про молчащего бота» в канале «бот». */
+export function statusMessage(text: string, prefix: "mn" | "pn" = "mn"): MessageBody {
+  return body(text, [row(btn("📌 Текст «если бот молчит»", `${prefix}:sq`), btn("◀ Назад", `${prefix}:more`)), row(btn("🏠 Меню", `${prefix}:home`))]);
 }
 
 export function confirmResetMessage(): MessageBody {

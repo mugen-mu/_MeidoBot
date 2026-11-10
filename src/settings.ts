@@ -54,13 +54,15 @@ export interface AppSettings {
   recentOn: boolean;
   /** сообщения бота в канал — со звуком (упоминание хозяина), не только настоящие напоминания (D7); выкл по умолчанию */
   soundAll: boolean;
+  /** бот сам заводит дела-сопровождение (копия базы, зависимости, модели, ключи; этап 4); вкл по умолчанию */
+  choresOn: boolean;
 }
 
 export const SETTING_KEYS = [
   "tz", "default_ladder", "default_time", "quiet_enabled", "quiet_from", "quiet_to", "away_until",
   "summary_morning", "summary_evening", "weekly", "ch_remind", "ch_bot", "ch_today", "ch_forum", "ch_archive", "intake", "light", "water", "gas", "character", "mood_on",
   "style_level", "style_script", "style_sfx", "style_honorifics", "style_kaomoji", "hints_on", "llm_on", "live_on", "birthday",
-  "time_morning", "time_evening", "recent_on", "sound_all",
+  "time_morning", "time_evening", "recent_on", "sound_all", "chores",
 ] as const;
 
 function minutes(v: string | undefined, fallback: number | null): number | null {
@@ -116,6 +118,7 @@ export function readSettings(rows: { key: string; value: string }[]): AppSetting
     wordEvening: minutes(m.get("time_evening") || undefined, null) ?? 19 * 60,
     recentOn: m.get("recent_on") === "1",
     soundAll: m.get("sound_all") === "1",
+    choresOn: m.get("chores") !== "0",
   };
 }
 

@@ -42,6 +42,10 @@ export interface AnimeCronArgs {
   /** хватит ли подзапросов на n действий (как room2 в cron) */
   room: (n: number) => boolean;
   spend: (n: number) => void;
+  /** паспорт источников (этап 4): итог чтения Shikimori / AniLibria */
+  note?: (id: "shikimori" | "anilibria", ok: boolean) => void;
+  /** строка Хару перед сообщением о сломанном источнике (null — без неё) */
+  voice?: () => Promise<string | null>;
 }
 
 /** С какого часа (минут от полуночи) обновляем расписание: ночью, когда в источниках уже свежие данные. */
@@ -93,6 +97,7 @@ export async function runAnime(a: AnimeCronArgs): Promise<{ ops: Op[]; notes: st
     } else {
       a.spend(1 + Math.min(8, tracked.length));
       const got = await fetchSchedules(tracked.map((x) => x.mal_id), a.fetchFn);
+      a.note?.("shikimori", !!got);
       if (got) {
         for (const r of tracked) {
           const sch = got.find((x) => x.mal === r.mal_id);
@@ -106,7 +111,9 @@ export async function runAnime(a: AnimeCronArgs): Promise<{ ops: Op[]; notes: st
         notes.push("аниме: расписание не прочиталось");
         if (fails >= FAIL_NOTICE_AT && meta.get("anime_fail_notice") !== "1" && a.s.chRemind && a.room(2)) {
           try {
-            await api.postMessage(a.s.chRemind, { content: FAIL_NOTICE, allowed_mentions: { parse: [] } });
+            const line = a.voice ? await a.voice() : null;
+            await api.postMessage(a.s.chRemind, { content: line ? `${line}
+${FAIL_NOTICE}` : FAIL_NOTICE, allowed_mentions: { parse: [] } });
             ops.push(setMeta("anime_fail_notice", "1"));
           } catch (e) {
             if (!(e instanceof BudgetExceeded)) healthy = false;
@@ -124,6 +131,7 @@ export async function runAnime(a: AnimeCronArgs): Promise<{ ops: Op[]; notes: st
     } else {
       a.spend(1);
       const got = await fetchVoice(a.fetchFn);
+      a.note?.("anilibria", !!got);
       if (got) {
         let n = 0;
         for (const r of tracked) {
