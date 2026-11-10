@@ -162,6 +162,37 @@ describe("график света в сводках", () => {
     expect(texts()[texts().length - 1]).toContain("Yasno снова отвечает.");
   });
 
+  it("утром график на сегодня не опубликован: бот следит и пишет отдельно, когда появится; один раз", async () => {
+    await w.repo().exec([setSetting("light", "3")]);
+    const waiting = { "3.1": { today: day("2026-11-07", "WaitingForSchedule", WAIT), tomorrow: day("2026-11-08", "WaitingForSchedule", WAIT) } };
+    w.light = waiting;
+    await w.run(kyiv(2026, 11, 7, 8, 0));
+    expect(texts()[0]).toContain("график ещё не опубликован");
+    const n = texts().length;
+    await w.run(kyiv(2026, 11, 7, 8, 15)); // график всё ещё не вышел: тихо
+    expect(texts().length).toBe(n);
+    w.light = yasno();
+    await w.run(kyiv(2026, 11, 7, 8, 20)); // не «пятая» минута десятка: ещё не проверяет
+    expect(texts().length).toBe(n);
+    await w.run(kyiv(2026, 11, 7, 8, 25));
+    const last = texts()[texts().length - 1];
+    expect(last).toContain("на сегодня");
+    expect(last).toContain("Света не будет 06:30–14:00, 17:00–21:00.");
+    const m = texts().length;
+    await w.run(kyiv(2026, 11, 7, 8, 35));
+    await w.run(kyiv(2026, 11, 7, 11, 5));
+    expect(texts().length).toBe(m);
+  });
+
+  it("утром график уже опубликован: слежки нет, второго сообщения нет", async () => {
+    await w.repo().exec([setSetting("light", "3")]);
+    await w.run(kyiv(2026, 11, 7, 8, 0));
+    const n = texts().length;
+    await w.run(kyiv(2026, 11, 7, 8, 25));
+    await w.run(kyiv(2026, 11, 7, 9, 5));
+    expect(texts().length).toBe(n);
+  });
+
   it("«аварийные отключения» Yasno: понятный текст вместо сырого статуса", () => {
     const d = { today: day("2026-11-07", "EmergencyShutdowns", []), tomorrow: day("2026-11-08", "EmergencyShutdowns", []) };
     const data = parseYasno({ "3.1": d });

@@ -28,7 +28,7 @@ import { handlePhrase } from "./anime/handlers.ts";
 import { listAnime } from "./anime/store.ts";
 import { eveningLines } from "./anime/ui.ts";
 import { handleReply } from "./reply.ts";
-import { YASNO_ATTEMPTS, fetchYasno, lightLines, publishedFor, tomorrowDigest, type LightData } from "./light.ts";
+import { YASNO_ATTEMPTS, fetchYasno, groupsFor, lightLines, publishedFor, tomorrowDigest, type LightData } from "./light.ts";
 
 /** Повторная проверка света после сбоя Yasno в сводке: через сколько минут и сколько раз. */
 const LIGHT_RETRY_MIN = 30;
@@ -422,6 +422,10 @@ export async function runCron(d: CronDeps): Promise<CronReport> {
           // сбой — не конец: перепроверяем через полчаса (потом раз в час, пока не получится) и пишем отдельным сообщением
           if (!light) ops2.push(setMeta("light_retry", JSON.stringify({ kind, date: today, at: now + LIGHT_RETRY_MIN * MINUTE, n: 1 })));
           else if (parseLightRetry(meta.get("light_retry"))) ops2.push(deleteMeta("light_retry"));
+          // утром график на сегодня ещё не вышел: следим и пишем отдельным сообщением, когда появится (шаг 2б5)
+          if (kind === "morning" && light && groupsFor(s.lightGroup, light).length > 0 && !publishedFor("today", s.lightGroup, light, today)) {
+            ops2.push(setMeta("light_today_wait", today));
+          }
           if (kind === "evening" && light && publishedFor("tomorrow", s.lightGroup, light, localDate(addDaysWall(now, 1, s.tz), s.tz))) {
             ops2.push(setMeta("light_tmr", localDate(addDaysWall(now, 1, s.tz), s.tz)));
           }
@@ -522,6 +526,7 @@ export async function runCron(d: CronDeps): Promise<CronReport> {
               await api.postMessage(s.chRemind, { content: `<@${owner}> ${text}`, allowed_mentions: { users: [owner] } });
               ops2.push(deleteMeta("light_retry"));
               if (data && retry.kind === "evening" && publishedFor("tomorrow", s.lightGroup, data, tmr)) ops2.push(setMeta("light_tmr", tmr));
+              if (data && retry.kind === "morning" && groupsFor(s.lightGroup, data).length > 0 && !publishedFor("today", s.lightGroup, data, today)) ops2.push(setMeta("light_today_wait", today));
               report.notes.push("свет: повторная проверка удалась");
             } catch (e) {
               if (!(e instanceof BudgetExceeded)) report.notes.push("свет: не удалось отправить повторную проверку");
@@ -529,6 +534,27 @@ export async function runCron(d: CronDeps): Promise<CronReport> {
           } else {
             ops2.push(setMeta("light_retry", JSON.stringify({ ...retry, at: now + (retry.n < LIGHT_RETRY_FAST ? LIGHT_RETRY_MIN : LIGHT_RETRY_SLOW_MIN) * MINUTE, n: retry.n + 1 })));
           }
+        }
+      }
+    }
+
+    // 2б5. утренняя сводка вышла, а график на сегодня тогда ещё не был опубликован: проверяем раз в 10 минут до конца суток и пишем один раз, когда появится
+    if (
+      s.lightGroup && owner && s.chRemind && !away && meta.get("light_today_wait") === today &&
+      Math.floor(now / MINUTE) % 10 === 5 && room2(4)
+    ) {
+      repo.counter.spend(YASNO_ATTEMPTS);
+      const data = await fetchYasno(d.fetchFn ?? fetch);
+      if (data && publishedFor("today", s.lightGroup, data, today)) {
+        try {
+          await api.postMessage(s.chRemind, {
+            content: `<@${owner}> ${tomorrowDigest(s.lightGroup, data, today, MOOD_CONFIG.address, "today")}`,
+            allowed_mentions: { users: [owner] },
+          });
+          ops2.push(deleteMeta("light_today_wait"), event(now, "light_today"));
+          report.notes.push("свет: график на сегодня отправлен");
+        } catch (e) {
+          if (!(e instanceof BudgetExceeded)) report.notes.push("свет: не удалось отправить график на сегодня");
         }
       }
     }
