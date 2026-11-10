@@ -7,6 +7,7 @@ import type { AiBinding } from "../llm.ts";
 import { EMPTY_REPLY, EMPTY_SERIES_REPLY, NOT_RECURRING_REPLY, SECRET_REPLY, createFromText } from "../intake.ts";
 import { tired } from "../flavor.ts";
 import { MoodSession, makeCtx, reactionLine, recordDone, recordedLine, resetOps } from "../personality/director.ts";
+import { QUIET_META_KEY, isQuietNow } from "../personality/day.ts";
 import type { Situation } from "../personality/phrases.ts";
 import { LIVE_TIMEOUT_INTERACTION_MS } from "../personality/liveLines.ts";
 import { MOODS, type Mood, isMood } from "../personality/moodEngine.ts";
@@ -15,7 +16,7 @@ import { moodReport } from "../personality/report.ts";
 import { maidEmbed, wantSprite } from "../personality/look.ts";
 import { parseStyle, styleToSettings } from "../personality/animeStyle.ts";
 import { glossaryReport, styleReport } from "../personality/styleReport.ts";
-import { describeSpec, needsSnoozeQuestion, parseCustomSteps, parseSpec, type LadderSpec } from "../ladder.ts";
+import { SNOOZE_TEASE_AT, describeSpec, needsSnoozeQuestion, parseCustomSteps, parseSpec, type LadderSpec } from "../ladder.ts";
 import { fetchYasno, lightFullText, normalizeGroup } from "../light.ts";
 import { newPowerKey, readPower } from "../power.ts";
 import { type AnimeCtx, handleAddModal, handleAnimeButton, handleEpModal } from "../anime/handlers.ts";
@@ -124,12 +125,16 @@ export interface HandlerCtx {
 type Reply = Record<string, unknown>;
 
 /** Реплика Хару к короткому ответу бота; без «Настроения» или на серьёзных/«Без стиля» делах — null. */
-const react = (c: { s: AppSettings; mood: MoodSession }, sit: Situation, o: { title: string; critical?: number | boolean; plain?: number | boolean }): Promise<string | null> =>
-  c.s.moodOn ? reactionLine(c.mood, sit, o) : Promise.resolve(null);
+const react = (c: { s: AppSettings; mood: MoodSession }, sit: Situation, o: { title: string; critical?: number | boolean; plain?: number | boolean; item_id?: number; id?: number }): Promise<string | null> =>
+  c.s.moodOn ? reactionLine(c.mood, sit, { ...o, itemId: o.item_id ?? o.id }) : Promise.resolve(null);
 const msg = (body: MessageBody): Reply => ({ type: 4, data: body });
 const eph = (text: string): Reply => msg({ ...plainMessage(text, true) });
 /** Ответ-обновление сообщения: прежняя карточка горничной (embed) убирается, если новый текст её не задаёт. */
 const update = (body: MessageBody): Reply => ({ type: 7, data: { embeds: [], ...body } });
+
+/** «Тихий день» идёт: до какого времени (для /mood); иначе null. */
+const quietText = (c: { meta: Map<string, string>; now: number; s: AppSettings }): string | null =>
+  isQuietNow(c.meta.get(QUIET_META_KEY), c.now) ? formatWhen(Number(c.meta.get(QUIET_META_KEY)), c.now, c.s.tz) : null;
 
 const WD_BY_NAME: Record<string, number> = { понедельник: 1, вторник: 2, среда: 3, четверг: 4, пятница: 5, суббота: 6, воскресенье: 7 };
 
@@ -155,12 +160,15 @@ export async function handleInteraction(i: Interaction, ctx: HandlerCtx): Promis
     repo: ctx.repo, userId: owner, ctx: makeCtx(ctx.now, s), rand: ctx.rand, style: s.style,
     live: s.liveOn && ctx.ai ? { ai: ctx.ai, tz: s.tz, timeoutMs: LIVE_TIMEOUT_INTERACTION_MS } : null,
   });
+  if (isQuietNow(meta.get(QUIET_META_KEY), ctx.now)) mood.silent = true; // «тихий день»: Хару молчит совсем (приписки характера — ниже, в `c`)
   let returnLine: string | null = null;
   if (s.moodOn && (i.type === 2 || i.type === 3 || i.type === 5)) {
     await mood.load();
     if (mood.apply({ type: "activity" }).returned) returnLine = await mood.sayLive("return_after_pause");
   }
-  const c: C = { ...ctx, s, meta, owner, i, mood };
+  // «тихий день»: приписки «уставшей горничной» тоже молчат (как нейтральный характер); настоящее значение нужно только кнопке переключения
+  const quiet = isQuietNow(meta.get(QUIET_META_KEY), ctx.now);
+  const c: C = { ...ctx, s: quiet && s.character !== "neutral" ? { ...s, character: "neutral" } : s, realCharacter: s.character, meta, owner, i, mood };
   let reply: Reply;
   switch (i.type) {
     case 2:
@@ -189,6 +197,8 @@ ${subtext(returnLine)}`;
 
 interface C extends HandlerCtx {
   s: AppSettings;
+  /** характер, записанный в настройках (на «тихий день» `s.character` временно нейтральный) */
+  realCharacter: AppSettings["character"];
   meta: Map<string, string>;
   owner: string;
   i: Interaction;
@@ -457,9 +467,9 @@ async function moodCommand(c: C): Promise<Reply> {
   if (set !== undefined) {
     if (!isMood(set)) return eph(`Такого настроения нет. Бывают: ${MOODS.join(", ")}.`);
     c.mood.force(set as Mood);
-    return moodCard(c, moodReport({ state: c.mood.state!, enabled: c.s.moodOn }), `Настроение задано вручную: ${set}. Оно сменится само, когда числа и время скажут иначе.`);
+    return moodCard(c, moodReport({ state: c.mood.state!, enabled: c.s.moodOn, quietUntil: quietText(c) }), `Настроение задано вручную: ${set}. Оно сменится само, когда числа и время скажут иначе.`);
   }
-  return moodCard(c, moodReport({ state: c.mood.state!, enabled: c.s.moodOn, greeting: c.mood.say("greeting") }));
+  return moodCard(c, moodReport({ state: c.mood.state!, enabled: c.s.moodOn, greeting: c.mood.say("greeting"), quietUntil: quietText(c) }));
 }
 
 /** /style: показать стиль речи или изменить (уровень, письмо, манга-звуки, обращения, каомодзи); в ответе — живые примеры. */
@@ -579,7 +589,8 @@ async function onComponent(c: C): Promise<Reply> {
       const occ = await asOcc(c, a);
       if (!occ || !isOpen(occ)) return gone();
       if (needsSnoozeQuestion(occ.snooze_count)) {
-        return update(snoozeQuestionMessage({ occId: occ.id, itemId: occ.item_id, title: occ.title, count: occ.snooze_count + 1 }));
+        const line = occ.snooze_count + 1 >= SNOOZE_TEASE_AT ? await react(c, "snooze_5", occ) : null;
+        return update(snoozeQuestionMessage({ occId: occ.id, itemId: occ.item_id, title: occ.title, count: occ.snooze_count + 1, line }));
       }
       return snoozeTo(c, occ, c.now + Number(b) * MINUTE);
     }
@@ -677,7 +688,7 @@ async function snoozeTo(c: C, occ: OccView, target: number, resetCount = false):
   const ops: Op[] = [...snoozeOps(occ, target, c.now)];
   if (resetCount) ops.push(updateOcc(occ.id, { snooze_count: 0 }));
   await c.repo.exec(ops);
-  return update(snoozedMessage({ occId: occ.id, title: occ.title, whenText: formatWhen(target, c.now, c.s.tz), itemId: occ.item_id, line: await react(c, "snoozed", occ) }));
+  return update(snoozedMessage({ occId: occ.id, title: occ.title, whenText: formatWhen(target, c.now, c.s.tz), itemId: occ.item_id, line: await react(c, occ.snooze_count + 1 >= SNOOZE_TEASE_AT ? "snooze_5" : "snoozed", occ) }));
 }
 
 /** Включить или выключить приём дел в личке: какие записи сделать и каким станет состояние. */
@@ -863,7 +874,7 @@ async function onMenu(c: C, parts: string[], values: string[]): Promise<Reply> {
     }
     case "mo": {
       await c.mood.load();
-      const text = moodReport({ state: c.mood.state!, enabled: c.s.moodOn, greeting: c.mood.say("greeting") });
+      const text = moodReport({ state: c.mood.state!, enabled: c.s.moodOn, greeting: c.mood.say("greeting"), quietUntil: quietText(c) });
       return show({ ...moodBody(c, text), components: resultMessage("").components });
     }
     case "more":
@@ -900,7 +911,7 @@ async function onMenu(c: C, parts: string[], values: string[]): Promise<Reply> {
           ops.push(setSetting("quiet_enabled", c.s.quietEnabled ? "0" : "1"));
           break;
         case "ch":
-          ops.push(setSetting("character", c.s.character === "maid" ? "neutral" : "maid"));
+          ops.push(setSetting("character", c.realCharacter === "maid" ? "neutral" : "maid"));
           break;
         case "mo":
           ops.push(setSetting("mood_on", c.s.moodOn ? "0" : "1"));

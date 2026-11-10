@@ -5,6 +5,7 @@ import { OPEN_STATES, type OccView, type Op } from "./db/types.ts";
 import type { DiscordApi, IncomingMessage, MessageBody } from "./discord/types.ts";
 import { messageTime } from "./intake.ts";
 import { doneMessage, plainMessage, snoozedMessage, withLine } from "./discord/ui.ts";
+import { SNOOZE_TEASE_AT } from "./ladder.ts";
 import { type MoodSession, reactionLine, recordDone } from "./personality/director.ts";
 import type { Situation } from "./personality/phrases.ts";
 import { cancelItemOps, doneOps, rescheduleOps, snoozeOps } from "./service.ts";
@@ -107,8 +108,8 @@ export async function handleReply(
   if (d.mood && action.kind !== "done") {
     const sit: Situation = !OPEN_STATES.includes(occ.state)
       ? "reply_closed"
-      : action.kind === "cancel" ? "cancelled" : action.kind === "snooze" ? "snoozed" : action.kind === "past" ? "reply_past" : "reply_unknown";
-    doneLine = await reactionLine(d.mood, sit, { title: occ.title, critical: occ.critical, plain: occ.plain });
+      : action.kind === "cancel" ? "cancelled" : action.kind === "snooze" ? (occ.snooze_count + 1 >= SNOOZE_TEASE_AT ? "snooze_5" : "snoozed") : action.kind === "past" ? "reply_past" : "reply_unknown";
+    doneLine = await reactionLine(d.mood, sit, { title: occ.title, critical: occ.critical, plain: occ.plain, itemId: occ.item_id });
   }
   const res = applyReply(occ, action, d.s, d.now, doneLine);
   if (res.ops.length) await d.repo.exec(res.ops);

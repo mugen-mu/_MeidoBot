@@ -1,5 +1,6 @@
 // Особые дни и интересы хозяина для реплик Хару (этап 2 «Характер»). ТОЛЬКО ДАННЫЕ и чистые функции.
 // День рождения хозяина пока не задан (даты нет): заготовка готова, настройка `birthday` («месяц.день») читается, интерфейса для неё нет.
+// Дни рождения близких (этап 2 — заготовка, этап 5 подключит список): `Person` (имя и дата), `parsePeopleDates`, третий аргумент `occasionFor`.
 
 /** Чем интересуется хозяин: Хару вворачивает это в шутки (не в каждой реплике). Дальше сюда добавятся коллекция аниме и т. п. */
 export const INTERESTS: string[] = ["аниме"];
@@ -32,6 +33,26 @@ export function parseBirthday(raw: string | undefined | null): MonthDay | null {
   return mo >= 1 && mo <= 12 && d >= 1 && d <= 31 ? { mo, d } : null;
 }
 
+/** Близкий человек: в базе только имя и дата (F5), без фамилии и телефона. Заготовка под этап 5 «Календарь сюрпризов»: списка в настройках пока нет. */
+export interface Person {
+  name: string;
+  mo: number;
+  d: number;
+}
+
+/** «Мама 11.20», «Андрей 3.5.1990», по строке на человека; плохие строки пропускаются; год отбрасывается. */
+export function parsePeopleDates(text: string | undefined | null): Person[] {
+  const out: Person[] = [];
+  for (const line of (text ?? "").split(/\r?\n/)) {
+    const m = /^(.{1,40}?)\s+(\d{1,2})\.(\d{1,2})(?:\.\d{2,4})?$/u.exec(line.trim());
+    if (!m) continue;
+    const mo = Number(m[2]);
+    const d = Number(m[3]);
+    if (mo >= 1 && mo <= 12 && d >= 1 && d <= 31) out.push({ name: m[1].trim(), mo, d });
+  }
+  return out;
+}
+
 export interface Occasion {
   /** ситуация фразы: праздник и «скоро день рождения» */
   situation: "holiday" | "birthday_soon";
@@ -50,12 +71,18 @@ export function daysUntil(today: { y: number; mo: number; d: number }, bd: Month
 }
 
 /** Особый повод на сегодня: день рождения (сегодня), скоро день рождения (за 7 и за 1 день), иначе праздник; иначе null. */
-export function occasionFor(today: { y: number; mo: number; d: number }, birthday: MonthDay | null = null): Occasion | null {
+export function occasionFor(today: { y: number; mo: number; d: number }, birthday: MonthDay | null = null, people: Person[] = []): Occasion | null {
   if (birthday) {
     const n = daysUntil(today, birthday);
     if (n === 0) return { situation: "holiday", label: "день рождения хозяина (сегодня!)" };
     if (n === 1) return { situation: "birthday_soon", label: "день рождения хозяина уже завтра" };
     if (n === 7) return { situation: "birthday_soon", label: "день рождения хозяина через неделю" };
+  }
+  for (const p of people) {
+    const n = daysUntil(today, p);
+    if (n === 0) return { situation: "holiday", label: `день рождения: ${p.name} (сегодня!)` };
+    if (n === 1) return { situation: "birthday_soon", label: `день рождения: ${p.name} уже завтра` };
+    if (n === 7) return { situation: "birthday_soon", label: `день рождения: ${p.name} через неделю` };
   }
   const h = HOLIDAYS.find((x) => x.mo === today.mo && x.d === today.d);
   return h ? { situation: "holiday", label: h.label } : null;

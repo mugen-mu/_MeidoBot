@@ -2,6 +2,7 @@
 // Чистая логика: случайность приходит аргументом, чтобы тесты были предсказуемыми.
 import { MOOD_CONFIG, type MoodConfig } from "./config.ts";
 import type { Mood } from "./moodEngine.ts";
+import { RECENT_DAYS } from "./day.ts";
 import { FALLBACK_SITUATION, PHRASES, type Phrases, type Situation } from "./phrases.ts";
 
 export interface PhraseVars {
@@ -12,6 +13,8 @@ export interface PhraseVars {
   name?: string;
   /** обращение для «зова» (запятая рядом, начало предложения); иначе user — аниме-слой ставит сюда «госюдзин-сама» */
   userVoc?: string;
+  /** номер дела: от него и от даты считается «щепотка случайности» (этап 2); в текст фразы не подставляется */
+  itemId?: number;
 }
 
 /** Короткий отпечаток текста фразы: по нему помним «последние 5», и он не ломается, когда пул пополняют. */
@@ -74,12 +77,26 @@ export function pickPhrase(a: {
   rand: () => number;
   bank?: Phrases;
   cfg?: MoodConfig;
+  /** отпечаток → номер суток последнего использования; с `today` включает правило «не повторять 14 дней» (этап 2, D6) */
+  used?: Record<string, number>;
+  today?: number;
 }): Pick | null {
   const cfg = a.cfg ?? MOOD_CONFIG;
   const pool = poolFor(a.mood, a.situation, a.bank);
   if (pool.length === 0) return null;
   const banned = new Set(a.recent.slice(-cfg.noRepeat));
-  let candidates = pool.filter((t) => !banned.has(fingerprint(t)));
+  const fresh = (t: string): boolean => {
+    const d = a.used?.[fingerprint(t)];
+    return a.today === undefined || d === undefined || a.today - d >= RECENT_DAYS;
+  };
+  let candidates = pool.filter((t) => !banned.has(fingerprint(t)) && fresh(t));
+  if (candidates.length === 0 && a.used && a.today !== undefined) {
+    // весь пул звучал недавно: берём самую давнюю (не ту, что только что была)
+    const last = a.recent[a.recent.length - 1];
+    const ordered = pool.filter((t) => pool.length === 1 || fingerprint(t) !== last);
+    const oldest = Math.min(...ordered.map((t) => a.used?.[fingerprint(t)] ?? -Infinity));
+    candidates = ordered.filter((t) => (a.used?.[fingerprint(t)] ?? -Infinity) === oldest);
+  }
   if (candidates.length === 0) {
     const last = a.recent[a.recent.length - 1];
     candidates = pool.length > 1 ? pool.filter((t) => fingerprint(t) !== last) : pool;

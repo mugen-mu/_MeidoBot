@@ -53,13 +53,20 @@ export type Situation =
   | "deleted"
   | "reply_unknown"
   | "reply_past"
-  | "reply_closed";
+  | "reply_closed"
+  // этап 2 ретроспективы 2 «Хару ожила»: пятое откладывание, хорошая серия, достижения
+  | "snooze_5"
+  | "good_streak"
+  | "achieve_tail"
+  | "achieve_week_clean"
+  | "achieve_week_ontime";
 
 export const SITUATIONS: Situation[] = [
   "reminder", "reminder_repeat", "missed_first", "missed", "done", "done_late", "streak_praise", "relief",
   "greeting", "return_after_pause", "idle_ping", "chat_fallback", "thanks", "recorded",
   "summary_morning", "summary_evening", "summary_weekly", "empty_list", "empty_today", "holiday", "birthday_soon",
   "draft", "cancelled", "stopped", "snoozed", "deleted", "reply_unknown", "reply_past", "reply_closed",
+  "snooze_5", "good_streak", "achieve_tail", "achieve_week_clean", "achieve_week_ontime",
 ];
 
 /** Если у настроения нет фраз для ситуации, берём ближайшую «родственную» из того же настроения. */
@@ -77,6 +84,11 @@ export const FALLBACK_SITUATION: Partial<Record<Situation, Situation>> = {
   stopped: "cancelled",
   reply_past: "reply_unknown",
   reply_closed: "reply_unknown",
+  snooze_5: "snoozed",
+  good_streak: "done",
+  achieve_tail: "done",
+  achieve_week_clean: "summary_weekly",
+  achieve_week_ontime: "done",
 };
 
 export type Phrases = Record<string, Partial<Record<Situation, string[]>>>;
@@ -85,6 +97,7 @@ import { BASE_PHRASES } from "./phrases.base.ts";
 import { EXTRA_PHRASES } from "./phrases.extra.ts";
 import { GENERATED } from "./phrases.generated.ts";
 import { REACTION_PHRASES } from "./phrases.reactions.ts";
+import { STAGE2_PHRASES } from "./phrases.stage2.ts";
 
 const key = (t: string): string => t.toLowerCase().replace(/[^\p{L}]+/gu, " ").trim();
 
@@ -116,9 +129,9 @@ export function mergePools(primary: Phrases, fallback: Phrases, minPrimary = 8):
 
 /** Запасной набор: свои фразы и фразы для сводок/пустого списка/праздников (у них основного пула нет). */
 const FALLBACK_BANK: Phrases = Object.fromEntries(
-  [...new Set([...Object.keys(BASE_PHRASES), ...Object.keys(EXTRA_PHRASES), ...Object.keys(REACTION_PHRASES)])].map((m) => [
+  [...new Set([...Object.keys(BASE_PHRASES), ...Object.keys(EXTRA_PHRASES), ...Object.keys(REACTION_PHRASES), ...Object.keys(STAGE2_PHRASES)])].map((m) => [
     m,
-    { ...BASE_PHRASES[m], ...EXTRA_PHRASES[m], ...REACTION_PHRASES[m] },
+    { ...BASE_PHRASES[m], ...EXTRA_PHRASES[m], ...REACTION_PHRASES[m], ...STAGE2_PHRASES[m] },
   ]),
 );
 

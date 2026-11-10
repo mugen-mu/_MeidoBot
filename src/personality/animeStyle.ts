@@ -89,8 +89,18 @@ export interface StyleState {
   bon?: number;
   /** вызовы модели для живых реплик за текущие сутки UTC: d — номер суток, n — сколько вызовов (дневной потолок) */
   lv?: { d: number; n: number };
+  /** этап 2: отпечаток реплики → номер суток, когда она звучала в последний раз (не повторять 14 дней) */
+  rl?: Record<string, number>;
+  /** этап 2: серия суток подряд, когда «Готово» нажато вовремя: d — последние сутки, n — сколько суток подряд */
+  ot?: { d: number; n: number };
+  /** этап 2: с каких суток нет «Висит» (последнее просроченное дело или наблюдение «висит»); от него считается «неделя без «Висит»» */
+  cl?: number;
+  /** этап 2: когда показывалась особая реплика (номера суток): any — любая, gs — заметка о серии, wk — «7 дней вовремя», wc — начало отсчёта, за который дали «неделю без «Висит»» */
+  ac?: { any?: number; gs?: number; wk?: number; wc?: number };
 }
 export const emptyStyleState = (): StyleState => ({ n: 0, words: {} });
+
+const posNum = (x: unknown): number | undefined => (Number.isFinite(Number(x)) && Number(x) > 0 && x !== null && x !== "" ? Number(x) : undefined);
 
 export function parseStyleState(json: string | null | undefined): StyleState {
   try {
@@ -103,6 +113,23 @@ export function parseStyleState(json: string | null | undefined): StyleState {
     if (Number(v?.cin) > 0) out.cin = Number(v.cin);
     if (Number(v?.bon) > 0) out.bon = Number(v.bon);
     if (Number(v?.lv?.d) > 0 && Number(v?.lv?.n) >= 0) out.lv = { d: Number(v.lv.d), n: Number(v.lv.n) };
+    const rl: Record<string, number> = {};
+    for (const [k, d] of Object.entries((v?.rl ?? {}) as Record<string, unknown>)) {
+      const n = posNum(d);
+      if (n !== undefined) rl[k] = n;
+    }
+    if (Object.keys(rl).length) out.rl = rl;
+    const od = posNum(v?.ot?.d);
+    const on = posNum(v?.ot?.n);
+    if (od !== undefined && on !== undefined) out.ot = { d: od, n: on };
+    const cl = posNum(v?.cl);
+    if (cl !== undefined) out.cl = cl;
+    const ac: NonNullable<StyleState["ac"]> = {};
+    for (const k of ["any", "gs", "wk", "wc"] as const) {
+      const n = posNum(v?.ac?.[k]);
+      if (n !== undefined) ac[k] = n;
+    }
+    if (Object.keys(ac).length) out.ac = ac;
     return out;
   } catch {
     return emptyStyleState();

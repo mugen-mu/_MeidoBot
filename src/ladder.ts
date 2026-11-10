@@ -139,6 +139,8 @@ export function firstFireAt(l: Ladder, baseAt: number): number {
 
 /** После 3-го откладывания бот спрашивает «сегодня / разбить на шаги / удалить». */
 export const SNOOZE_LIMIT = 3;
+/** С 5-го откладывания Хару подкалывает: «либо делай, либо забудь» (этап 2, B5). */
+export const SNOOZE_TEASE_AT = 5;
 export function needsSnoozeQuestion(snoozeCountBefore: number): boolean {
   return snoozeCountBefore + 1 >= SNOOZE_LIMIT;
 }

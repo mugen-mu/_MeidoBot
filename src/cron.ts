@@ -17,6 +17,7 @@ import { createFromText, EMPTY_REPLY, EMPTY_SERIES_REPLY, messageTime, SECRET_RE
 import { GAS_CHECK_EVERY, GAS_RETRY_AFTER, dueGas, failGas, fetchGas, gasSummaryLines, parseGasState, planGas } from "./gas.ts";
 import { WATER_CHECK_EVERY, WATER_RETRY_AFTER, dueWater, failWater, fetchWater, parseWaterState, planWater, waterSummaryLines } from "./water.ts";
 import { MoodSession, canStyle, makeCtx, reactionLine, recordedLine, summaryLine } from "./personality/director.ts";
+import { QUIET_DAY_MS, QUIET_META_KEY, QUIET_OFF_REPLY, QUIET_ON_REPLY, isQuietNow, parseQuietDay } from "./personality/day.ts";
 import { LIVE_TIMEOUT_CRON_MS } from "./personality/liveLines.ts";
 import { maidEmbed, pickReaction, wantSprite } from "./personality/look.ts";
 import { isPolite, isSeriousTopic } from "./personality/moodEngine.ts";
@@ -107,8 +108,10 @@ export async function runCron(d: CronDeps): Promise<CronReport> {
   const token = d.token ?? crypto.randomUUID();
   const report: CronReport = { claimed: 0, sent: 0, deferred: 0, failed: 0, summaries: [], panel: false, intake: 0, ping: "skip", subrequests: 0, notes: [] };
   const pre = await repo.prelude(now, d.maxSends ?? MAX_SENDS, token);
-  const s = pre.settings;
   const meta = pre.meta;
+  // «тихий день»: старые приписки «уставшей горничной» (сводки, пустые списки, аниме) тоже молчат — как нейтральный характер
+  const quietNow = isQuietNow(meta.get(QUIET_META_KEY), now);
+  const s: AppSettings = quietNow && pre.settings.character !== "neutral" ? { ...pre.settings, character: "neutral" } : pre.settings;
   const owner = meta.get("owner_id") ?? d.env.ownerId ?? null;
   // «Всё со звуком» (D7): по галочке каждое новое сообщение бота в канал упоминает хозяина; личка и так со звуком
   const api = withSound(d.api, owner ?? undefined, s.soundAll, [meta.get("dm_channel_id")].filter((x): x is string => !!x));
@@ -131,6 +134,9 @@ export async function runCron(d: CronDeps): Promise<CronReport> {
           live: s.liveOn && d.ai ? { ai: d.ai, tz: s.tz, timeoutMs: LIVE_TIMEOUT_CRON_MS, gate: () => repo.counter.can(4 + RESERVE), spend: () => repo.counter.spend(1) } : null,
         })
       : null;
+
+  // «тихий день» (этап 2, D3, D5): сутки Хару молчит совсем — ни реплик, ни карточек, ни реакций; напоминания и сводки идут как всегда
+  if (mood && quietNow) mood.silent = true;
 
   // ---------- 1. созревшие срабатывания ----------
   const ops: Op[] = [];
@@ -170,13 +176,16 @@ export async function runCron(d: CronDeps): Promise<CronReport> {
         if (mood && occ.kind === "main" && occ.item_kind === "reminder" && room(3)) {
           await mood.load();
           const becameOverdue = plan.phase === "overdue" && occ.state !== "overdue";
-          if (becameOverdue) mood.apply({ type: "miss" });
+          if (becameOverdue) {
+            mood.apply({ type: "miss" });
+            mood.noteMiss();
+          }
           if (canStyle(occ.title, occ.critical, occ.plain)) {
             const situation = becameOverdue
               ? mood.state!.missStreak === 1 ? "missed_first" : "missed"
               : plan.phase === "overdue" ? "missed" : occ.fire_count === 0 && occ.state === "planned" ? "reminder" : "reminder_repeat";
             // повторное «просрочено» не должно каждый раз грозить: драма — с паузой, внутри say()
-            flavor = await mood.sayLive(situation, { task: occ.title });
+            flavor = await mood.sayLive(situation, { task: occ.title, itemId: occ.item_id });
             // карточка с цветом настроения; спрайт — редко, а в «кино-моменте» и при затяжных пропусках — всегда
             if (flavor) look = { mood: mood.state!.mood, origin, sprite: wantSprite(mood.rand, mood.cinema || (situation === "missed" && mood.state!.missStreak >= 3)) };
           }
@@ -246,7 +255,7 @@ export async function runCron(d: CronDeps): Promise<CronReport> {
   const room2 = (n = 1) => repo.counter.can(n + 2); // ещё нужны: запись ops2 и пинг сторожу
   /** Реакция-эмодзи по настроению на сообщение хозяина (этап Х3): редко, на серьёзные темы — никогда; сбой реакции не страшен. */
   const react = async (ch: string, messageId: string, always: boolean, text = ""): Promise<void> => {
-    if (!mood?.loaded || !room2(1) || isSeriousTopic(text)) return;
+    if (!mood?.loaded || mood.silent || !room2(1) || isSeriousTopic(text)) return;
     const e = pickReaction(mood.state!.mood, mood.rand, always);
     if (!e) return;
     try {
@@ -296,6 +305,20 @@ export async function runCron(d: CronDeps): Promise<CronReport> {
               continue;
             }
           }
+          // «тихий день» словом (этап 2, D3): «тихий день» — сутки без реплик Хару; «хватит тихого дня» — досрочно снять. Сообщение целиком из этих слов, иначе это дело.
+          const quietWord = parseQuietDay(m.content);
+          if (quietWord && room2(3)) {
+            report.intake++;
+            if (quietWord === "on") ops2.push(setMeta(QUIET_META_KEY, String(now + QUIET_DAY_MS)));
+            else ops2.push(deleteMeta(QUIET_META_KEY));
+            if (mood) mood.silent = quietWord === "on";
+            try {
+              await api.postMessage(ch, { content: quietWord === "on" ? QUIET_ON_REPLY : QUIET_OFF_REPLY, allowed_mentions: { parse: [] } });
+            } catch (e) {
+              if (e instanceof BudgetExceeded) break;
+            }
+            continue;
+          }
           // свет текстом: «дай график света», «что со светом» — график, а не дело (этап 1 ретроспективы 2); без модели.
           // Слово «свет» в обычном деле («оплатить свет», «в 18:00 свет») сюда не попадает; промах поправит кнопка «Это было дело».
           if (isLightQuestion(m.content) && !detectSecret(m.content).secret && room2(YASNO_ATTEMPTS + 4)) {
@@ -322,6 +345,7 @@ export async function runCron(d: CronDeps): Promise<CronReport> {
             if (word) {
               const line = mood.hearWord(word);
               report.intake++;
+              if (mood.silent) continue; // тихий день: симпатия засчитана, ответа нет
               try {
                 await api.postMessage(ch, {
                   embeds: [maidEmbed({ mood: mood.state!.mood, text: line, origin, sprite: wantSprite(mood.rand) })],
@@ -337,6 +361,7 @@ export async function runCron(d: CronDeps): Promise<CronReport> {
             mood.apply({ type: "activity", polite });
             if (polite) {
               report.intake++;
+              if (mood.silent) continue; // тихий день: «спасибо» без ответа
               const line = await mood.sayLive("thanks");
               try {
                 await api.postMessage(
@@ -470,7 +495,14 @@ export async function runCron(d: CronDeps): Promise<CronReport> {
       if (mood && kind !== "return" && room2(3)) {
         try {
           await mood.load();
-          const line = await summaryLine(mood, { kind, open: list.length, done: kind === "weekly" ? weeklyDone : undefined, wall: wallOf(now, s.tz), birthday: s.birthday });
+          const line = await summaryLine(mood, {
+            kind,
+            open: list.length,
+            done: kind === "weekly" ? weeklyDone : undefined,
+            wall: wallOf(now, s.tz),
+            birthday: s.birthday,
+            hot: kind === "morning" ? list.filter((o) => o.state === "overdue").length : undefined,
+          });
           if (line) content = `${content}\n\n${line}`;
         } catch (e) {
           if (e instanceof BudgetExceeded) break;

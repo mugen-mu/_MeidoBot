@@ -177,9 +177,9 @@ export function draftMessage(a: { occId: number; itemId: number; title: string; 
   };
 }
 
-export function snoozeQuestionMessage(a: { occId: number; itemId: number; title: string; count: number }): MessageBody {
+export function snoozeQuestionMessage(a: { occId: number; itemId: number; title: string; count: number; line?: string | null }): MessageBody {
   return {
-    content: `Откладываешь «${a.title}» в ${a.count}-й раз. Что делаем?`,
+    content: withLine(`Откладываешь «${a.title}» в ${a.count}-й раз. Что делаем?`, a.line),
     allowed_mentions: { parse: [] },
     components: [
       row(

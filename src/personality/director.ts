@@ -6,7 +6,7 @@ import type { AiBinding } from "../llm.ts";
 import { detectSecret } from "../secrets.ts";
 import type { OccView, Op } from "../db/types.ts";
 import { type AppSettings, inQuietHours } from "../settings.ts";
-import { wallOf } from "../time/tz.ts";
+import { localDate, wallOf } from "../time/tz.ts";
 import {
   STYLE_DEFAULT,
   type StyleConfig,
@@ -17,6 +17,16 @@ import {
 } from "./animeStyle.ts";
 import { cinemaMoment } from "./cinema.ts";
 import { MOOD_CONFIG, type MoodConfig } from "./config.ts";
+import {
+  ACHIEVEMENT_SITUATION,
+  type Achievement,
+  dayNumber,
+  effectiveMood,
+  noteDone,
+  noteMiss,
+  observeHot,
+  rememberLine,
+} from "./day.ts";
 import {
   type Mood,
   type MoodCtx,
@@ -30,9 +40,9 @@ import {
   step,
 } from "./moodEngine.ts";
 import { LIVE_DAILY_CAP, type LineRequest, liveLine, pickAngle, pickLength } from "./liveLines.ts";
-import { INTERESTS, INTEREST_CHANCE, type MonthDay, occasionFor } from "./occasions.ts";
+import { INTERESTS, INTEREST_CHANCE, type MonthDay, type Person, occasionFor } from "./occasions.ts";
 import type { Situation } from "./phrases.ts";
-import { type PhraseVars, fill, pickPhrase, remember } from "./speech.ts";
+import { type PhraseVars, fill, pickPhrase, poolFor, remember } from "./speech.ts";
 import { type UserWordId, wordReply } from "./userWords.ts";
 
 const MINUTE = 60_000;
@@ -75,7 +85,7 @@ export function makeCtx(now: number, s: Pick<AppSettings, "tz" | "quietEnabled" 
     const { from, to } = cfg.night;
     return from < to ? m >= from && m < to : m >= from || m < to;
   };
-  return { now, isNight };
+  return { now, isNight, dayKey: localDate(now, s.tz) };
 }
 
 /** Стиль выключается на критичных делах и серьёзных темах (здоровье, врачи, горе): остаётся обычный нейтральный текст. */
@@ -157,6 +167,8 @@ export class MoodSession {
   styleState: StyleState = emptyStyleState();
   /** последняя реплика say() оказалась «кино-моментом» (тогда показываем спрайт) */
   cinema = false;
+  /** «Тихий день» (D3, D5): Хару молчит совсем — ни реплик, ни кино-моментов; счётчики настроения и серий при этом идут */
+  silent = false;
   private pending: Op[] = [];
   private dirty = false;
 
@@ -207,26 +219,46 @@ export class MoodSession {
     this.pending.push(event(this.ctx.now, "mood", null, `${from}>${mood}: вручную`));
   }
 
-  /** Фраза для ситуации в текущем настроении или null (пула нет, или пауза «драмы»). Запоминает её, чтобы не повторять. */
+  /** Сутки хозяина (номер суток с 1970) для памяти реплик и серий. */
+  get dayNum(): number {
+    return dayNumber(this.ctx.dayKey ?? new Date(this.ctx.now).toISOString().slice(0, 10));
+  }
+
+  /**
+   * Настроение, с которым говорить: явное (`mood`, например гордая похвала) — как есть; иначе настоящее с поправками дня
+   * (окраска суток, «щепотка» от даты и номера дела, яндере только на пропусках — `effectiveMood`).
+   */
+  private voice(situation: Situation, vars: PhraseVars, mood?: Mood): Mood {
+    if (mood) return mood;
+    const dayKey = this.ctx.dayKey ?? new Date(this.ctx.now).toISOString().slice(0, 10);
+    return effectiveMood({ mood: this.state!.mood, situation, dayKey, itemId: vars.itemId, has: (m, sit) => poolFor(m, sit).length > 0 });
+  }
+
+  /** Фраза для ситуации в текущем настроении или null (пула нет, пауза «драмы» или «тихий день»). Запоминает её, чтобы не повторять 14 дней. */
   say(situation: Situation, vars: PhraseVars = {}, mood?: Mood): string | null {
     if (!this.state) throw new Error("MoodSession: сначала load()");
     this.cinema = false;
+    if (this.silent) return null;
     const st = this.state;
     const dramatic = situation === "missed" && st.missStreak >= this.cfg.thresholds.yandereMiss + 1;
     if (dramatic && st.lastDramaAt !== null && this.ctx.now - st.lastDramaAt < this.cfg.dramaCooldownMinutes * MINUTE) return null;
+    const m = this.voice(situation, vars, mood);
     const p = pickPhrase({
-      mood: mood ?? st.mood,
+      mood: m,
       situation,
       vars: { miss_count: st.missStreak, done_streak: st.doneStreak, ...vars },
       recent: st.recent,
       rand: this.rand,
       cfg: this.cfg,
+      used: this.styleState.rl,
+      today: this.dayNum,
     });
     if (!p) return null;
     this.state = { ...st, recent: remember(st.recent, p.key, this.cfg), lastDramaAt: dramatic ? this.ctx.now : st.lastDramaAt };
+    this.styleState = { ...this.styleState, rl: rememberLine(this.styleState.rl, p.key, this.dayNum) };
     this.dirty = true;
     // «кино-момент» (Х3): редкий длинный монолог вместо обычной фразы, только на уровне 3 и с паузой
-    const cin = cinemaMoment({ mood: mood ?? st.mood, situation, style: this.style, state: this.styleState, now: this.ctx.now, rand: this.rand, vars, cfg: this.cfg });
+    const cin = cinemaMoment({ mood: m, situation, style: this.style, state: this.styleState, now: this.ctx.now, rand: this.rand, vars, cfg: this.cfg });
     if (cin) {
       this.styleState = cin.state;
       this.cinema = true;
@@ -235,7 +267,7 @@ export class MoodSession {
     // аниме-слой (Х2): поверх выбранной фразы; на уровне 0 это обычная подстановка без вставок
     const r = renderStyled({
       template: p.raw,
-      mood: mood ?? st.mood,
+      mood: m,
       situation,
       style: this.style,
       state: this.styleState,
@@ -254,6 +286,10 @@ export class MoodSession {
    */
   async sayLive(situation: Situation, vars: PhraseVars & { facts?: string; occasion?: string; task?: string } = {}, mood?: Mood): Promise<string | null> {
     if (!this.state) throw new Error("MoodSession: сначала load()");
+    if (this.silent) {
+      this.cinema = false;
+      return null;
+    }
     const lc = this.live;
     if (!lc) return this.say(situation, vars, mood);
     const st = this.state;
@@ -267,7 +303,7 @@ export class MoodSession {
     lc.spend?.();
     this.styleState = { ...this.styleState, lv: { d: day, n: used + 1 } };
     this.dirty = true;
-    const m = mood ?? st.mood;
+    const m = this.voice(situation, vars, mood);
     const w = wallOf(this.ctx.now, lc.tz);
     const req: LineRequest = {
       mood: m,
@@ -300,6 +336,32 @@ export class MoodSession {
     if (!this.state) throw new Error("MoodSession: сначала load()");
     const r = cinemaMoment({ mood: this.state.mood, situation, style: this.style, state: this.styleState, now: this.ctx.now, rand: this.rand, vars, cfg: this.cfg, force: true });
     return r!.text;
+  }
+
+  /** «Готово» по главному напоминанию: серия суток и достижение (или null). Считается и в тихий день и на серьёзных темах — просто без реплики. */
+  noteDone(a: { onTime: boolean; ageDays: number }): Achievement | null {
+    const r = noteDone(this.styleState, { day: this.dayNum, ...a });
+    this.styleState = r.state;
+    this.dirty = true;
+    return r.achievement;
+  }
+
+  /** Пропуск: серия суток обнуляется, отсчёт «недели без «Висит»» начинается заново. */
+  noteMiss(): void {
+    this.styleState = noteMiss(this.styleState, this.dayNum);
+    this.dirty = true;
+  }
+
+  /** Наблюдение за «Висит» в утренней сводке; возвращает достижение «неделя без «Висит»», если пора. */
+  observeHot(hot: number): Achievement | null {
+    const r = observeHot(this.styleState, { day: this.dayNum, hot });
+    // тихий день: отсчёт идёт, но награду не тратим — достижение дождётся следующего утра
+    if (this.silent && r.achievement) return null;
+    if (r.state !== this.styleState) {
+      this.styleState = r.state;
+      this.dirty = true;
+    }
+    return r.achievement;
   }
 
   /** Можно ли засчитать симпатию за аниме-слово хозяина: раз в cooldownHours (ТЗ, 5Д). */
@@ -342,18 +404,32 @@ export class MoodSession {
 /**
  * «Готово» по делу: событие для настроения и фраза для сообщения (или null — стиль выключен / фраз нет).
  * Выполнение главного напоминания до просрочки — «вовремя», после — «с опозданием»; остальное (таймеры, «заранее») — просто активность.
- * Приоритет фраз: особая похвала за серию → «наконец-то» после пропусков → редкая скупая похвала → обычная для настроения.
+ * Приоритет фраз: достижение (давний хвост, 7 дней вовремя) → заметка о хорошей серии суток → особая похвала за серию → «наконец-то» после пропусков →
+ * редкая скупая похвала → обычная для настроения. Серии и достижения считаются всегда, реплика — только если стиль уместен (не серьёзная тема, не тихий день).
  */
-export async function recordDone(m: MoodSession, occ: Pick<OccView, "kind" | "item_kind" | "state" | "title" | "critical"> & { plain?: number }): Promise<string | null> {
+export async function recordDone(
+  m: MoodSession,
+  occ: Pick<OccView, "kind" | "item_kind" | "state" | "title" | "critical"> & { plain?: number; item_id?: number; due_at?: number | null },
+): Promise<string | null> {
   const counts = occ.kind === "main" && occ.item_kind === "reminder";
   const r = m.apply(counts ? { type: "done", onTime: occ.state !== "overdue" } : { type: "activity" });
+  const overdue = counts && occ.state === "overdue";
+  const ageDays = overdue && occ.due_at ? Math.max(0, Math.floor((m.ctx.now - occ.due_at) / 86_400_000)) : 0;
+  const ach = counts ? m.noteDone({ onTime: !overdue, ageDays }) : null;
   if (!canStyle(occ.title, occ.critical, occ.plain ?? 0)) return null;
-  const vars = { task: occ.title };
+  const vars = { task: occ.title, itemId: occ.item_id };
+  if (ach) {
+    const line = await m.sayLive(ACHIEVEMENT_SITUATION[ach], vars, "proud");
+    if (line) return brighten(line, ach);
+  }
   if (counts && r.milestone !== null) return m.sayLive("streak_praise", vars, "proud");
   if (counts && r.relief) return m.sayLive("relief", vars);
   if (counts && m.rand() < m.cfg.randomPraiseChance) return m.sayLive("done", vars, "proud");
   return m.sayLive(counts && occ.state === "overdue" ? "done_late" : "done", vars);
 }
+
+/** «Ярче» без картинок (спрайты — позже): у достижений и серии эмодзи-метка в начале, если фраза из пула уже её не несёт (модель обычно не ставит). */
+const brighten = (line: string, ach: Achievement): string => (/^[✨🏆]/u.test(line) ? line : `${ach === "good_streak" ? "✨" : "🏆"} ${line}`);
 
 /** Реплика к подтверждению «Записано …»: null на серьёзных темах и критичных делах (стиль там выключен) или когда пула нет. */
 export async function recordedLine(m: MoodSession, title: string, critical: boolean | number): Promise<string | null> {
@@ -370,10 +446,28 @@ export const SUMMARY_LINE_CHANCE = { morning: 0.85, evening: 0.75, weekly: 1 } a
  */
 export async function summaryLine(
   m: MoodSession,
-  a: { kind: "morning" | "evening" | "weekly"; open: number; done?: number; wall: { y: number; mo: number; d: number }; birthday: MonthDay | null },
+  a: {
+    kind: "morning" | "evening" | "weekly";
+    open: number;
+    done?: number;
+    wall: { y: number; mo: number; d: number };
+    birthday: MonthDay | null;
+    /** сколько дел сейчас «висит» (просрочено); нужно утром для достижения «неделя без «Висит»» */
+    hot?: number;
+    /** близкие люди с датами (заготовка под этап 5; пока всегда пусто) */
+    people?: Person[];
+  },
 ): Promise<string | null> {
   if (!m.loaded) return null;
-  const occ = a.kind === "morning" ? occasionFor(a.wall, a.birthday) : null;
+  const occ = a.kind === "morning" ? occasionFor(a.wall, a.birthday, a.people) : null;
+  // «неделя без «Висит»»: утром, если семь суток нет просроченных (наблюдение и отсчёт — в сессии настроения); редкое событие главнее праздничной реплики
+  if (a.kind === "morning" && a.hot !== undefined) {
+    const ach = m.observeHot(a.hot);
+    if (ach) {
+      const line = await m.sayLive(ACHIEVEMENT_SITUATION[ach], { facts: "неделя без «Висит»: ни одного просроченного дела семь суток подряд" }, "proud");
+      if (line) return brighten(line, ach);
+    }
+  }
   if (occ) return m.sayLive(occ.situation, { occasion: occ.label });
   if (a.kind === "morning" && a.open === 0) return m.sayLive("empty_today", { facts: "на сегодня дел нет" });
   if (m.rand() >= SUMMARY_LINE_CHANCE[a.kind]) return null;
@@ -392,6 +486,8 @@ export const REACTION_CHANCE: Partial<Record<Situation, number>> = {
   reply_unknown: 0.8,
   reply_past: 0.8,
   reply_closed: 0.6,
+  /** пятое откладывание: подколка всегда (B5) */
+  snooze_5: 1,
 };
 
 /**
@@ -401,10 +497,10 @@ export const REACTION_CHANCE: Partial<Record<Situation, number>> = {
 export async function reactionLine(
   m: MoodSession,
   situation: Situation,
-  o: { title?: string; critical?: boolean | number; plain?: boolean | number } = {},
+  o: { title?: string; critical?: boolean | number; plain?: boolean | number; itemId?: number } = {},
 ): Promise<string | null> {
   if (o.title !== undefined && !canStyle(o.title, o.critical ?? 0, o.plain ?? 0)) return null;
   await m.load();
   if (m.rand() >= (REACTION_CHANCE[situation] ?? 0.7)) return null;
-  return m.sayLive(situation, { task: o.title });
+  return m.sayLive(situation, { task: o.title, itemId: o.itemId });
 }
