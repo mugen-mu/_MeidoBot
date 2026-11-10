@@ -34,7 +34,7 @@ import { YASNO_ATTEMPTS, fetchYasno, groupsFor, lightFullText, lightLines, publi
 import { isLightQuestion, lightAskMessage } from "./lightAsk.ts";
 import { detectSecret } from "./secrets.ts";
 import { withSound } from "./sound.ts";
-import { CHORES, choreMetaKey, choreParsed, choresDue, periodKey } from "./chores.ts";
+import { choreMetaKey, choreParsed, choresDue, periodKey } from "./chores.ts";
 import {
   META_KEY as PASSPORT_KEY,
   type SourceId,
