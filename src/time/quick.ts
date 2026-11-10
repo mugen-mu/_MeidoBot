@@ -10,14 +10,14 @@ export const QUICK_OPTIONS: QuickOption[] = [
   { key: "m15", label: "Через 15 минут" },
   { key: "h1", label: "Через час" },
   { key: "h3", label: "Через 3 часа" },
-  { key: "eve", label: "Сегодня вечером, 19:00" },
+  { key: "eve", label: "Сегодня вечером" },
   { key: "tom", label: "Завтра утром" },
   { key: "mon", label: "В понедельник утром" },
   { key: "wk", label: "Через неделю" },
 ];
 
-/** Момент для быстрого варианта или null, если ключ неизвестен. `morning` — минуты от полуночи. */
-export function quickDue(key: string, now: number, tz: string, morning = 9 * 60): number | null {
+/** Момент для быстрого варианта или null, если ключ неизвестен. `morning` и `evening` — минуты от полуночи («утром» и «вечером» хозяина). */
+export function quickDue(key: string, now: number, tz: string, morning = 9 * 60, evening = 19 * 60): number | null {
   const at = (t: number, minutes: number) => {
     const w = wallOf(t, tz);
     return wallToUtc({ y: w.y, mo: w.mo, d: w.d, h: Math.floor(minutes / 60), mi: minutes % 60 }, tz);
@@ -30,8 +30,8 @@ export function quickDue(key: string, now: number, tz: string, morning = 9 * 60)
     case "h3":
       return now + 3 * HOUR;
     case "eve": {
-      const t = at(now, 19 * 60);
-      return t > now ? t : at(addDaysWall(now, 1, tz), 19 * 60);
+      const t = at(now, evening);
+      return t > now ? t : at(addDaysWall(now, 1, tz), evening);
     }
     case "tom":
       return at(addDaysWall(now, 1, tz), morning);

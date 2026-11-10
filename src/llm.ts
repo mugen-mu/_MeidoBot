@@ -61,14 +61,14 @@ export function extractJson(text: string): Record<string, unknown> | null {
 const ISO_RE = /^(\d{4})-(\d{2})-(\d{2})[T ](\d{2}):(\d{2})/;
 
 /** Превращает ответ модели в готовый разбор или null (тогда бот работает как раньше). Чистая функция — тестируется без сети. */
-export function interpretReply(text: string, original: string, o: { now: number; tz: string; defaultTime: number }): Parsed | null {
+export function interpretReply(text: string, original: string, o: { now: number; tz: string; defaultTime: number; morningTime?: number; eveningTime?: number }): Parsed | null {
   const j = extractJson(text);
   if (!j || !titleOk(j.title, original)) return null;
   const title = (j.title as string).trim();
   const rep = typeof j.repeat === "string" && j.repeat.trim() && j.repeat.trim().toLowerCase() !== "null" ? j.repeat.trim() : null;
   if (rep) {
     // повтор разбирает наш обычный разбор: так рецепт повтора всегда «родной»; не поняли — молча как раньше
-    const p = parseInput(`${rep} ${title}`, { now: o.now, tz: o.tz, defaultTime: o.defaultTime });
+    const p = parseInput(`${rep} ${title}`, { now: o.now, tz: o.tz, defaultTime: o.defaultTime, morningTime: o.morningTime, eveningTime: o.eveningTime });
     if (!p.recipe || p.due === null || p.seriesEmpty || p.past || !p.title) return null;
     return { ...p, title };
   }
@@ -91,7 +91,7 @@ export function interpretReply(text: string, original: string, o: { now: number;
 export async function understandPhrase(
   ai: AiBinding | undefined,
   text: string,
-  o: { now: number; tz: string; defaultTime: number; timeoutMs?: number },
+  o: { now: number; tz: string; defaultTime: number; morningTime?: number; eveningTime?: number; timeoutMs?: number },
 ): Promise<Parsed | null> {
   if (!ai) return null;
   let timer: ReturnType<typeof setTimeout> | undefined;

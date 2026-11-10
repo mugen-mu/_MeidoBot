@@ -46,12 +46,21 @@ export interface AppSettings {
   liveOn: boolean;
   /** день рождения хозяина (месяц.день) или null; интерфейса пока нет — заготовка */
   birthday: MonthDay | null;
+  /** что значит «утром» в фразах и быстрых вариантах, минуты от полуночи (решение пользователя 2026-11-10, C4); по умолчанию — `defaultTime` */
+  wordMorning: number;
+  /** что значит «вечером», минуты от полуночи (C4); по умолчанию 19:00 */
+  wordEvening: number;
+  /** «Добавить» показывает три последних дела кнопками (C5); выкл по умолчанию */
+  recentOn: boolean;
+  /** сообщения бота в канал — со звуком (упоминание хозяина), не только настоящие напоминания (D7); выкл по умолчанию */
+  soundAll: boolean;
 }
 
 export const SETTING_KEYS = [
   "tz", "default_ladder", "default_time", "quiet_enabled", "quiet_from", "quiet_to", "away_until",
   "summary_morning", "summary_evening", "weekly", "ch_remind", "ch_bot", "ch_today", "ch_forum", "ch_archive", "intake", "light", "water", "gas", "character", "mood_on",
   "style_level", "style_script", "style_sfx", "style_honorifics", "style_kaomoji", "hints_on", "llm_on", "live_on", "birthday",
+  "time_morning", "time_evening", "recent_on", "sound_all",
 ] as const;
 
 function minutes(v: string | undefined, fallback: number | null): number | null {
@@ -103,7 +112,16 @@ export function readSettings(rows: { key: string; value: string }[]): AppSetting
     llmOn: m.get("llm_on") === "1",
     liveOn: m.get("live_on") !== "0",
     birthday: parseBirthday(m.get("birthday")),
+    wordMorning: minutes(m.get("time_morning") || undefined, null) ?? (minutes(m.get("default_time"), 9 * 60) ?? 9 * 60),
+    wordEvening: minutes(m.get("time_evening") || undefined, null) ?? 19 * 60,
+    recentOn: m.get("recent_on") === "1",
+    soundAll: m.get("sound_all") === "1",
   };
+}
+
+/** Настройки времени для разбора фраз: одни и те же «утро» и «вечер» везде, где бот читает время. */
+export function timeOpts(s: AppSettings): { tz: string; defaultTime: number; morningTime: number; eveningTime: number } {
+  return { tz: s.tz, defaultTime: s.defaultTime, morningTime: s.wordMorning, eveningTime: s.wordEvening };
 }
 
 /** В тихих часах ли момент ms (окно может переходить через полночь, например 23:00–07:00). */

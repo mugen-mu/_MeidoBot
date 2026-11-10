@@ -2,7 +2,7 @@
 // Ответ нужен за 3 секунды: быстрые действия отвечают сразу, долгие (/setup) — «отложенным» ответом и правкой потом.
 import { type Repo, deleteMeta, setMeta, setSetting, updateOcc } from "../db/repo.ts";
 import { parseWaterWords } from "../water.ts";
-import type { OccView, Op } from "../db/types.ts";
+import type { OccView, Op, Source } from "../db/types.ts";
 import type { AiBinding } from "../llm.ts";
 import { EMPTY_REPLY, EMPTY_SERIES_REPLY, NOT_RECURRING_REPLY, SECRET_REPLY, createFromText } from "../intake.ts";
 import { tired } from "../flavor.ts";
@@ -16,7 +16,7 @@ import { maidEmbed, wantSprite } from "../personality/look.ts";
 import { parseStyle, styleToSettings } from "../personality/animeStyle.ts";
 import { glossaryReport, styleReport } from "../personality/styleReport.ts";
 import { describeSpec, needsSnoozeQuestion, parseCustomSteps, parseSpec, type LadderSpec } from "../ladder.ts";
-import { fetchYasno, lightLines, normalizeGroup, nowLine } from "../light.ts";
+import { fetchYasno, lightFullText, normalizeGroup } from "../light.ts";
 import { newPowerKey, readPower } from "../power.ts";
 import { type AnimeCtx, handleAddModal, handleAnimeButton, handleEpModal } from "../anime/handlers.ts";
 import { listAnime } from "../anime/store.ts";
@@ -34,15 +34,17 @@ import {
   snoozeOps,
   stopSeriesOps,
 } from "../service.ts";
-import type { AppSettings } from "../settings.ts";
+import { type AppSettings, timeOpts } from "../settings.ts";
 import { describeLead, describeRecipe, formatWhen } from "../time/format.ts";
 import { normalizeEvery, parseInput, parseWhen } from "../time/parse.ts";
 import { quickDue } from "../time/quick.ts";
-import { DAY, MINUTE, addDaysWall, fmtHHMM, localDate, nextTimeOfDay, parseHHMM, wallOf } from "../time/tz.ts";
+import { DAY, MINUTE, fmtHHMM, nextTimeOfDay, parseHHMM, wallOf } from "../time/tz.ts";
+import { LIGHT_ASK_BUTTON_PREFIX } from "../lightAsk.ts";
 import {
   type ListFilter,
   type Section,
   addModal,
+  recentMessage,
   cardMessage,
   confirmDeleteMessage,
   confirmResetMessage,
@@ -70,6 +72,7 @@ import {
   doneMessage,
   editModal,
   ladderNumsModal,
+  dayWordsModal,
   lightModal,
   waterModal,
   gasModal,
@@ -203,7 +206,7 @@ const out = (c: C, body: MessageBody): Reply => msg(publicHere(c) ? body : { ...
 async function createReply(
   c: C,
   text: string,
-  source: "slash" | "menu",
+  source: Source,
   extra: { body?: string; requireRecurring?: boolean; /** как показать готовую запись (по умолчанию — как команду) */ wrap?: (b: MessageBody) => Reply } = {},
 ): Promise<Reply> {
   const r = await createFromText(
@@ -317,11 +320,7 @@ function lightReply(c: C, wrap: (text: string) => MessageBody, first: Reply): Re
   c.defer(
     (async () => {
       const data = await fetchYasno(c.fetchFn ?? fetch);
-      const today = localDate(c.now, c.s.tz);
-      const tomorrow = localDate(addDaysWall(c.now, 1, c.s.tz), c.s.tz);
-      const text = data
-        ? [...lightLines("today", group, data, today), nowLine(c.now, group, data, c.s.tz), ...lightLines("tomorrow", group, data, tomorrow)].filter(Boolean).join("\n")
-        : "Не удалось получить график: Yasno не отвечает. Попробуйте позже.";
+      const text = lightFullText(c.now, c.s.tz, group, data);
       if (c.i.application_id) await c.api.editInteractionOriginal(c.i.application_id, c.i.token, wrap(text)).catch(() => undefined);
     })(),
   );
@@ -363,7 +362,7 @@ async function slashSnooze(c: C): Promise<Reply> {
   const occ = await c.repo.openMainOfItem(Number(opt(c, "id")));
   if (!occ) return eph("Открытого дела с таким номером нет. Номера — в /list.");
   const text = opt(c, "when");
-  const when = text ? parseWhen(String(text), { now: c.now, tz: c.s.tz, defaultTime: c.s.defaultTime }) : { due: c.now + 60 * MINUTE, past: false };
+  const when = text ? parseWhen(String(text), { now: c.now, ...timeOpts(c.s) }) : { due: c.now + 60 * MINUTE, past: false };
   if (!when) return eph("Не понял время. Пример: «завтра 10:30» или «через 2 часа».");
   if (when.past) return eph("Это время уже прошло.");
   await c.repo.exec(occ.state === "draft" ? rescheduleOps(occ, when.due, c.now) : snoozeOps(occ, when.due, c.now));
@@ -548,9 +547,9 @@ function confirmFor(c: C, occ: OccView): MessageBody {
   });
 }
 
-/** «Сегодня»: сегодня в 19:00, а если уже позже — через час. */
-function todayTarget(now: number, tz: string): number {
-  const t = nextTimeOfDay(now, 19 * 60, tz);
+/** «Сегодня»: сегодня вечером (по часам хозяина, по умолчанию 19:00), а если уже позже — через час. */
+function todayTarget(now: number, tz: string, evening = 19 * 60): number {
+  const t = nextTimeOfDay(now, evening, tz);
   return t - now < DAY - 30 * MINUTE ? t : now + 60 * MINUTE;
 }
 
@@ -641,7 +640,7 @@ async function onComponent(c: C): Promise<Reply> {
     case "when": {
       const occ = await asOcc(c, a);
       if (!occ || occ.state !== "draft") return gone();
-      const due = quickDue(b, c.now, c.s.tz, c.s.defaultTime);
+      const due = quickDue(b, c.now, c.s.tz, c.s.wordMorning, c.s.wordEvening);
       if (due === null) return eph("Не понял вариант времени.");
       await c.repo.exec(rescheduleOps(occ, due, c.now));
       return update(confirmFor(c, { ...occ, due_at: due }));
@@ -656,11 +655,17 @@ async function onComponent(c: C): Promise<Reply> {
     case "tdy": {
       const occ = await asOcc(c, a);
       if (!occ || !isOpen(occ)) return gone();
-      const r = await snoozeTo(c, occ, todayTarget(c.now, c.s.tz), true);
+      const r = await snoozeTo(c, occ, todayTarget(c.now, c.s.tz, c.s.wordEvening), true);
       return r;
     }
     case "split":
       return { type: 9, data: splitModal(Number(a)).data };
+    case "ldo": {
+      // «Это было дело»: фразу, которую приняли за вопрос про свет, записываем как обычное дело (текст — в самой кнопке)
+      const text = String(c.i.data?.custom_id ?? "").slice(LIGHT_ASK_BUTTON_PREFIX.length).trim();
+      if (!text) return gone();
+      return createReply(c, text, "channel", { wrap: (b) => update(b) });
+    }
     default:
       return eph("Это действие бот не знает.");
   }
@@ -792,7 +797,7 @@ async function onMenu(c: C, parts: string[], values: string[]): Promise<Reply> {
       const p = pageOf(arg[3]);
       const occ = await asOcc(c, arg[0]);
       if (!occ || !isOpen(occ)) return gonePage(f, p);
-      const due = quickDue(arg[1] ?? "", c.now, c.s.tz, c.s.defaultTime);
+      const due = quickDue(arg[1] ?? "", c.now, c.s.tz, c.s.wordMorning, c.s.wordEvening);
       if (due === null) return eph("Не понял вариант времени.");
       await c.repo.exec(occ.state === "draft" ? rescheduleOps(occ, due, c.now) : snoozeOps(occ, due, c.now));
       return show(resultMessage(withLine(`Отложено: **${occ.title}** — до ${formatWhen(due, c.now, c.s.tz)}`, await react(c, "snoozed", occ)), f, p));
@@ -832,8 +837,21 @@ async function onMenu(c: C, parts: string[], values: string[]): Promise<Reply> {
       await c.repo.exec(cancelItemOps(item.id, c.now, "delete"));
       return show(resultMessage(withLine(`Удалено: **${item.title}**`, await react(c, "deleted", item)), f, p));
     }
-    case "add":
+    case "add": {
+      // галочка «Недавние дела» (C5): сначала три последних кнопками, окно — по «Новое…»
+      if (c.s.recentOn) {
+        const recent = await c.repo.recentItems(3);
+        if (recent.length) return show(recentMessage(recent, panel ? "pn" : "mn"));
+      }
       return { type: 9, data: addModal(panel ? "pn" : "mn").data };
+    }
+    case "addnew":
+      return { type: 9, data: addModal(panel ? "pn" : "mn").data };
+    case "rc": {
+      const item = await c.repo.getItem(Number(arg[0]));
+      if (!item || item.archived_at || item.scrubbed_at) return show(resultMessage("Этого дела уже нет в истории: нажмите «Добавить» ещё раз."));
+      return createReply(c, item.title, "menu", { wrap: (b) => show(withNav(b)) });
+    }
     case "wk":
       return show(resultMessage(await weekWithAnime(c)));
     case "an":
@@ -917,6 +935,12 @@ async function onMenu(c: C, parts: string[], values: string[]): Promise<Reply> {
         case "dm":
           ops.push(...(await dmToggle(c)).ops);
           break;
+        case "rc":
+          ops.push(setSetting("recent_on", c.s.recentOn ? "0" : "1"));
+          break;
+        case "snd":
+          ops.push(setSetting("sound_all", c.s.soundAll ? "0" : "1"));
+          break;
         default:
           return eph("Это действие бот не знает.");
       }
@@ -940,6 +964,8 @@ async function onMenu(c: C, parts: string[], values: string[]): Promise<Reply> {
           return tagged("m_summ", summModal(c.s));
         case "lt":
           return tagged("m_light", lightModal(c.s));
+        case "dw":
+          return tagged("m_dw", dayWordsModal(c.s));
         case "wt":
           return tagged("m_water", waterModal(c.s));
         case "gs":
@@ -979,10 +1005,10 @@ const str = (v: string | string[] | undefined): string => (Array.isArray(v) ? (v
 /** Время из окна «На…»: строка важнее быстрого варианта. */
 function whenFromModal(c: C, v: Map<string, string | string[]>): { due: number; past: boolean } | "none" | "bad" {
   const text = str(v.get("text"));
-  if (text) return parseWhen(text, { now: c.now, tz: c.s.tz, defaultTime: c.s.defaultTime }) ?? "bad";
+  if (text) return parseWhen(text, { now: c.now, ...timeOpts(c.s) }) ?? "bad";
   const key = str(v.get("quick"));
   if (key && key !== "custom") {
-    const due = quickDue(key, c.now, c.s.tz, c.s.defaultTime);
+    const due = quickDue(key, c.now, c.s.tz, c.s.wordMorning, c.s.wordEvening);
     return due === null ? "bad" : { due, past: false };
   }
   return "none";
@@ -1039,6 +1065,21 @@ async function onModal(c: C): Promise<Reply> {
       await setAway(c, days);
       return settingsUpdate(c, [], sec);
     }
+    case "m_dw": {
+      // «утром» и «вечером» хозяина (C4): пусто = по умолчанию; ошибка ввода — ничего не записываем
+      const ops: Op[] = [];
+      for (const [field, key, label] of [["morning", "time_morning", "Утром"], ["evening", "time_evening", "Вечером"]] as const) {
+        const raw = str(v.get(field));
+        if (!raw) {
+          ops.push(setSetting(key, ""));
+          continue;
+        }
+        const t = parseHHMM(raw);
+        if (t === null) return eph(`${label}: время нужно в виде ЧЧ:ММ, например 07:30.`);
+        ops.push(setSetting(key, fmtHHMM(t)));
+      }
+      return settingsUpdate(c, ops, sec);
+    }
     case "m_light": {
       const t = str(v.get("group")).toLowerCase();
       if (t === "" || t === "выкл" || t === "off") return settingsUpdate(c, [setSetting("light", "off")], sec);
@@ -1091,7 +1132,7 @@ async function editSubmit(c: C, id: string, v: Map<string, string | string[]>): 
   const whenText = str(v.get("when"));
   let due = occ.due_at;
   if (whenText && !occ.rule_recipe && occ.kind === "main") {
-    const w = parseWhen(whenText, { now: c.now, tz: c.s.tz, defaultTime: c.s.defaultTime });
+    const w = parseWhen(whenText, { now: c.now, ...timeOpts(c.s) });
     if (!w) return eph("Не понял время. Пример: «завтра 10:30».");
     if (w.past) return eph("Это время уже прошло.");
     ops.push(...rescheduleOps(occ, w.due, c.now));
@@ -1122,11 +1163,11 @@ async function splitSubmit(c: C, id: string, v: Map<string, string | string[]>):
     .slice(0, 10);
   if (lines.length === 0) return eph("Впишите хотя бы один шаг.");
   if (lines.some((l) => detectSecret(l).secret)) return eph(SECRET_REPLY);
-  const target = todayTarget(c.now, c.s.tz);
+  const target = todayTarget(c.now, c.s.tz, c.s.wordEvening);
   const ops: Op[] = [];
   const titles: string[] = [];
   for (const line of lines) {
-    const parsed = parseInput(line, { now: c.now, tz: c.s.tz, defaultTime: c.s.defaultTime });
+    const parsed = parseInput(line, { now: c.now, ...timeOpts(c.s) });
     if (!parsed.title) continue;
     if (parsed.due === null || parsed.past) parsed.due = target;
     ops.push(...newItemOps({ parsed, source: "slash", settings: c.s, now: c.now }).ops);

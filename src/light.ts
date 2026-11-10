@@ -1,7 +1,7 @@
 // График отключений света для сводок. Источник — открытые данные Yasno (ДТЕК Дніпровські електромережі, Днепр):
 // регион 3, оператор 301. Данные: по группам («3.1», «3.2» …) на сегодня и завтра, слоты в минутах от полуночи.
 // Адрес дома бот не хранит и не знает — только номер группы, который пользователь задаёт в /settings.
-import { fmtHHMM, wallOf } from "./time/tz.ts";
+import { addDaysWall, fmtHHMM, localDate, wallOf } from "./time/tz.ts";
 
 export const YASNO_URL = "https://app.yasno.ua/api/blackout-service/public/shutdowns/regions/3/dsos/301/planned-outages";
 
@@ -164,6 +164,14 @@ export function nowLine(now: number, group: string, data: LightData, tz: string)
     );
   }
   return lines.size === 1 ? [...lines][0] : null;
+}
+
+/** Полный ответ «график света»: сегодня, «сейчас», завтра. Один вид для кнопки «Свет», команды /light и вопроса текстом в канале. */
+export function lightFullText(now: number, tz: string, group: string, data: LightData | null): string {
+  if (!data) return "Не удалось получить график: Yasno не отвечает. Попробуйте позже.";
+  const today = localDate(now, tz);
+  const tomorrow = localDate(addDaysWall(now, 1, tz), tz);
+  return [...lightLines("today", group, data, today), nowLine(now, group, data, tz), ...lightLines("tomorrow", group, data, tomorrow)].filter(Boolean).join("\n");
 }
 
 /** «2026-11-08» -> «11.08.2026» (американский формат месяц.день.год: решение пользователя 2026-11-08). */

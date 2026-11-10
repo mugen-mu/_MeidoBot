@@ -21,6 +21,10 @@ export interface ParseOptions {
   tz: string;
   /** время для дел «на дату без часа», минуты от полуночи (по умолчанию 09:00) */
   defaultTime?: number;
+  /** что значит «утром», минуты от полуночи (по умолчанию 09:00) */
+  morningTime?: number;
+  /** что значит «вечером», минуты от полуночи (по умолчанию 19:00) */
+  eveningTime?: number;
 }
 
 export interface Parsed {
@@ -45,7 +49,8 @@ const rx = (src: string, flags = "iu") => new RegExp(src, flags);
 
 const NUMW =
   "\\d+(?:[.,]\\d+)?|один|одну|одна|два|две|три|четыре|пять|шесть|семь|восемь|девять|десять|пятнадцать|двадцать|тридцать|сорок|пятьдесят";
-const UNIT = "минут\\p{L}*|мин|час\\p{L}*|дн\\p{L}*|день|сутки|недел\\p{L}*|месяц\\p{L}*|год\\p{L}*|лет";
+// последние три — сокращения после числа: «10м», «2ч», «3д» (м — минуты, не месяцы)
+const UNIT = "минут\\p{L}*|мин|час\\p{L}*|дн\\p{L}*|день|сутки|недел\\p{L}*|месяц\\p{L}*|год\\p{L}*|лет|м|ч|д";
 const WD =
   "понедельник\\p{L}*|вторник\\p{L}*|сред[аыуе]\\p{L}*|четверг\\p{L}*|пятниц\\p{L}*|суббот\\p{L}*|воскресень\\p{L}*";
 const ORD = "перв\\p{L}*|втор\\p{L}*|трет\\p{L}*|четв[её]рт\\p{L}*|последн\\p{L}*";
@@ -63,8 +68,9 @@ function num(w: string | undefined): number {
 
 function unitOf(w: string): "minutes" | "hours" | "days" | "weeks" | "months" | "years" | null {
   const l = w.toLowerCase();
-  if (l.startsWith("мин")) return "minutes";
-  if (l.startsWith("час")) return "hours";
+  if (l === "м" || l.startsWith("мин")) return "minutes";
+  if (l === "ч" || l.startsWith("час")) return "hours";
+  if (l === "д") return "days";
   if (l.startsWith("дн") || l.startsWith("ден") || l.startsWith("сут")) return "days";
   if (l.startsWith("нед")) return "weeks";
   if (l.startsWith("мес")) return "months";
@@ -140,7 +146,7 @@ function hasDateContext(s: string): boolean {
 }
 
 /** Время суток в минутах от полуночи или null; найденный кусок стирается. */
-function extractTime(w: Work): number | null {
+function extractTime(w: Work, words: { morning: number; evening: number } = { morning: 9 * 60, evening: 19 * 60 }): number | null {
   let m = w.take(rx(`(?:${B}(?:в|к|около|ровно)\\s+)?${B}(\\d{1,2}):(\\d{2})(?:\\s*(утра|вечера|дня|ночи)${E})?`));
   if (m) {
     const h = toMinutes(Number(m[1]), m[3]);
@@ -172,10 +178,20 @@ function extractTime(w: Work): number | null {
       if (h !== null) return h * 60;
     }
   }
+  // «завтра 9 позвонить маме», «сегодня 20 написать отчёт»: час сразу после слова-даты без «в».
+  // Осторожно: число считаем временем только перед концом фразы, знаком препинания или глаголом на -ть/-ти/-чь
+  // («завтра 5 яблок купить» — не время).
+  const afterDate = rx(`(${B}(?:сегодня|завтра|послезавтра|${WD})\\s+)(\\d{1,2})(?=\\s*$|\\s*[,.;!?]|\\s+\\p{L}+(?:ться|ть|ти|чь)${E})`);
+  const ma = afterDate.exec(w.s);
+  if (ma && Number(ma[2]) <= 23) {
+    const start = ma.index + ma[1].length;
+    w.s = w.s.slice(0, start) + " ".repeat(ma[2].length) + w.s.slice(start + ma[2].length);
+    return Number(ma[2]) * 60;
+  }
   if (w.take(rx(`${B}в\\s+обед${E}`))) return 13 * 60;
-  if (w.take(rx(`${B}утром${E}`))) return 9 * 60;
+  if (w.take(rx(`${B}утром${E}`))) return words.morning;
   if (w.take(rx(`${B}(?:днём|днем)${E}`))) return 13 * 60;
-  if (w.take(rx(`${B}вечером${E}`))) return 19 * 60;
+  if (w.take(rx(`${B}вечером${E}`))) return words.evening;
   return null;
 }
 
@@ -418,6 +434,7 @@ export function cleanTitle(raw: string): string {
 export function parseInput(text: string, opts: ParseOptions): Parsed {
   const { now, tz } = opts;
   const defMin = opts.defaultTime ?? 9 * 60;
+  const words = { morning: opts.morningTime ?? 9 * 60, evening: opts.eveningTime ?? 19 * 60 };
   const w = new Work(text);
 
   // «заранее»
@@ -443,7 +460,7 @@ export function parseInput(text: string, opts: ParseOptions): Parsed {
     if (um) {
       const startIdx = um.index + um[0].indexOf("до");
       const tail = new Work(w.s.slice(startIdx + 2));
-      const tTime = extractTime(tail);
+      const tTime = extractTime(tail, words);
       const tDate = extractDate(tail, now, tz);
       const r = resolveMoment(tDate, tTime, 23 * 60 + 59, now, tz);
       if (r) {
@@ -456,7 +473,7 @@ export function parseInput(text: string, opts: ParseOptions): Parsed {
   // «через N …»
   const durationDue = draft ? null : extractDuration(w, now, tz);
 
-  const timeMin = extractTime(w);
+  const timeMin = extractTime(w, words);
   const date = extractDate(w, now, tz);
 
   let due: number | null = null;

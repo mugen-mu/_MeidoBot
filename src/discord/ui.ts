@@ -432,6 +432,13 @@ export const summModal = (s: AppSettings) =>
     textLabel("Часовой пояс", "tz", { value: s.tz, max: 40 }),
   ]);
 
+/** «Утром» и «вечером» хозяина (C4): что бот понимает под этими словами в фразах и быстрых вариантах. */
+export const dayWordsModal = (s: AppSettings) =>
+  modal("m_dw", "«Утром» и «вечером»", [
+    textLabel("Утром — это во сколько (ЧЧ:ММ)", "morning", { value: fmtHHMM(s.wordMorning), max: 5 }),
+    textLabel("Вечером — это во сколько (ЧЧ:ММ)", "evening", { value: fmtHHMM(s.wordEvening), max: 5 }),
+  ]);
+
 export const lightModal = (s: AppSettings) =>
   modal("m_light", "График света", [
     textLabel("Группа (3 или 3.1; «выкл» — не показывать)", "group", { value: s.lightGroup ?? "выкл", max: 10 }),

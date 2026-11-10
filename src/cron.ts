@@ -28,7 +28,10 @@ import { handlePhrase } from "./anime/handlers.ts";
 import { listAnime } from "./anime/store.ts";
 import { eveningLines } from "./anime/ui.ts";
 import { handleReply } from "./reply.ts";
-import { YASNO_ATTEMPTS, fetchYasno, groupsFor, lightLines, publishedFor, tomorrowDigest, type LightData } from "./light.ts";
+import { YASNO_ATTEMPTS, fetchYasno, groupsFor, lightFullText, lightLines, publishedFor, tomorrowDigest, type LightData } from "./light.ts";
+import { isLightQuestion, lightAskMessage } from "./lightAsk.ts";
+import { detectSecret } from "./secrets.ts";
+import { withSound } from "./sound.ts";
 
 /** Повторная проверка света после сбоя Yasno в сводке: через сколько минут и сколько раз. */
 const LIGHT_RETRY_MIN = 30;
@@ -100,13 +103,15 @@ function hash(s: string): string {
 const defer = (id: number, at: number): Op => updateOcc(id, { next_fire_at: at, lock_until: null, lock_token: null });
 
 export async function runCron(d: CronDeps): Promise<CronReport> {
-  const { repo, api, now } = d;
+  const { repo, now } = d;
   const token = d.token ?? crypto.randomUUID();
   const report: CronReport = { claimed: 0, sent: 0, deferred: 0, failed: 0, summaries: [], panel: false, intake: 0, ping: "skip", subrequests: 0, notes: [] };
   const pre = await repo.prelude(now, d.maxSends ?? MAX_SENDS, token);
   const s = pre.settings;
   const meta = pre.meta;
   const owner = meta.get("owner_id") ?? d.env.ownerId ?? null;
+  // «Всё со звуком» (D7): по галочке каждое новое сообщение бота в канал упоминает хозяина; личка и так со звуком
+  const api = withSound(d.api, owner ?? undefined, s.soundAll, [meta.get("dm_channel_id")].filter((x): x is string => !!x));
   /** адрес Worker (его записывает обработчик команд): отсюда берутся спрайты для карточек */
   const origin = meta.get("public_origin") ?? null;
   report.claimed = pre.claimed.length;
@@ -290,6 +295,24 @@ export async function runCron(d: CronDeps): Promise<CronReport> {
               report.intake++;
               continue;
             }
+          }
+          // свет текстом: «дай график света», «что со светом» — график, а не дело (этап 1 ретроспективы 2); без модели.
+          // Слово «свет» в обычном деле («оплатить свет», «в 18:00 свет») сюда не попадает; промах поправит кнопка «Это было дело».
+          if (isLightQuestion(m.content) && !detectSecret(m.content).secret && room2(YASNO_ATTEMPTS + 4)) {
+            report.intake++;
+            let text: string;
+            if (!s.lightGroup) text = "Группа света не задана: /settings → «Свет: группа…» → впишите номер (например, 3).";
+            else {
+              repo.counter.spend(YASNO_ATTEMPTS);
+              text = lightFullText(now, s.tz, s.lightGroup, await fetchYasno(d.fetchFn ?? fetch));
+            }
+            try {
+              await api.postMessage(ch, lightAskMessage(text, m.content));
+            } catch (e) {
+              if (e instanceof BudgetExceeded) break;
+              report.notes.push("свет: не удалось ответить на вопрос в канале");
+            }
+            continue;
           }
           // настроение: любое сообщение хозяина — активность; «спасибо» горничной — вежливость, дело из этого не создаём
           if (mood && room2(3)) {

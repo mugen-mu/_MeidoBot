@@ -95,6 +95,26 @@ export class Repo {
     return this.first<Item>("SELECT * FROM items WHERE id = ?", id);
   }
 
+  /**
+   * Последние разные по названию дела (для «Добавить» с кнопками недавних, этап 1 ретроспективы 2): без удалённых,
+   * без стёртых (старше 90 дней), без таймеров; повтор названия показываем один раз — самым свежим делом.
+   */
+  async recentItems(n: number): Promise<{ id: number; title: string }[]> {
+    const rows = await this.all<{ id: number; title: string }>(
+      "SELECT id, title FROM items WHERE archived_at IS NULL AND scrubbed_at IS NULL AND secret_flag = 0 AND kind = 'reminder' ORDER BY id DESC LIMIT 40",
+    );
+    const seen = new Set<string>();
+    const out: { id: number; title: string }[] = [];
+    for (const r of rows) {
+      const key = r.title.trim().toLowerCase();
+      if (!key || seen.has(key)) continue;
+      seen.add(key);
+      out.push({ id: r.id, title: r.title });
+      if (out.length >= n) break;
+    }
+    return out;
+  }
+
   /** Главное срабатывание дела, которое ещё открыто (для /snooze и /cancel по номеру дела). */
   openMainOfItem(itemId: number): Promise<OccView | null> {
     return this.first<OccView>(

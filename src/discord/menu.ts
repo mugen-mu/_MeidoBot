@@ -82,6 +82,17 @@ export function moreMessage(prefix: "mn" | "pn" = "mn"): MessageBody {
   return body("**Ещё**", [row(btn("🎭 Настроение", `${prefix}:mo`), btn("⚙ Настройки", `${prefix}:st`)), row(btn("🏠 Меню", `${prefix}:home`))]);
 }
 
+/**
+ * «Добавить» с галочкой «Три последних дела» (C5): последние дела кнопками и «Новое…». Нажатие на дело создаёт такое же новое
+ * (бот спросит время), «Новое…» открывает обычное окно. По умолчанию галочка выключена, «Добавить» сразу открывает окно.
+ */
+export function recentMessage(items: { id: number; title: string }[], prefix: "mn" | "pn" = "mn"): MessageBody {
+  return body("**Добавить дело**\nПовторить недавнее или записать новое:", [
+    row(...items.slice(0, 3).map((it) => btn(`↻ ${clip(it.title, 40)}`, `${prefix}:rc:${it.id}`))),
+    row(btn("✏ Новое…", `${prefix}:addnew`, 3), btn("🏠 Меню", `${prefix}:home`)),
+  ]);
+}
+
 /** Экран-справка (текст и «Назад»): слова Хару, подтверждения. */
 export function infoMessage(text: string, backId: string, backLabel = "◀ Назад"): MessageBody {
   return body(text, [row(btn(backLabel, backId), btn("🏠 Меню", "mn:home"))]);
@@ -264,7 +275,7 @@ export function sectionMessage(s: AppSettings, sec: Section, now: number, dmOn: 
         [
           "**📰 Сводки и коммуналка**",
           `Утренняя сводка: ${s.morning === null ? "выкл" : fmtHHMM(s.morning)}; вечерняя: ${s.evening === null ? "выкл" : fmtHHMM(s.evening)}; итоги недели: ${describeWeekly(s)}.`,
-          `Часовой пояс: ${s.tz}.`,
+          `Часовой пояс: ${s.tz}. «Утром» — ${fmtHHMM(s.wordMorning)}, «вечером» — ${fmtHHMM(s.wordEvening)} (так бот понимает эти слова в делах).`,
           `График света (Днепр): ${s.lightGroup ? `группа ${s.lightGroup}` : "выкл"}.`,
           s.waterWords.length
             ? `Вода (Днепр): слежу по словам «${s.waterWords.join(", ")}». Предупреждаю сразу, накануне вечером и за 2 часа; если отключений нет — молчу.`
@@ -280,6 +291,7 @@ export function sectionMessage(s: AppSettings, sec: Section, now: number, dmOn: 
             btn("Время и пояс…", "mn:md:sm:m"),
           ),
           row(btn("Свет: группа…", "mn:md:lt:m"), btn("Вода: слова…", "mn:md:wt:m"), btn("Газ: слова…", "mn:md:gs:m"), btn("Ссылки для телефона", "mn:pw"), btn("Новый ключ ссылок", "mn:pw:new", 4)),
+          row(btn("«Утром» и «вечером»…", "mn:md:dw:m")),
           back,
         ],
       );
@@ -368,11 +380,15 @@ export function sectionMessage(s: AppSettings, sec: Section, now: number, dmOn: 
           "**⋯ Ещё**",
           `Понимание фраз моделью: ${onOff(s.llmOn)}. Если бот не понял время, он спросит языковую модель; такую запись стоит проверить.`,
           `Личка: ${onOff(dmOn)}. Канал «бот»: ${s.chBot ? "заведён" : "не создан (/setup)"}.`,
+          `Недавние дела в «Добавить»: ${onOff(s.recentOn)}. Нажали «Добавить» — три последних дела кнопками, чтобы повторить в два касания.`,
+          `Звук для всего: ${onOff(s.soundAll)}. Выкл — упоминание (звук) только у настоящих напоминаний; вкл — и у сводок, подтверждений и реплик Хару.`,
         ].join("\n"),
         [
           row(
             btn(s.llmOn ? "Понимание моделью: выключить" : "Понимание моделью: включить", "mn:tg:llm:a", s.llmOn ? 3 : 2),
             btn(dmOn ? "Личка: выключить" : "Личка: включить", "mn:tg:dm:a", dmOn ? 3 : 2),
+            btn(s.recentOn ? "Недавние дела: выключить" : "Недавние дела: включить", "mn:tg:rc:a", s.recentOn ? 3 : 2),
+            btn(s.soundAll ? "Звук для всего: выключить" : "Звук для всего: включить", "mn:tg:snd:a", s.soundAll ? 3 : 2),
           ),
           row(btn("Слова Хару", "mn:gl"), btn("Сбросить настроение…", "mn:rs", 4)),
           back,

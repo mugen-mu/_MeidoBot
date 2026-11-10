@@ -8,7 +8,7 @@ import { doneMessage, plainMessage, snoozedMessage, withLine } from "./discord/u
 import { type MoodSession, reactionLine, recordDone } from "./personality/director.ts";
 import type { Situation } from "./personality/phrases.ts";
 import { cancelItemOps, doneOps, rescheduleOps, snoozeOps } from "./service.ts";
-import type { AppSettings } from "./settings.ts";
+import { type AppSettings, timeOpts } from "./settings.ts";
 import { formatWhen } from "./time/format.ts";
 import { parseWhen } from "./time/parse.ts";
 
@@ -27,11 +27,11 @@ function normalize(raw: string): string {
 }
 
 /** Что хотел сказать ответ. `at` — время отправки сообщения (от него считается «через 2 мин»). */
-export function parseReply(text: string, ctx: { at: number; tz: string; defaultTime: number }): ReplyAction {
+export function parseReply(text: string, ctx: { at: number; tz: string; defaultTime: number; morningTime?: number; eveningTime?: number }): ReplyAction {
   const t = normalize(text);
   if (DONE_RX.test(t)) return { kind: "done" };
   if (CANCEL_RX.test(t)) return { kind: "cancel" };
-  const w = parseWhen(t, { now: ctx.at, tz: ctx.tz, defaultTime: ctx.defaultTime });
+  const w = parseWhen(t, { now: ctx.at, tz: ctx.tz, defaultTime: ctx.defaultTime, morningTime: ctx.morningTime, eveningTime: ctx.eveningTime });
   if (!w) return { kind: "unknown" };
   return w.past ? { kind: "past" } : { kind: "snooze", due: w.due };
 }
@@ -95,7 +95,7 @@ export async function handleReply(
     if (itemId !== null) occ = await d.repo.openMainOfItem(itemId);
   }
   if (!occ) return "ignored";
-  const action = parseReply(m.content, { at: messageTime(m, d.now), tz: d.s.tz, defaultTime: d.s.defaultTime });
+  const action = parseReply(m.content, { at: messageTime(m, d.now), ...timeOpts(d.s) });
   // настроение: любой ответ — активность; «готово» — выполнено (вовремя или с опозданием)
   let doneLine: string | null = null;
   if (d.mood && OPEN_STATES.includes(occ.state)) {
