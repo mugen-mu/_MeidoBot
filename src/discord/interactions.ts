@@ -27,6 +27,7 @@ import {
   cancelItemOps,
   doneOps,
   newItemOps,
+  notNeededOps,
   parseRecipe,
   rescheduleOps,
   setLadderOps,
@@ -34,6 +35,8 @@ import {
   setTitleOps,
   snoozeOps,
   stopSeriesOps,
+  touchOps,
+  unfreezeOps,
 } from "../service.ts";
 import { type AppSettings, timeOpts } from "../settings.ts";
 import { describeLead, describeRecipe, formatWhen } from "../time/format.ts";
@@ -636,7 +639,7 @@ async function onComponent(c: C): Promise<Reply> {
       if (!occ || !isOpen(occ)) return gone();
       const preset = values[0];
       if (preset === "soft" || preset === "standard" || preset === "strong") {
-        await c.repo.exec([setLadderOps(occ.item_id, { preset })]);
+        await c.repo.exec([setLadderOps(occ.item_id, { preset }), touchOps(occ.item_id, c.now)]);
         return update(confirmFor(c, { ...occ, item_ladder: JSON.stringify({ preset }) }));
       }
       return update(confirmFor(c, occ));
@@ -683,6 +686,7 @@ async function onComponent(c: C): Promise<Reply> {
 }
 
 const isOpen = (o: OccView) => ["draft", "planned", "fired", "snoozed", "overdue"].includes(o.state);
+const isFrozen = (o: OccView) => o.state === "cancelled" && o.closed_reason === "frozen";
 
 async function snoozeTo(c: C, occ: OccView, target: number, resetCount = false): Promise<Reply> {
   const ops: Op[] = [...snoozeOps(occ, target, c.now)];
@@ -783,13 +787,14 @@ async function onMenu(c: C, parts: string[], values: string[]): Promise<Reply> {
       return show(homeMessage(homeStats(await c.repo.openMain(100), c.now, c.s.tz)));
     case "ls": {
       const f = filterOf(arg[0]);
-      return show(listMessage(await c.repo.openMain(100), f, pageOf(arg[1]), c.now, c.s.tz));
+      // «Заморожено» (этап 3) — замороженные дела; остальные экраны — открытые
+      return show(listMessage(f === "z" ? await c.repo.frozenMain(100) : await c.repo.openMain(100), f, pageOf(arg[1]), c.now, c.s.tz));
     }
     case "it": {
       const f = filterOf(arg[1]);
       const p = pageOf(arg[2]);
       const occ = await asOcc(c, arg[0]);
-      if (!occ || !isOpen(occ)) return gonePage(f, p);
+      if (!occ || !(f === "z" ? isFrozen(occ) : isOpen(occ))) return gonePage(f, p);
       return show(cardMessage(occ, f, p, c.now, c.s.tz, describeSpec(parseSpec(occ.item_ladder) ?? c.s.defaultLadder)));
     }
     case "dn": {
@@ -802,6 +807,24 @@ async function onMenu(c: C, parts: string[], values: string[]): Promise<Reply> {
       const look = line && c.mood.state ? { mood: c.mood.state.mood, origin: spriteOrigin(c), sprite: wantSprite(c.mood.rand, c.mood.cinema) } : null;
       const done = doneMessage(occ.title, c.s.character, occ.id, line, look);
       return show({ ...done, components: [resultMessage("", f, p).components![0]] });
+    }
+    case "nn": {
+      // «Не нужно» в разборе давнего (этап 3): закрывает это срабатывание; повторяющееся дело живёт дальше
+      const f = filterOf(arg[1]);
+      const p = pageOf(arg[2]);
+      const occ = await asOcc(c, arg[0]);
+      if (!occ || !isOpen(occ)) return gonePage(f, p);
+      await c.repo.exec(notNeededOps(occ, c.now));
+      return show(resultMessage(`Закрыто как ненужное: **${occ.title}**${occ.rule_recipe ? ". Повтор остаётся, следующие повторения придут." : "."}`, f, p));
+    }
+    case "fv": {
+      // «Вернуть» замороженное (этап 3): дело снова «висит» как было
+      const f = filterOf(arg[1]);
+      const p = pageOf(arg[2]);
+      const occ = await asOcc(c, arg[0]);
+      if (!occ || !isFrozen(occ)) return gonePage(f, p);
+      await c.repo.exec(unfreezeOps(occ, c.now));
+      return show(resultMessage(`Вернула: **${occ.title}**. Оно снова в «Висит», как было.`, f, p));
     }
     case "sz": {
       const f = filterOf(arg[2]);
@@ -878,7 +901,7 @@ async function onMenu(c: C, parts: string[], values: string[]): Promise<Reply> {
       return show({ ...moodBody(c, text), components: resultMessage("").components });
     }
     case "more":
-      return show(moreMessage(panel ? "pn" : "mn"));
+      return show(moreMessage(panel ? "pn" : "mn", (await c.repo.frozenCount(0)).total));
     case "pw":
       return powerCommand(c, arg[0] === "new");
     case "gl": {
@@ -1160,6 +1183,7 @@ async function editSubmit(c: C, id: string, v: Map<string, string | string[]>): 
   if (ladder && ladder !== "keep") ops.push(setLadderOps(occ.item_id, spec));
   const plainSel = str(v.get("plain"));
   if (plainSel === "plain" || plainSel === "styled") ops.push(setPlainOps(occ.item_id, plainSel === "plain"));
+  if (ops.length) ops.push(touchOps(occ.item_id, c.now)); // хозяин тронул дело: не «давнее» и не заморозится ещё 30 дней
   if (ops.length) await c.repo.exec(ops);
   return update(confirmFor(c, { ...occ, title, due_at: due, item_ladder: spec ? JSON.stringify(spec) : occ.item_ladder }));
 }

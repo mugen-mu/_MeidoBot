@@ -137,7 +137,7 @@ export function cancelItemOps(itemId: number, now: number, reason = "cancel"): O
   return [
     op(
       `UPDATE occurrences SET state = 'cancelled', closed_at = ?, closed_reason = ?, next_fire_at = NULL, lock_until = NULL, lock_token = NULL
-       WHERE item_id = ? AND state IN (${OPEN})`,
+       WHERE item_id = ? AND (state IN (${OPEN}) OR (state = 'cancelled' AND closed_reason = 'frozen'))`,
       now, reason, itemId,
     ),
     op("UPDATE items SET archived_at = ? WHERE id = ?", now, itemId),
@@ -149,6 +149,7 @@ export function cancelItemOps(itemId: number, now: number, reason = "cancel"): O
 export function snoozeOps(occ: OccView, target: number, now: number): Op[] {
   return [
     updateOcc(occ.id, {
+      touched_at: now,
       state: "snoozed",
       base_at: target,
       next_fire_at: target,
@@ -165,6 +166,7 @@ export function snoozeOps(occ: OccView, target: number, now: number): Op[] {
 export function rescheduleOps(occ: OccView, due: number, now: number): Op[] {
   return [
     updateOcc(occ.id, {
+      touched_at: now,
       state: "planned",
       due_at: due,
       base_at: due,
@@ -189,6 +191,42 @@ export function setTitleOps(itemId: number, title: string): Op {
   return op("UPDATE items SET title = ? WHERE id = ?", title, itemId);
 }
 
+/** Хозяин тронул дело (поменял название, настойчивость, стиль): оно не «давнее» и не заморозится ещё 30 дней. */
+export const touchOps = (itemId: number, now: number): Op =>
+  op(`UPDATE occurrences SET touched_at = ? WHERE item_id = ? AND state IN (${OPEN})`, now, itemId);
+
+/**
+ * Заморозить (этап 3, B7): дело остаётся в базе как есть, просто не напоминает и не показывается в «Висит».
+ * Это состояние «cancelled» с причиной «frozen»; все остальные поля (срок, счётчики) не меняются, чтобы «Вернуть» восстановило дело как было.
+ */
+export function freezeOps(occ: OccView, now: number): Op[] {
+  return [
+    updateOcc(occ.id, { state: "cancelled", closed_at: now, closed_reason: "frozen", next_fire_at: null, lock_until: null, lock_token: null }),
+    event(now, "frozen", occ.id),
+  ];
+}
+
+/** «Вернуть»: дело снова «висит» как было (срок, счётчики те же), отсчёт 30 дней начинается заново, лестница сама не стартует. */
+export function unfreezeOps(occ: OccView, now: number): Op[] {
+  return [
+    updateOcc(occ.id, { state: "overdue", closed_at: null, closed_reason: null, next_fire_at: null, touched_at: now }),
+    event(now, "unfrozen", occ.id),
+  ];
+}
+
+/**
+ * «Не нужно» в разборе: закрывает именно это срабатывание. Не повторяющееся дело уходит в архив, а у повторяющегося
+ * ряд живёт дальше (в отличие от «Удалить», которое убирает всю серию).
+ */
+export function notNeededOps(occ: OccView, now: number): Op[] {
+  const ops = [
+    updateOcc(occ.id, { state: "cancelled", closed_at: now, closed_reason: "not_needed", next_fire_at: null, lock_until: null, lock_token: null }),
+    event(now, "not_needed", occ.id),
+  ];
+  if (!occ.rule_recipe) ops.push(op("UPDATE items SET archived_at = ? WHERE id = ?", now, occ.item_id));
+  return ops;
+}
+
 /** Стереть текст закрытых дел старше 90 дней: остаются счётчики и даты. */
 export function scrubOps(now: number): Op[] {
   const cutoff = now - 90 * 24 * 60 * MINUTE;
@@ -196,7 +234,7 @@ export function scrubOps(now: number): Op[] {
     op(
       `UPDATE items SET title = '(стёрто)', body = NULL, scrubbed_at = ?
        WHERE scrubbed_at IS NULL AND id IN (
-         SELECT i.id FROM items i WHERE NOT EXISTS (SELECT 1 FROM occurrences o WHERE o.item_id = i.id AND o.state IN (${OPEN}))
+         SELECT i.id FROM items i WHERE NOT EXISTS (SELECT 1 FROM occurrences o WHERE o.item_id = i.id AND (o.state IN (${OPEN}) OR (o.state = 'cancelled' AND o.closed_reason = 'frozen')))
            AND COALESCE((SELECT MAX(closed_at) FROM occurrences o WHERE o.item_id = i.id), i.archived_at, i.created_at) < ?)`,
       now, cutoff,
     ),

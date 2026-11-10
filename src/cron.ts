@@ -51,7 +51,9 @@ function parseLightRetry(raw: string | undefined): LightRetry | null {
 }
 import { MOOD_CONFIG } from "./personality/config.ts";
 import { planFire } from "./ladder.ts";
-import { ladderFor, nextSeriesOps, scrubOps } from "./service.ts";
+import { freezeOps, ladderFor, nextSeriesOps, scrubOps } from "./service.ts";
+import { calmMessage, reviewMessage } from "./discord/ui.ts";
+import { freezeCandidates, isTail, shouldNoteTail, soonFrozen } from "./tail.ts";
 import { type AppSettings, inQuietHours } from "./settings.ts";
 import { MINUTE, addDaysWall, localDate, nextTimeOfDay, wallOf } from "./time/tz.ts";
 
@@ -432,6 +434,20 @@ export async function runCron(d: CronDeps): Promise<CronReport> {
       }
     }
 
+    // 2а1. автозаморозка (этап 3, B7): раз в день после 06:00 дело, которое «висит» 30 суток без единого нажатия, замораживается.
+    // Замороженное остаётся в базе целым, не напоминает и возвращается кнопкой «Вернуть» (⋯ Ещё → Заморожено). В отъезде не замораживаем.
+    if (owner && !away && minuteOfDay >= 6 * 60 && meta.get("last_freeze") !== today && room2(3)) {
+      const list = await getItems();
+      const frozen = freezeCandidates(list, now);
+      for (const o of frozen) ops2.push(...freezeOps(o, now));
+      if (frozen.length) {
+        const ids = new Set(frozen.map((o) => o.id));
+        items = list.filter((o) => !ids.has(o.id));
+        report.notes.push(`заморожено дел: ${frozen.length}`);
+      }
+      ops2.push(setMeta("last_freeze", today));
+    }
+
     // 2б. возвращение из отъезда и сводки
     if (awayEnded) ops2.push(setSetting("away_until", "0"));
     const summaries: ("morning" | "evening" | "weekly" | "return")[] = [];
@@ -450,6 +466,8 @@ export async function runCron(d: CronDeps): Promise<CronReport> {
       let content: string;
       let more: ReturnType<typeof summaryMoreRow> | undefined;
       let weeklyDone = 0;
+      // «сколько висит» по будням: строка о давнем хвосте раз в 1–3 дня (B8); в субботу этим занимается разбор ниже
+      const tailNote = kind === "morning" && wallOf(now, s.tz).wd !== 6 && list.some((o) => isTail(o, now)) && shouldNoteTail(today, meta.get("tail_note_day"));
       if (kind === "weekly") {
         const row = await repo.first<{ n: number }>(
           "SELECT COUNT(*) AS n FROM occurrences WHERE state = 'done' AND closed_reason = 'done' AND closed_at >= ?",
@@ -487,7 +505,7 @@ export async function runCron(d: CronDeps): Promise<CronReport> {
           const lines = eveningLines(await listAnime(repo), now, s.tz, "neutral");
           if (lines.length) extra = [...extra, ...lines];
         }
-        const parts = summaryParts(kind, { items: list, now, tz: s.tz, ownerId: owner as string, extra, character: s.character });
+        const parts = summaryParts(kind, { items: list, now, tz: s.tz, ownerId: owner as string, extra, character: s.character, tailNote });
         content = parts.text;
         if (parts.truncated) more = summaryMoreRow(kind);
       }
@@ -512,11 +530,50 @@ export async function runCron(d: CronDeps): Promise<CronReport> {
         await api.postMessage(s.chRemind as string, { content, allowed_mentions: { users: [owner as string] }, ...(more ? { components: [more] } : {}) });
         report.summaries.push(kind);
         if (kind !== "return") ops2.push(setMeta(`last_${kind}`, today));
+        if (tailNote) ops2.push(setMeta("tail_note_day", today));
         if (kind === "morning") ops2.push(...scrubOps(now));
       } catch (e) {
         if (e instanceof BudgetExceeded) break;
         healthy = false;
         ops2.push(event(now, "summary_failed", null, kind));
+      }
+    }
+
+    // 2б1. субботний разбор давнего хвоста (этап 3, B2, B3, B6, B9): отдельное сообщение после утренней сводки, без упоминания.
+    // Давнее = «висит» больше 7 суток; все сразу списком; предупреждение о заморозке до следующей субботы; «Висит» = 0 — одна тёплая строка.
+    if (owner && s.chRemind && !away && wallOf(now, s.tz).wd === 6 && meta.get("last_review") !== today) {
+      // разбор идёт сразу после утренней сводки (выключена утренняя сводка — разбора нет, замораживается всё равно)
+      const base = s.morning;
+      const summaryDone = meta.get("last_morning") === today || report.summaries.includes("morning");
+      if (base !== null && summaryDone && minuteOfDay >= base && minuteOfDay < base + 240 && room2(6)) {
+        try {
+          const list = await getItems();
+          const tail = list.filter((o) => isTail(o, now));
+          const hot = list.filter((o) => o.state === "overdue" || o.state === "fired").length;
+          if (tail.length === 0 && hot > 0) {
+            ops2.push(setMeta("last_review", today)); // висит только свежее: оно в сводках, разбор не нужен
+          } else {
+            let line: string | null = null;
+            if (mood) {
+              await mood.load();
+              line = await mood.sayLive(tail.length ? "tail_review" : "tail_clear", { facts: tail.length ? `давних дел: ${tail.length}` : "ничего не висит" });
+            }
+            let body;
+            if (tail.length === 0) body = calmMessage(line);
+            else {
+              const fz = await repo.frozenCount(now - 7 * 24 * 60 * MINUTE);
+              body = reviewMessage({ tail, soon: soonFrozen(list, now), frozenRecent: fz.recent, frozenTotal: fz.total, now, tz: s.tz, line });
+            }
+            await api.postMessage(s.chRemind, body);
+            ops2.push(setMeta("last_review", today), event(now, "review", null, `n=${tail.length}`));
+            report.notes.push(tail.length ? `разбор давнего: ${tail.length}` : "«Висит» = 0: тёплая строка");
+          }
+        } catch (e) {
+          if (!(e instanceof BudgetExceeded)) {
+            healthy = false;
+            ops2.push(event(now, "review_failed"));
+          }
+        }
       }
     }
 

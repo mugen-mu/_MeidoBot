@@ -10,6 +10,7 @@ import { type Mood } from "../personality/moodEngine.ts";
 import { maidEmbed } from "../personality/look.ts";
 import { styleSummary } from "../personality/styleReport.ts";
 import { parseRecipe } from "../service.ts";
+import { TAIL_DAYS, isTail } from "../tail.ts";
 import type { ActionRow, Button, MessageBody } from "./types.ts";
 
 export const cid = (...parts: (string | number)[]): string => parts.join(":");
@@ -265,7 +266,18 @@ export const SUMMARY_MAX_LINES = 10;
 
 export const summaryText = (kind: "morning" | "evening" | "return", a: SummaryArgs): string => summaryParts(kind, a).text;
 
-type SummaryArgs = { items: OccView[]; now: number; tz: string; ownerId: string; extra?: string[]; character?: Character; /** без обрезки до 10 строк */ full?: boolean };
+type SummaryArgs = {
+  items: OccView[];
+  now: number;
+  tz: string;
+  ownerId: string;
+  extra?: string[];
+  character?: Character;
+  /** без обрезки до 10 строк и без сворачивания давнего хвоста */
+  full?: boolean;
+  /** утром: добавить строку «Давнее висит: N» (пора по интервалу 1–3 дня, B8); сам хвост в сводках не перечисляется — его разбирает субботний разбор */
+  tailNote?: boolean;
+};
 
 /** Сводка: текст и признак «список обрезан» (тогда под сообщением нужна кнопка «Показать всё»). */
 export function summaryParts(kind: "morning" | "evening" | "return", a: SummaryArgs): { text: string; truncated: boolean } {
@@ -275,7 +287,10 @@ export function summaryParts(kind: "morning" | "evening" | "return", a: SummaryA
   const today = startOfDay(now, tz);
   const tomorrow = today + 24 * 60 * MINUTE;
   const dayAfter = tomorrow + 24 * 60 * MINUTE;
-  const hot = items.filter(isBurning);
+  // давнее («висит» больше 7 дней) утренняя и вечерняя сводки не перечисляют: оно строкой-счётчиком и субботним разбором (этап 3, B2, B8)
+  const collapse = !a.full && (kind === "morning" || kind === "evening");
+  const tail = collapse ? items.filter((o) => isTail(o, now)) : [];
+  const hot = items.filter((o) => isBurning(o) && !tail.includes(o));
   const at = (o: OccView) => (o.state === "snoozed" && o.next_fire_at ? o.next_fire_at : o.due_at);
   const dueIn = (from: number, to: number) =>
     items.filter((o) => !isBurning(o) && o.state !== "draft" && at(o) !== null && (at(o) as number) >= from && (at(o) as number) < to);
@@ -288,8 +303,9 @@ export function summaryParts(kind: "morning" | "evening" | "return", a: SummaryA
     const t = dueIn(today, tomorrow);
     lines.push(t.length ? "**Сегодня:**" : "На сегодня дел со сроком нет.", ...t.map((o) => `• ${time(o)} ${clip(o.title, 80)} (#${o.item_id})`));
     if (hot.length) lines.push("**Висит:**", ...hot.map((o) => itemLine(o, now, tz)));
+    if (tail.length && a.tailNote) lines.push(`⏳ Давнее висит: ${tail.length} (разбор — по субботам; список — «Висит» в меню)`);
   } else if (kind === "evening") {
-    lines.push(hot.length ? "**Не закрыто — закройте или перенесите на конкретное время:**" : "Незакрытого нет.", ...hot.map((o) => itemLine(o, now, tz)));
+    lines.push(hot.length ? "**Не закрыто — закройте или перенесите на конкретное время:**" : tail.length ? "Свежего незакрытого нет." : "Незакрытого нет.", ...hot.map((o) => itemLine(o, now, tz)));
     const t = dueIn(tomorrow, dayAfter);
     if (t.length) lines.push("**Завтра:**", ...t.map((o) => `• ${time(o)} ${clip(o.title, 80)} (#${o.item_id})`));
   } else {
@@ -313,6 +329,28 @@ export function summaryParts(kind: "morning" | "evening" | "return", a: SummaryA
   }
   return { text: joinLines(`<@${a.ownerId}> ${head}`, lines), truncated };
 }
+
+/**
+ * Субботний разбор давнего хвоста (B2): отдельное сообщение после утренней сводки, без упоминания. Всё давнее списком сразу (B3),
+ * предупреждение о том, что заморозится до следующей субботы, и строка про уже замороженное; под сообщением одна кнопка «Разобрать».
+ */
+export function reviewMessage(a: { tail: OccView[]; soon: OccView[]; frozenRecent: number; frozenTotal: number; now: number; tz: string; line?: string | null }): MessageBody {
+  const head = `**Разбор «Висит»** — давнее (больше ${TAIL_DAYS} дней): ${a.tail.length}`;
+  let text = joinLines(head, a.tail.map((o) => itemLine(o, a.now, a.tz)), 1400);
+  if (a.soon.length) {
+    const titles = a.soon.slice(0, 5).map((o) => clip(o.title, 40)).join(", ");
+    text += `\n⚠ Эти ${a.soon.length} заморожу до следующей субботы, если ничего не нажмёте: ${titles}${a.soon.length > 5 ? "…" : ""}`;
+  }
+  if (a.frozenRecent > 0) text += `\n🧊 Заморожено за неделю: ${a.frozenRecent}. Вернуть: «⋯ Ещё» → «🧊 Заморожено».`;
+  else if (a.frozenTotal > 0) text += `\n🧊 Всего заморожено: ${a.frozenTotal} (в «⋯ Ещё» → «🧊 Заморожено»).`;
+  return { content: withLine(text, a.line), allowed_mentions: { parse: [] }, components: [row(btn("🧹 Разобрать", "pn:ls:r:0", 1))] };
+}
+
+/** «Висит» = 0 (B9): раз в неделю тёплая строка вместо разбора. */
+export const calmMessage = (line?: string | null): MessageBody => ({
+  content: withLine("**Висит**\nНичего не висит — хорошая неделя.", line),
+  allowed_mentions: { parse: [] },
+});
 
 /** Кнопка под обрезанной сводкой: полный список приходит отдельным сообщением «только вам». */
 export const summaryMoreRow = (kind: "morning" | "evening" | "return"): ActionRow => row(btn("Показать всё", cid("sumall", kind)));

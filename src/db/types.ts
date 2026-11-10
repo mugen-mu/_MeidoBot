@@ -44,6 +44,8 @@ export interface Occurrence {
   created_at: number;
   closed_at: number | null;
   closed_reason: string | null;
+  /** когда хозяин сам в последний раз что-то сделал с делом (этап 3): от него считаются «давнее» и заморозка */
+  touched_at: number | null;
 }
 
 /** Срабатывание вместе с делом и правилом — то, что нужно cron и обработчику кнопок. */

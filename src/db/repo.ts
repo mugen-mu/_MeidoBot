@@ -134,6 +134,26 @@ export class Repo {
     );
   }
 
+  /** Замороженные дела (этап 3): главные срабатывания в состоянии «заморожено», свежие замороженные первыми. */
+  async frozenMain(limit = 100): Promise<OccView[]> {
+    return this.all<OccView>(
+      `${OCC_VIEW_SELECT} WHERE o.kind = 'main' AND o.state = 'cancelled' AND o.closed_reason = 'frozen' AND i.archived_at IS NULL
+       ORDER BY o.closed_at DESC LIMIT ?`,
+      limit,
+    );
+  }
+
+  /** Сколько заморожено всего и за последние `sinceMs` (один подзапрос). */
+  async frozenCount(since: number): Promise<{ total: number; recent: number }> {
+    const r = await this.first<{ total: number; recent: number | null }>(
+      `SELECT COUNT(*) AS total, SUM(CASE WHEN o.closed_at >= ? THEN 1 ELSE 0 END) AS recent
+       FROM occurrences o JOIN items i ON i.id = o.item_id
+       WHERE o.kind = 'main' AND o.state = 'cancelled' AND o.closed_reason = 'frozen' AND i.archived_at IS NULL`,
+      since,
+    );
+    return { total: r?.total ?? 0, recent: r?.recent ?? 0 };
+  }
+
   /** Настройки и служебные значения одним подзапросом. */
   async loadConfig(): Promise<{ settings: AppSettings; meta: Map<string, string> }> {
     const [s, m] = await this.exec([op("SELECT key, value FROM settings"), op("SELECT key, value FROM meta")]);
@@ -203,7 +223,7 @@ export const event = (now: number, kind: string, occId: number | null = null, de
 
 const OCC_COLUMNS = new Set([
   "due_at", "base_at", "state", "fire_count", "next_fire_at", "snooze_count", "last_message_id", "last_channel_id",
-  "lock_until", "lock_token", "closed_at", "closed_reason",
+  "lock_until", "lock_token", "closed_at", "closed_reason", "touched_at",
 ]);
 
 export function updateOcc(id: number, patch: Record<string, unknown>): Op {

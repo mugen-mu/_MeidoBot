@@ -9,6 +9,7 @@ import { MINUTE, fmtHHMM, startOfDay } from "../time/tz.ts";
 import type { OccView } from "../db/types.ts";
 import { styleSummary } from "../personality/styleReport.ts";
 import { parseRecipe } from "../service.ts";
+import { isTail } from "../tail.ts";
 import { GAS_WORDS_HINT } from "../gas.ts";
 import { WATER_WORDS_HINT } from "../water.ts";
 import { describeWeekly, selectLabel, textLabel, modal } from "./ui.ts";
@@ -77,9 +78,15 @@ export function homeMessage(st: HomeStats): MessageBody {
   return body(`**Meido — меню**\n${st.open === 0 ? "Открытых дел нет." : parts.join(" · ")}`, homeButtons("mn", st));
 }
 
-/** «Ещё»: то, что нужно реже (настроение горничной, настройки). Свет — на главном экране (с 2026-11-09). */
-export function moreMessage(prefix: "mn" | "pn" = "mn"): MessageBody {
-  return body("**Ещё**", [row(btn("🎭 Настроение", `${prefix}:mo`), btn("⚙ Настройки", `${prefix}:st`)), row(btn("🏠 Меню", `${prefix}:home`))]);
+/**
+ * «Ещё»: то, что нужно реже (настроение горничной, настройки). Свет — на главном экране (с 2026-11-09).
+ * «🧊 Заморожено N» (этап 3) появляется, только когда есть что возвращать, — на виду экранов кнопок не прибавилось.
+ */
+export function moreMessage(prefix: "mn" | "pn" = "mn", frozen = 0): MessageBody {
+  return body("**Ещё**", [
+    row(btn("🎭 Настроение", `${prefix}:mo`), btn("⚙ Настройки", `${prefix}:st`), ...(frozen > 0 ? [btn(`🧊 Заморожено ${frozen}`, `${prefix}:ls:z:0`)] : [])),
+    row(btn("🏠 Меню", `${prefix}:home`)),
+  ]);
 }
 
 /**
@@ -109,11 +116,12 @@ export function panelMessage(): MessageBody {
 
 // ---------- дела ----------
 
-export type ListFilter = "a" | "h" | "t" | "n";
+/** a — все, h — висит, t — сегодня, n — без срока; r — давнее (разбор, этап 3), z — заморожено (этап 3) */
+export type ListFilter = "a" | "h" | "t" | "n" | "r" | "z";
 export const PAGE_SIZE = 5;
-const FILTER_LABEL: Record<ListFilter, string> = { a: "Все", h: "Висит", t: "Сегодня", n: "Без срока" };
+const FILTER_LABEL: Record<ListFilter, string> = { a: "Все", h: "Висит", t: "Сегодня", n: "Без срока", r: "Давнее", z: "Заморожено" };
 
-export const isFilter = (f: string): f is ListFilter => f === "a" || f === "h" || f === "t" || f === "n";
+export const isFilter = (f: string): f is ListFilter => f === "a" || f === "h" || f === "t" || f === "n" || f === "r" || f === "z";
 
 export function filterItems(items: OccView[], f: ListFilter, now: number, tz: string): OccView[] {
   const t0 = startOfDay(now, tz);
@@ -125,12 +133,14 @@ export function filterItems(items: OccView[], f: ListFilter, now: number, tz: st
       return items.filter((o) => !isBurning(o) && o.state !== "draft" && at(o) !== null && (at(o) as number) >= t0 && (at(o) as number) < t1);
     case "n":
       return items.filter((o) => o.state === "draft");
+    case "r":
+      return items.filter((o) => isTail(o, now));
     default:
       return items;
   }
 }
 
-const STATE_SHORT: Record<string, string> = { draft: "без срока", planned: "", snoozed: "отложено до", fired: "ждёт «Готово»", overdue: "висит" };
+const STATE_SHORT: Record<string, string> = { draft: "без срока", planned: "", snoozed: "отложено до", fired: "ждёт «Готово»", overdue: "висит", cancelled: "заморожено" };
 
 function line(o: OccView, n: number, now: number, tz: string): string {
   const rep = o.rule_recipe ? " ↻" : "";
@@ -151,7 +161,9 @@ export function listMessage(items: OccView[], f: ListFilter, page: number, now: 
   const rows: ActionRow[] = [];
   if (slice.length) rows.push(row(...slice.map((o, i) => btn(String(i + 1), `mn:it:${o.id}:${f}:${p}`, 1))));
   const count = (k: ListFilter) => filterItems(all, k, now, tz).length;
-  rows.push(row(...(["a", "h", "t", "n"] as const).map((k) => btn(`${FILTER_LABEL[k]} ${count(k)}`, `mn:ls:${k}:0`, k === f ? 1 : 2))));
+  // «Давнее» и «Заморожено» — отдельные экраны (из разбора и из «Ещё»): вместо четырёх фильтров там «Все» и «Висит», кнопок на обычных списках не прибавилось
+  if (f === "r" || f === "z") rows.push(row(btn("📋 Все", "mn:ls:a:0"), btn("⏳ Висит", "mn:ls:h:0")));
+  else rows.push(row(...(["a", "h", "t", "n"] as const).map((k) => btn(`${FILTER_LABEL[k]} ${count(k)}`, `mn:ls:${k}:0`, k === f ? 1 : 2))));
   rows.push(
     row(
       btn("◀", `mn:ls:${f}:${p - 1}`, 2, p === 0),
@@ -165,6 +177,7 @@ export function listMessage(items: OccView[], f: ListFilter, page: number, now: 
 
 /** Карточка дела: подробности и действия. `f`/`p` — откуда пришли (кнопка «К списку» вернёт туда же). */
 export function cardMessage(o: OccView, f: ListFilter, p: number, now: number, tz: string, defaultLadder: string): MessageBody {
+  if (o.state === "cancelled") return frozenCardMessage(o, f, p, now, tz);
   const recipe = parseRecipe(o);
   const lines = [`**${o.title}**`];
   const when = at(o);
@@ -174,6 +187,12 @@ export function cardMessage(o: OccView, f: ListFilter, p: number, now: number, t
   lines.push(`Как часто напоминать: ${defaultLadder} · #${o.item_id}`);
   const ctx = `${o.id}:${f}:${p}`;
   const repeats = o.item_kind === "timer" || o.rule_recipe !== null;
+  // разбор давнего (B4): «Готово», «Не нужно», «Отложить» — вместо «Изменить» и остальных кнопок
+  if (f === "r") {
+    return body(lines.join(String.fromCharCode(10)), [
+      row(btn("✅ Готово", `mn:dn:${ctx}`, 3), btn("🙅 Не нужно", `mn:nn:${ctx}`, 4), btn("⏰ Отложить на завтра", `mn:sz:${o.id}:tom:r:${p}`), btn("🕒 Отложить на…", `mn:sa:${ctx}`), btn("◀ К разбору", `mn:ls:r:${p}`)),
+    ]);
+  }
   const rows: ActionRow[] = [
     row(btn("✅ Готово", `mn:dn:${ctx}`, 3), btn("⏰ Через час", `mn:sz:${o.id}:h1:${f}:${p}`), btn("🌆 Вечером", `mn:sz:${o.id}:eve:${f}:${p}`), btn("🌅 Завтра", `mn:sz:${o.id}:tom:${f}:${p}`), btn("🕒 На…", `mn:sa:${ctx}`)),
     row(
@@ -184,6 +203,15 @@ export function cardMessage(o: OccView, f: ListFilter, p: number, now: number, t
     ),
   ];
   return body(lines.join("\n"), rows);
+}
+
+/** Карточка замороженного дела: «Вернуть» вместо «Изменить»; дело в базе целое, ничего не потеряно. */
+export function frozenCardMessage(o: OccView, f: ListFilter, p: number, now: number, tz: string): MessageBody {
+  const lines = [`**${o.title}**`, `Заморожено: ${o.closed_at !== null ? formatWhen(o.closed_at, now, tz) : "давно"}`];
+  if (o.due_at !== null) lines.push(`Висело с: ${formatWhen(o.due_at, now, tz)} · #${o.item_id}`);
+  return body(lines.join(String.fromCharCode(10)), [
+    row(btn("↩ Вернуть", `mn:fv:${o.id}:${f}:${p}`, 3), btn("🗑 Удалить", `mn:dl:${o.item_id}:${o.id}:${f}:${p}`, 4), btn("◀ К списку", `mn:ls:${f}:${p}`)),
+  ]);
 }
 
 export function confirmDeleteMessage(title: string, itemId: number, occId: number, f: ListFilter, p: number): MessageBody {

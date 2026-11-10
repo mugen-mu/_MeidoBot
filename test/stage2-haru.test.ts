@@ -485,8 +485,9 @@ describe("«тихий день»", () => {
       const repo = x.repo(100);
       await runCron({ repo, api: countedApi(x.discord, repo.counter), now: morning, env: {}, rand: () => 0, fetchFn: (async () => new Response("down", { status: 503 })) as unknown as typeof fetch });
     }
-    const a = withLine.discord.live(CH_REMIND).map((m) => m.body.content);
-    const b = without.discord.live(CH_REMIND).map((m) => m.body.content);
+    const onlySummary = (x: World) => x.discord.live(CH_REMIND).map((m) => m.body.content).filter((c) => String(c).includes("Сводка на сегодня"));
+    const a = onlySummary(withLine);
+    const b = onlySummary(without);
     expect(a.length).toBe(1);
     expect(a).toEqual(b);
   });
@@ -578,7 +579,7 @@ describe("достижения в боте", () => {
     const at = (k: number) => NOW - 4 * 60 * MINUTE + 5 * MINUTE + k * DAY; // 08:05 по Киеву
     const morning = async (k: number) => {
       await run(at(k));
-      const l = w.discord.live(CH_REMIND);
+      const l = w.discord.live(CH_REMIND).filter((m) => String(m.body.content).includes("Сводка на сегодня"));
       return String(l[l.length - 1].body.content);
     };
     await morning(0);
