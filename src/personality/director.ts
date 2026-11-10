@@ -39,7 +39,7 @@ import {
   isSeriousTopic,
   step,
 } from "./moodEngine.ts";
-import { LIVE_DAILY_CAP, type LineRequest, liveLine, pickAngle, pickLength } from "./liveLines.ts";
+import { LIVE_DAILY_CAP, type LineRequest, liveLine, pickAngle, pickJaWords, pickLength } from "./liveLines.ts";
 import { INTERESTS, INTEREST_CHANCE, type MonthDay, type Person, occasionFor } from "./occasions.ts";
 import type { Situation } from "./phrases.ts";
 import { type PhraseVars, fill, pickPhrase, poolFor, remember } from "./speech.ts";
@@ -319,6 +319,7 @@ export class MoodSession {
       interests: this.rand() < INTEREST_CHANCE ? INTERESTS : [],
       occasion: vars.occasion,
       facts: vars.facts,
+      jaWords: this.style.level > 0 ? pickJaWords(m, this.rand) : undefined,
       angle: pickAngle(this.rand),
       noLead: this.rand() < 0.7,
       jaMax: this.rand() < 0.5 ? 1 : 2,

@@ -254,7 +254,7 @@ export function renderStyled(a: RenderArgs): RenderResult {
         w.moods.includes(a.mood) &&
         (!w.situations || w.situations.includes(a.situation)) &&
         !used.includes(w.id) &&
-        !(words[w.id] && n - words[w.id].l < L.wordCooldown),
+        !(words[w.id] && n - words[w.id].l < (w.cooldown ?? L.wordCooldown)),
     );
   const wrap = (w: Word, punctTable: Record<Mood, string>): string => `${cap(show(w))}${w.punct ?? punctTable[a.mood]}`;
   if (budget > 0 && rand() < L.leadChance[lvl]) {
