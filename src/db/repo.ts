@@ -11,9 +11,23 @@ export class BudgetExceeded extends Error {
 
 export class Counter {
   used = 0;
+  /** строки базы за запуск по ответам D1 (meta.rows_read / rows_written) и размер базы после последнего запроса — для `usage.ts` */
+  rowsRead = 0;
+  rowsWritten = 0;
+  dbBytes = 0;
+  /** нейроны Workers AI, потраченные за запуск (см. countedAi) */
+  neurons = 0;
   readonly limit: number;
   constructor(limit = 1000) {
     this.limit = limit;
+  }
+  /** Учесть метаданные ответа D1; чего нет (оболочка тестов, старый ответ) — не считается. */
+  note(meta: unknown): void {
+    const m = meta as { rows_read?: unknown; rows_written?: unknown; size_after?: unknown } | null | undefined;
+    if (!m) return;
+    if (typeof m.rows_read === "number") this.rowsRead += m.rows_read;
+    if (typeof m.rows_written === "number") this.rowsWritten += m.rows_written;
+    if (typeof m.size_after === "number" && m.size_after > 0) this.dbBytes = m.size_after;
   }
   remaining(): number {
     return this.limit - this.used;
@@ -47,6 +61,8 @@ export interface Prelude {
   claimed: OccView[];
   /** открытые срабатывания таймеров с сообщением: при новом срабатывании их сообщения удаляем */
   timerOpen: { id: number; item_id: number; last_message_id: string; last_channel_id: string }[];
+  /** отметка «жив» предыдущего запуска (до записи нового); null — запуск первый. По ней видны перерывы. */
+  prevAliveAt: number | null;
 }
 
 export class Repo {
@@ -61,18 +77,24 @@ export class Repo {
   async exec(ops: Op[]): Promise<D1Result[]> {
     if (ops.length === 0) return [];
     this.counter.spend(1);
-    return this.db.batch(ops.map((o) => this.db.prepare(o.sql).bind(...o.params.map(norm))));
+    const res = await this.db.batch(ops.map((o) => this.db.prepare(o.sql).bind(...o.params.map(norm))));
+    for (const r of res) this.counter.note(r.meta);
+    return res;
   }
 
   async all<T>(sql: string, ...params: unknown[]): Promise<T[]> {
     this.counter.spend(1);
     const r = await this.db.prepare(sql).bind(...params.map(norm)).all<T>();
+    this.counter.note(r.meta);
     return r.results ?? [];
   }
 
   async first<T>(sql: string, ...params: unknown[]): Promise<T | null> {
     this.counter.spend(1);
-    return (await this.db.prepare(sql).bind(...params.map(norm)).first<T>()) ?? null;
+    // all() вместо first(): только он отдаёт meta с числом прочитанных строк; запросы с first() — по ключу или с LIMIT 1/агрегатом
+    const r = await this.db.prepare(sql).bind(...params.map(norm)).all<T>();
+    this.counter.note(r.meta);
+    return r.results?.[0] ?? null;
   }
 
   // ---------- чтение для обработчиков ----------
@@ -169,9 +191,10 @@ export class Repo {
    */
   async prelude(now: number, limit: number, token: string, lockMs = 120_000): Promise<Prelude> {
     const res = await this.exec([
-      op("INSERT INTO meta (key, value) VALUES ('alive_at', ?) ON CONFLICT(key) DO UPDATE SET value = excluded.value", String(now)),
       op("SELECT key, value FROM settings"),
+      // служебные значения читаем ДО записи «жив»: в них прежняя отметка — по ней считаем перерывы между запусками
       op("SELECT key, value FROM meta"),
+      op("INSERT INTO meta (key, value) VALUES ('alive_at', ?) ON CONFLICT(key) DO UPDATE SET value = excluded.value", String(now)),
       op(
         `UPDATE occurrences SET lock_until = ?, lock_token = ?
          WHERE id IN (
@@ -187,11 +210,14 @@ export class Repo {
          WHERE i.kind = 'timer' AND o.state = 'fired' AND o.last_message_id IS NOT NULL`,
       ),
     ]);
+    const meta = new Map(((res[1].results ?? []) as { key: string; value: string }[]).map((r) => [r.key, r.value]));
+    const prev = Number(meta.get("alive_at"));
     return {
-      settings: readSettings((res[1].results ?? []) as { key: string; value: string }[]),
-      meta: new Map(((res[2].results ?? []) as { key: string; value: string }[]).map((r) => [r.key, r.value])),
+      settings: readSettings((res[0].results ?? []) as { key: string; value: string }[]),
+      meta,
       claimed: (res[4].results ?? []) as OccView[],
       timerOpen: (res[5].results ?? []) as Prelude["timerOpen"],
+      prevAliveAt: Number.isFinite(prev) && prev > 0 ? prev : null,
     };
   }
 }

@@ -234,7 +234,10 @@ describe("cron: сбои, замок и лимиты", () => {
     expect(r2.subrequests).toBeLessThanOrEqual(50);
     expect(r1.sent + r2.sent).toBe(60); // второй запуск добирает остальное, ничего не потеряно и не продублировано
     expect(w.d1.q("SELECT 1 FROM occurrences WHERE fire_count = 0")).toHaveLength(0);
-    expect(w.discord.posted).toHaveLength(60);
+    // 60 напоминаний + одно предупреждение «запас лимитов Cloudflare»: запуск дошёл почти до 50 подзапросов (usage.ts, от 70%)
+    const isLimitWarning = (p: { body: { content?: string } }) => String(p.body.content ?? "").includes("лимитов Cloudflare");
+    expect(w.discord.posted.filter((p) => !isLimitWarning(p))).toHaveLength(60);
+    expect(w.discord.posted.filter(isLimitWarning)).toHaveLength(1);
   });
 
   it("запуск под замком: параллельный запуск не дублирует отправку", async () => {

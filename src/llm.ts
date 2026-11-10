@@ -3,10 +3,26 @@
 // В модель уходит только текст самого дела (секреты отсеиваются в intake.ts до вызова); ответ проверяется и никогда не пишется в журнал.
 import { type Parsed, parseInput } from "./time/parse.ts";
 import { wallOf, wallToUtc } from "./time/tz.ts";
+import { neuronsOf } from "./usage.ts";
 
 /** Минимум, который мы требуем от привязки AI (в Worker — env.AI; в тестах — заглушка). */
 export interface AiBinding {
   run(model: string, input: Record<string, unknown>): Promise<unknown>;
+}
+
+/**
+ * Привязка с подсчётом нейронов: каждый успешный ответ модели добавляет свою стоимость в `counter.neurons`
+ * (по usage из ответа или запасным числом) — из этого `usage.ts` знает, сколько бесплатной нормы Workers AI съедено.
+ */
+export function countedAi(ai: AiBinding | undefined, counter: { neurons: number }): AiBinding | undefined {
+  if (!ai) return ai;
+  return {
+    async run(model, input) {
+      const r = await ai.run(model, input);
+      counter.neurons += neuronsOf(r);
+      return r;
+    },
+  };
 }
 
 export const LLM_MODEL = "@cf/google/gemma-4-26b-a4b-it";

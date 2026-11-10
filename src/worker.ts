@@ -1,5 +1,5 @@
 // Точка входа Cloudflare Worker: приём действий из Discord (HTTP) и запуск по расписанию (cron раз в минуту).
-import { type CronEnv, runCron } from "./cron.ts";
+import { type CronEnv, FAST_POLL, runCron } from "./cron.ts";
 import { Counter, Repo } from "./db/repo.ts";
 import { countedApi, createDiscordApi } from "./discord/api.ts";
 import { type Interaction, handleInteraction } from "./discord/interactions.ts";
@@ -75,12 +75,14 @@ export default {
     }
   },
 
-  async scheduled(_event: ScheduledController, env: Env, ctx: ExecutionContext): Promise<void> {
+  async scheduled(_event: ScheduledController, env: Env, _ctx: ExecutionContext): Promise<void> {
     // Бесплатный план: 50 подзапросов за запуск — считаем их (D1 и Discord вместе).
     const counter = new Counter(50);
     const repo = new Repo(env.DB, counter);
     const api = countedApi(createDiscordApi(env.DISCORD_BOT_TOKEN), counter);
     const cronEnv: CronEnv = { ownerId: env.OWNER_ID, watchdogUrl: env.WATCHDOG_URL };
-    ctx.waitUntil(runCron({ repo, api, now: Date.now(), env: cronEnv, ai: env.AI }));
+    // await, а не ctx.waitUntil: запуск живёт до ~55 с (быстрый опрос приёма, FAST_POLL). Для scheduled документация даёт 15 минут
+    // на сам обработчик; «30 секунд после возврата» (waitUntil) описаны только для HTTP — на них не полагаемся.
+    await runCron({ repo, api, now: Date.now(), env: cronEnv, ai: env.AI, fastPoll: FAST_POLL });
   },
 };

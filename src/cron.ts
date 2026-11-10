@@ -12,7 +12,8 @@ import {
   summaryParts,
   weeklyText,
 } from "./discord/ui.ts";
-import type { AiBinding } from "./llm.ts";
+import { type AiBinding, countedAi } from "./llm.ts";
+import { addRun, gapMinutes, limitWarnings, markWarned, parseUsage, parseWarned, warningMessage, weeklyLimitsLine } from "./usage.ts";
 import { createFromText, EMPTY_REPLY, EMPTY_SERIES_REPLY, messageTime, SECRET_REPLY } from "./intake.ts";
 import { GAS_CHECK_EVERY, GAS_RETRY_AFTER, dueGas, failGas, fetchGas, gasSummaryLines, parseGasState, planGas } from "./gas.ts";
 import { WATER_CHECK_EVERY, WATER_RETRY_AFTER, dueWater, failWater, fetchWater, parseWaterState, planWater, waterSummaryLines } from "./water.ts";
@@ -33,7 +34,7 @@ import { YASNO_ATTEMPTS, fetchYasno, groupsFor, lightFullText, lightLines, publi
 import { isLightQuestion, lightAskMessage } from "./lightAsk.ts";
 import { detectSecret } from "./secrets.ts";
 import { withSound } from "./sound.ts";
-import { choreMetaKey, choreParsed, choresDue, periodKey } from "./chores.ts";
+import { CHORES, choreMetaKey, choreParsed, choresDue, periodKey } from "./chores.ts";
 import {
   META_KEY as PASSPORT_KEY,
   type SourceId,
@@ -96,7 +97,27 @@ export interface CronDeps {
   ai?: AiBinding;
   /** случайность для фраз настроения; по умолчанию Math.random */
   rand?: () => number;
+  /** быстрый опрос приёма внутри минуты (шаг 4); без него — как раньше, раз в минуту */
+  fastPoll?: FastPoll;
 }
+
+/**
+ * Быстрый опрос каналов приёма: после обычной работы запуск ещё `rounds` раз с шагом `everyMs` читает каналы
+ * (обычная проверка стоит в начале минуты) — ответ на текст приходит за ~everyMs, а не за минуту. Ожидание между опросами
+ * процессорное время не тратит; пустой опрос — один подзапрос на канал и ни одного обращения к базе.
+ * `maxMs` — последний срок начала опроса от начала запуска (следующий запуск стартует через 60 с, наползать на него нельзя).
+ */
+export interface FastPoll {
+  rounds: number;
+  everyMs: number;
+  maxMs: number;
+  /** для тестов: подмена ожидания и часов */
+  sleep?: (ms: number) => Promise<void>;
+  clock?: () => number;
+}
+
+/** Рабочие числа для Worker: 4 опроса через 12, 24, 36 и 48 с — вместе с проверкой в начале минуты выходит раз в 12 с. */
+export const FAST_POLL: FastPoll = { rounds: 4, everyMs: 12_000, maxMs: 50_000 };
 
 export interface CronReport {
   claimed: number;
@@ -123,6 +144,9 @@ const defer = (id: number, at: number): Op => updateOcc(id, { next_fire_at: at, 
 
 export async function runCron(d: CronDeps): Promise<CronReport> {
   const { repo, now } = d;
+  const startedAt = (d.fastPoll?.clock ?? Date.now)();
+  /** привязка модели с подсчётом нейронов: расход виден в итоге недели и в предупреждениях (usage.ts) */
+  const ai = countedAi(d.ai, repo.counter);
   const token = d.token ?? crypto.randomUUID();
   const report: CronReport = { claimed: 0, sent: 0, deferred: 0, failed: 0, summaries: [], panel: false, intake: 0, ping: "skip", subrequests: 0, notes: [] };
   const pre = await repo.prelude(now, d.maxSends ?? MAX_SENDS, token);
@@ -149,7 +173,7 @@ export async function runCron(d: CronDeps): Promise<CronReport> {
   const mood =
     s.moodOn && owner ? new MoodSession({
           repo, userId: owner, ctx: makeCtx(now, s), rand: d.rand, style: s.style,
-          live: s.liveOn && d.ai ? { ai: d.ai, tz: s.tz, timeoutMs: LIVE_TIMEOUT_CRON_MS, gate: () => repo.counter.can(4 + RESERVE), spend: () => repo.counter.spend(1) } : null,
+          live: s.liveOn && ai ? { ai, tz: s.tz, timeoutMs: LIVE_TIMEOUT_CRON_MS, gate: () => repo.counter.can(4 + RESERVE), spend: () => repo.counter.spend(1) } : null,
         })
       : null;
 
@@ -298,7 +322,8 @@ export async function runCron(d: CronDeps): Promise<CronReport> {
   };
   const voiced = async <T extends { text: string }>(n: T): Promise<T> => {
     const line = await haruLine("source_down");
-    return line ? { ...n, text: `${line}\n${n.text}` } : n;
+    return line ? { ...n, text: `${line}
+${n.text}` } : n;
   };
   const enabledSources = { light: !!s.lightGroup, water: s.waterWords.length > 0, gas: s.gasWords.length > 0 };
   /** Реакция-эмодзи по настроению на сообщение хозяина (этап Х3): редко, на серьёзные темы — никогда; сбой реакции не страшен. */
@@ -312,23 +337,33 @@ export async function runCron(d: CronDeps): Promise<CronReport> {
       /* нет права или сообщения уже нет: не страшно */
     }
   };
+  const today = localDate(now, s.tz);
+  /** последнее прочитанное сообщение канала в памяти запуска: быстрые опросы (шаг 4) не ждут записи в базу и не читают её */
+  const lastSeen = new Map<string, string>();
+  let blindNoticed = false;
+  let intakeOn = false;
+  let intakeRound: (ops2: Op[], now: number) => Promise<void> = async () => {};
   try {
     let items: OccView[] | null = null;
     const getItems = async () => (items ??= await repo.openMain(100));
-    const today = localDate(now, s.tz);
 
     // 2а. обычный текст из каналов приёма: основной путь записи дел;
-    // канал напоминаний читаем только ради ответов (Reply) на сообщения-напоминания
+    // канал напоминаний читаем только ради ответов (Reply) на сообщения-напоминания.
+    // Один «круг» приёма — функция: в начале минуты она идёт здесь, потом её же гоняет быстрый опрос (шаг 4); внутри `ops2` и `now` — свои.
     if (owner) {
+      intakeOn = true;
+      intakeRound = async (ops2, now) => {
       const channels = s.intake.map((ch) => ({ ch, replies: false }));
       if (s.chRemind && !s.intake.includes(s.chRemind)) channels.push({ ch: s.chRemind, replies: true });
       for (const { ch, replies } of channels) {
         if (!room2(2)) break;
         const lastKey = `intake_last:${ch}`;
-        const last = meta.get(lastKey);
+        const last = lastSeen.get(ch) ?? meta.get(lastKey);
         if (last === undefined) {
           const latest = await api.listMessages(ch, null, 1);
-          ops2.push(setMeta(lastKey, latest.length ? latest[latest.length - 1].id : "0"));
+          const first = latest.length ? latest[latest.length - 1].id : "0";
+          lastSeen.set(ch, first);
+          ops2.push(setMeta(lastKey, first));
           continue;
         }
         const msgs = await api.listMessages(ch, last, 20);
@@ -443,7 +478,7 @@ export async function runCron(d: CronDeps): Promise<CronReport> {
             const line = await recordedLine(mood, title, critical);
             return line ? { line, look: { mood: mood.state!.mood, origin, sprite: wantSprite(mood.rand) } } : null;
           };
-          const r = await createFromText({ repo, settings: s, now, ai: d.ai, recorded: (title, critical) => recordedFor(title, critical), drafted: (title, critical) => (mood?.loaded ? reactionLine(mood, "draft", { title, critical }) : null) }, m.content, "channel", { at: messageTime(m, now) });
+          const r = await createFromText({ repo, settings: s, now, ai, recorded: (title, critical) => recordedFor(title, critical), drafted: (title, critical) => (mood?.loaded ? reactionLine(mood, "draft", { title, critical }) : null) }, m.content, "channel", { at: messageTime(m, now) });
           report.intake++;
           const reply =
             r.kind === "created"
@@ -460,16 +495,20 @@ export async function runCron(d: CronDeps): Promise<CronReport> {
           }
           if (r.kind === "created") await react(ch, m.id, false, m.content);
         }
-        if (lastId !== last) ops2.push(setMeta(lastKey, lastId));
+        if (lastId !== last) {
+          lastSeen.set(ch, lastId);
+          ops2.push(setMeta(lastKey, lastId));
+        }
         if (blind > 0) {
           ops2.push(event(now, "intake_blind", null, `n=${blind}`));
-          if (meta.get("intake_blind_notice") !== today && room2(1)) {
+          if (meta.get("intake_blind_notice") !== today && !blindNoticed && room2(1)) {
             try {
               await api.postMessage(ch, {
                 content:
                   "Не вижу текст сообщений в этом канале. Включите Message Content Intent в настройках приложения в Discord Developer Portal или пишите боту в личные сообщения.",
                 allowed_mentions: { parse: [] },
               });
+              blindNoticed = true;
               ops2.push(setMeta("intake_blind_notice", today));
             } catch {
               /* повторим завтра */
@@ -477,6 +516,8 @@ export async function runCron(d: CronDeps): Promise<CronReport> {
           }
         }
       }
+      };
+      await intakeRound(ops2, now);
     }
 
     // 2а1. автозаморозка (этап 3, B7): раз в день после 06:00 дело, которое «висит» 30 суток без единого нажатия, замораживается.
@@ -544,7 +585,7 @@ export async function runCron(d: CronDeps): Promise<CronReport> {
         weeklyDone = row?.n ?? 0;
         const broken = weekSourceLines(passport, now, s.tz, enabledSources);
         const brokenLine = broken.length ? await haruLine("source_week") : null;
-        content = weeklyText({ doneCount: row?.n ?? 0, items: list, now, tz: s.tz, ownerId: owner as string, character: s.character, sources: broken, sourcesLine: brokenLine });
+        content = weeklyText({ doneCount: row?.n ?? 0, items: list, now, tz: s.tz, ownerId: owner as string, character: s.character, limitsLine: weeklyLimitsLine(parseUsage(meta.get("usage"))), sources: broken, sourcesLine: brokenLine });
       } else {
         let extra: string[] = [];
         if (s.lightGroup && room2(3)) {
@@ -926,7 +967,8 @@ export async function runCron(d: CronDeps): Promise<CronReport> {
   if (ops2.length) await repo.exec(ops2);
 
   // ---------- 3. пинг сторожу: раз в 10 минут ----------
-  if (d.env.watchdogUrl && Math.floor(now / MINUTE) % 10 === 0 && repo.counter.can(1)) {
+  // can(2): один подзапрос всегда остаётся на запись запаса лимитов (шаг 5), иначе самый тесный запуск остался бы невидимым
+  if (d.env.watchdogUrl && Math.floor(now / MINUTE) % 10 === 0 && repo.counter.can(2)) {
     repo.counter.spend(1);
     const url = healthy ? d.env.watchdogUrl : `${d.env.watchdogUrl.replace(/\/$/, "")}/fail`;
     try {
@@ -934,6 +976,64 @@ export async function runCron(d: CronDeps): Promise<CronReport> {
       report.ping = healthy ? "ok" : "fail";
     } catch {
       report.ping = "fail";
+    }
+  }
+
+  // ---------- 4. быстрый опрос приёма ----------
+  // Текст, написанный в канал, обычная проверка в начале минуты подхватывает до 60 с спустя. Поэтому запуск не заканчивается:
+  // ещё несколько раз с паузой читает те же каналы тем же кругом приёма (шаг 2а). Состояние (что прочитано) — в памяти запуска и в базе.
+  const fp = d.fastPoll;
+  if (fp && intakeOn) {
+    const clock = fp.clock ?? Date.now;
+    const sleep = fp.sleep ?? ((ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms)));
+    for (let i = 1; i <= fp.rounds; i++) {
+      const due = i * fp.everyMs;
+      if (due > fp.maxMs) break;
+      const wait = startedAt + due - clock();
+      if (wait > 0) await sleep(wait);
+      if (!repo.counter.can(6)) break; // нужны: опрос (до двух каналов), запись прочитанного и запись запаса лимитов
+      const out: Op[] = [];
+      try {
+        await intakeRound(out, now + (clock() - startedAt));
+        if (mood?.loaded) out.push(...mood.ops());
+        if (out.length) await repo.exec(out);
+      } catch (e) {
+        if (!(e instanceof BudgetExceeded)) report.notes.push(`быстрый опрос: ${(e as Error).message}`);
+        break;
+      }
+    }
+  }
+
+  // ---------- 5. запас бесплатных лимитов (usage.ts): считаем итог запуска, при тесноте предупреждаем заранее ----------
+  if (repo.counter.can(1)) {
+    const days = addRun(parseUsage(meta.get("usage")), {
+      now,
+      subrequests: repo.counter.used + 1, // +1 — сама запись ниже
+      rowsRead: repo.counter.rowsRead,
+      rowsWritten: repo.counter.rowsWritten,
+      dbBytes: repo.counter.dbBytes,
+      neurons: repo.counter.neurons,
+      gapMin: gapMinutes(pre.prevAliveAt, now),
+    });
+    const uops: Op[] = [setMeta("usage", JSON.stringify(days))];
+    if (owner && s.chRemind && !away && !inQuietHours(s, minuteOfDay) && repo.counter.can(3)) {
+      const warned = parseWarned(meta.get("limit_warned"));
+      const ws = limitWarnings(days, now, s.tz, warned);
+      const text = warningMessage(ws, owner);
+      if (text) {
+        try {
+          await api.postMessage(s.chRemind, { content: text, allowed_mentions: { users: [owner] } });
+          uops.push(setMeta("limit_warned", JSON.stringify(markWarned(warned, ws, now))), event(now, "limit_warn", null, ws.map((w) => w.metric).join(",")));
+          report.notes.push(`лимиты: предупреждение (${ws.map((w) => w.metric).join(", ")})`);
+        } catch {
+          /* не вышло отправить: повторим в следующую минуту */
+        }
+      }
+    }
+    try {
+      await repo.exec(uops);
+    } catch (e) {
+      if (!(e instanceof BudgetExceeded)) report.notes.push(`лимиты: не записались (${(e as Error).message})`);
     }
   }
   report.subrequests = repo.counter.used;

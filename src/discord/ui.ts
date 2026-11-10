@@ -355,7 +355,7 @@ export const calmMessage = (line?: string | null): MessageBody => ({
 /** Кнопка под обрезанной сводкой: полный список приходит отдельным сообщением «только вам». */
 export const summaryMoreRow = (kind: "morning" | "evening" | "return"): ActionRow => row(btn("Показать всё", cid("sumall", kind)));
 
-export function weeklyText(a: { doneCount: number; items: OccView[]; now: number; tz: string; ownerId: string; character?: Character; sources?: string[]; sourcesLine?: string | null }): string {
+export function weeklyText(a: { doneCount: number; items: OccView[]; now: number; tz: string; ownerId: string; character?: Character; limitsLine?: string | null; sources?: string[]; sourcesLine?: string | null }): string {
   const hot = a.items.filter(isBurning);
   const drafts = a.items.filter((o) => o.state === "draft");
   const lines = [
@@ -363,6 +363,8 @@ export function weeklyText(a: { doneCount: number; items: OccView[]; now: number
   ];
   if (hot.length) lines.push("**Не закрыто:**", ...hot.map((o) => itemLine(o, a.now, a.tz)));
   if (drafts.length) lines.push("**Без срока (назначьте время или удалите):**", ...drafts.map((o) => itemLine(o, a.now, a.tz)));
+  // запас бесплатных лимитов Cloudflare за неделю (usage.ts): одна строка, чтобы тесноту было видно заранее
+  if (a.limitsLine) lines.push(a.limitsLine);
   // источники, которые не отвечают (этап 4): раз в неделю в итоге, голосом Хару
   if (a.sources?.length) lines.push("**Источники не отвечают:**", ...a.sources, ...(a.sourcesLine ? [a.sourcesLine] : []));
   const sign = tired(a.character ?? "neutral", "weeklySign", Math.floor(a.now / (7 * 24 * 60 * MINUTE)));
