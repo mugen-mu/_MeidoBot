@@ -33,6 +33,7 @@ import { handleReply } from "./reply.ts";
 import { YASNO_ATTEMPTS, fetchYasno, groupsFor, lightFullText, lightLines, publishedFor, tomorrowDigest, type LightData } from "./light.ts";
 import { isLightQuestion, lightAskMessage } from "./lightAsk.ts";
 import { isWeatherQuestion, weatherAskMessage } from "./weatherAsk.ts";
+import { parseNumberCommand } from "./bulk.ts";
 import {
   type Annual, CAL_HOUR, SEASON_TEXT, addedReply, calendarListText, dstItem, dstWarning, dueStage, isYearReviewDay, markValue, parseCalendarMessage,
   seasonKey, seasonStarting, stageItem, yearBounds, yearReviewText, ymdText,
@@ -73,7 +74,7 @@ function parseLightRetry(raw: string | undefined): LightRetry | null {
 }
 import { MOOD_CONFIG } from "./personality/config.ts";
 import { planFire } from "./ladder.ts";
-import { freezeOps, ladderFor, newItemOps, nextSeriesOps, scrubOps } from "./service.ts";
+import { cancelItemOps, doneOps, freezeOps, ladderFor, newItemOps, nextSeriesOps, scrubOps } from "./service.ts";
 import { calmMessage, headVoice, reviewMessage } from "./discord/ui.ts";
 import { freezeCandidates, isTail, shouldNoteTail, soonFrozen } from "./tail.ts";
 import { type AppSettings, inQuietHours } from "./settings.ts";
@@ -392,6 +393,40 @@ ${n.text}` } : n;
               report.intake++;
               continue;
             }
+          }
+          // «отмени #15, #17» / «готово #3» / «удали #7»: действие по номерам, а не новое дело (живая проверка 2026-11-10)
+          const numCmd = parseNumberCommand(m.content);
+          if (numCmd && room2(numCmd.ids.length + 4)) {
+            report.intake++;
+            const hit: string[] = [];
+            const missing: number[] = [];
+            const numOps: Op[] = [];
+            try {
+              for (const id of numCmd.ids) {
+                const occ = await repo.openMainOfItem(id);
+                if (!occ) {
+                  missing.push(id);
+                  continue;
+                }
+                numOps.push(...(numCmd.action === "done" ? doneOps(occ, now) : cancelItemOps(occ.item_id, now, numCmd.action === "delete" ? "delete" : "cancel")));
+                hit.push(`#${id} ${occ.title}`);
+              }
+              if (numOps.length) await repo.exec(numOps);
+            } catch (e) {
+              if (e instanceof BudgetExceeded) break;
+              throw e;
+            }
+            const word = numCmd.action === "done" ? "Готово" : numCmd.action === "delete" ? "Удалено" : "Отменено";
+            const lines: string[] = [];
+            if (hit.length) lines.push(`${word}: ${hit.length}.\n${hit.map((h) => `• ${h}`).join("\n")}`);
+            if (missing.length) lines.push(`Не нашла открытых дел: ${missing.map((i) => `#${i}`).join(", ")} (номера — в /list).`);
+            try {
+              await api.postMessage(ch, { content: lines.join("\n"), allowed_mentions: { parse: [] } });
+            } catch (e) {
+              if (e instanceof BudgetExceeded) break;
+              report.notes.push("номера: не удалось ответить в канале");
+            }
+            continue;
           }
           // «тихий день» словом (этап 2, D3): «тихий день» — сутки без реплик Хару; «хватит тихого дня» — досрочно снять. Сообщение целиком из этих слов, иначе это дело.
           const quietWord = parseQuietDay(m.content);
