@@ -110,7 +110,7 @@ describe("cron: ответ на напоминание", () => {
     w.discord.say(CH_REMIND, OWNER, "ну ладно", { ref: msgId, at: min(6) });
     await w.run(min(7));
     expect(w.occ(occId)).toEqual(before);
-    expect(w.discord.live(CH_REMIND).at(-1)!.body.content).toContain("Не понял");
+    expect(w.discord.live(CH_REMIND).at(-1)!.body.content).toContain("Не поняла");
   });
 
   it("ответ на закрытое дело: «уже закрыто», ничего не меняется", async () => {

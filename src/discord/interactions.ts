@@ -65,7 +65,6 @@ import {
   moreMessage,
   nextKaomoji,
   nextSfx,
-  panelMessage,
   resultMessage,
   sectionMessage,
   settingsHomeMessage,
@@ -382,7 +381,7 @@ async function slashSnooze(c: C): Promise<Reply> {
   if (!occ) return eph("Открытого дела с таким номером нет. Номера — в /list.");
   const text = opt(c, "when");
   const when = text ? parseWhen(String(text), { now: c.now, ...timeOpts(c.s) }) : { due: c.now + 60 * MINUTE, past: false };
-  if (!when) return eph("Не понял время. Пример: «завтра 10:30» или «через 2 часа».");
+  if (!when) return eph("Не поняла время. Пример: «завтра 10:30» или «через 2 часа».");
   if (when.past) return eph("Это время уже прошло.");
   await c.repo.exec(occ.state === "draft" ? rescheduleOps(occ, when.due, c.now) : snoozeOps(occ, when.due, c.now));
   if (occ.last_message_id && occ.last_channel_id) {
@@ -664,7 +663,7 @@ async function onComponent(c: C): Promise<Reply> {
       const occ = await asOcc(c, a);
       if (!occ || occ.state !== "draft") return gone();
       const due = quickDue(b, c.now, c.s.tz, c.s.wordMorning, c.s.wordEvening);
-      if (due === null) return eph("Не понял вариант времени.");
+      if (due === null) return eph("Не поняла вариант времени.");
       await c.repo.exec(rescheduleOps(occ, due, c.now));
       return update(confirmFor(c, { ...occ, due_at: due }));
     }
@@ -724,34 +723,9 @@ async function dmToggle(c: C): Promise<{ ops: Op[]; on: boolean }> {
 
 // ---------- кнопочное меню (экраны — menu.ts) ----------
 
-/** /menu: главный экран «только вам»; с panel:True — закреплённая панель в канале «бот» (правится, если уже есть). */
+/** /menu: главный экран «только вам». Закреплённую панель в канале «бот» убрали (решение Ihor 2026-11-10: лишний клик); кнопки уже стоящей панели (pn:) работают как раньше. */
 async function menuCommand(c: C): Promise<Reply> {
-  if ((opt(c, "panel") as unknown) !== true) return msg({ ...homeMessage(homeStats(await c.repo.openMain(100), c.now, c.s.tz)), flags: 64 });
-  const ch = c.s.chBot;
-  if (!ch) return eph("Канала «бот» ещё нет: выполните /setup на сервере.");
-  const oldId = c.meta.get("menu_panel_id");
-  if (oldId) {
-    try {
-      await c.api.editMessage(ch, oldId, panelMessage());
-      return eph("Панель в канале «бот» обновлена.");
-    } catch {
-      /* сообщения нет (удалено) — пошлём новое */
-    }
-  }
-  let sent: { id: string };
-  try {
-    sent = await c.api.postMessage(ch, panelMessage());
-  } catch {
-    return eph("Не получилось поставить панель в канал «бот». Проверьте, что у бота есть право писать туда.");
-  }
-  await c.repo.exec([setMeta("menu_panel_id", sent.id)]);
-  let pinned = true;
-  try {
-    await c.api.pinMessage(ch, sent.id);
-  } catch {
-    pinned = false;
-  }
-  return eph(pinned ? "Панель поставлена в канал «бот» и закреплена." : "Панель поставлена в канал «бот». Закрепить не вышло (нет права «Закреплять сообщения») — закрепите вручную: ••• → Закрепить.");
+  return msg({ ...homeMessage(homeStats(await c.repo.openMain(100), c.now, c.s.tz)), flags: 64 });
 }
 
 /** Аниме: общий контекст для кнопок и окон. */
@@ -841,7 +815,7 @@ async function onMenu(c: C, parts: string[], values: string[]): Promise<Reply> {
       const occ = await asOcc(c, arg[0]);
       if (!occ || !isOpen(occ)) return gonePage(f, p);
       const due = quickDue(arg[1] ?? "", c.now, c.s.tz, c.s.wordMorning, c.s.wordEvening);
-      if (due === null) return eph("Не понял вариант времени.");
+      if (due === null) return eph("Не поняла вариант времени.");
       await c.repo.exec(occ.state === "draft" ? rescheduleOps(occ, due, c.now) : snoozeOps(occ, due, c.now));
       {
       const until = formatWhen(due, c.now, c.s.tz);
@@ -1130,7 +1104,7 @@ async function onModal(c: C): Promise<Reply> {
       if (!occ || !isOpen(occ)) return gone();
       const w = whenFromModal(c, v);
       if (w === "none") return eph("Выберите вариант или впишите время, например «завтра 10:30».");
-      if (w === "bad") return eph("Не понял время. Пример: «завтра 10:30» или «через 2 часа».");
+      if (w === "bad") return eph("Не поняла время. Пример: «завтра 10:30» или «через 2 часа».");
       if (w.past) return eph("Это время уже прошло.");
       if (kind === "m_snz" && occ.state !== "draft") return nav(await snoozeTo(c, occ, w.due));
       await c.repo.exec(rescheduleOps(occ, w.due, c.now));
@@ -1226,7 +1200,7 @@ async function editSubmit(c: C, id: string, v: Map<string, string | string[]>): 
   let due = occ.due_at;
   if (whenText && !occ.rule_recipe && occ.kind === "main") {
     const w = parseWhen(whenText, { now: c.now, ...timeOpts(c.s) });
-    if (!w) return eph("Не понял время. Пример: «завтра 10:30».");
+    if (!w) return eph("Не поняла время. Пример: «завтра 10:30».");
     if (w.past) return eph("Это время уже прошло.");
     ops.push(...rescheduleOps(occ, w.due, c.now));
     due = w.due;
@@ -1267,7 +1241,7 @@ async function splitSubmit(c: C, id: string, v: Map<string, string | string[]>):
     ops.push(...newItemOps({ parsed, source: "slash", settings: c.s, now: c.now }).ops);
     titles.push(parsed.title);
   }
-  if (titles.length === 0) return eph("Не нашёл ни одного шага.");
+  if (titles.length === 0) return eph("Не нашла ни одного шага.");
   ops.push(...cancelItemOps(occ.item_id, c.now, "split"));
   await c.repo.exec(ops);
   return update(plainMessage(`Разбито на шаги (${titles.length}): ${titles.join("; ")}. Время — ${formatWhen(target, c.now, c.s.tz)}, поменять: /menu → Все дела → дело.`));

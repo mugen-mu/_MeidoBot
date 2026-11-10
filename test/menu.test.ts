@@ -323,47 +323,19 @@ describe("меню: настройки по разделам", () => {
   });
 });
 
-describe("команда /menu panel", () => {
-  const panel = () => call({ type: 2, data: { name: "menu", type: 1, options: [{ name: "panel", value: true }] } });
-
-  it("описана в списке команд", () => {
-    expect(COMMANDS.find((c) => c.name === "menu")).toBeTruthy();
+describe("команда /menu", () => {
+  it("описана в списке команд без параметров: панель в канал убрана (лишний клик)", () => {
+    const m = COMMANDS.find((c) => c.name === "menu") as { options?: unknown } | undefined;
+    expect(m).toBeTruthy();
+    expect(m!.options).toBeUndefined();
   });
 
-  it("без канала «бот»: подсказка про /setup", async () => {
-    w = new World();
-    await w.seed();
-    const r = await panel();
-    expect(r.data.content).toContain("/setup");
+  it("всегда главный экран «только вам»; в канал ничего не пишет и не закрепляет", async () => {
+    const r = await call({ type: 2, data: { name: "menu", type: 1 } });
+    expect(r.data.flags).toBe(64);
+    expect(r.data.content).toContain("Meido — меню");
+    expect(w.discord.posted).toHaveLength(0);
+    expect(w.discord.pins).toHaveLength(0);
   });
 
-  it("первый раз — пост и закрепление; второй — правка того же сообщения", async () => {
-    const r = await panel();
-    expect(r.data.content).toContain("закреплена");
-    expect(w.discord.posted).toHaveLength(1);
-    expect(w.discord.posted[0].channel).toBe(CH_BOT);
-    expect(JSON.stringify(w.discord.posted[0].body.components)).toContain("pn:add");
-    expect(w.discord.pins).toEqual([{ channel: CH_BOT, id: w.discord.posted[0].id }]);
-    const r2 = await panel();
-    expect(r2.data.content).toContain("обновлена");
-    expect(w.discord.posted).toHaveLength(1);
-    expect(w.discord.edits).toHaveLength(1);
-  });
-
-  it("панель удалили руками — ставится новая", async () => {
-    await panel();
-    w.discord.posted.length = 0; // как будто сообщения больше нет (правка вернёт 404)
-    const r = await panel();
-    expect(r.data.content).toContain("закреплена");
-    expect(w.discord.posted).toHaveLength(1);
-  });
-
-  it("закрепить не вышло: пост остаётся, пользователю подсказка", async () => {
-    w.discord.pinMessage = async () => {
-      throw new Error("403");
-    };
-    const r = await panel();
-    expect(r.data.content).toContain("Закрепить не вышло");
-    expect(w.discord.posted).toHaveLength(1);
-  });
 });

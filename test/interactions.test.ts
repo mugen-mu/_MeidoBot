@@ -145,7 +145,7 @@ describe("команды записи", () => {
     expect(flat(ok).some((x) => x.startsWith("lad:"))).toBe(false); // у таймера лестницы нет
     expect(w.d1.q("SELECT kind FROM items")).toEqual([{ kind: "timer" }]);
     const bad = await cmd("every", { text: "купить хлеб" });
-    expect(bad.data.content).toContain("Не понял повтор");
+    expect(bad.data.content).toContain("Не поняла повтор");
     expect(w.d1.q("SELECT 1 FROM items")).toHaveLength(1);
   });
 
@@ -259,7 +259,7 @@ describe("кнопки напоминания", () => {
     expect(u.data.content).toContain("свои числа: 0, 5, 15 мин");
     expect(w.occ(occId).next_fire_at).toBe(kyiv(2026, 11, 8, 11, 30));
     // ошибки не портят дело
-    expect((await submit(`m_edit:${occId}`, { title: "x", when: "абракадабра", ladder: ["keep"], nums: "" })).data.content).toContain("Не понял время");
+    expect((await submit(`m_edit:${occId}`, { title: "x", when: "абракадабра", ladder: ["keep"], nums: "" })).data.content).toContain("Не поняла время");
     expect((await submit(`m_edit:${occId}`, { title: "x", when: "", ladder: ["custom"], nums: "abc" })).data.content).toContain("Для «свои числа»");
     expect((await submit(`m_edit:${occId}`, { title: "пароль: Qw3rty!x7", when: "", ladder: ["keep"], nums: "" })).data.content).toContain("Bitwarden");
   });
@@ -273,7 +273,7 @@ describe("кнопки напоминания", () => {
     const b = await submit(`m_snz:${occId}`, { quick: "tom", text: "в пятницу 15:00" }, { now: at });
     expect(b.data.content).toContain("до в пятницу, 15:00".replace("до в", "до в"));
     expect((await submit(`m_snz:${occId}`, { quick: "", text: "" }, { now: at })).data.content).toContain("Выберите вариант");
-    expect((await submit(`m_snz:${occId}`, { text: "когда-нибудь" }, { now: at })).data.content).toContain("Не понял время");
+    expect((await submit(`m_snz:${occId}`, { text: "когда-нибудь" }, { now: at })).data.content).toContain("Не поняла время");
     expect((await submit(`m_snz:${occId}`, { text: "сегодня в 8:00" }, { now: at })).data.content).toContain("уже прошло");
   });
 
@@ -306,7 +306,7 @@ describe("списки, отмена, откладывание и отъезд �
     expect(sn.data.content).toContain("до завтра, 12:00");
     expect(w.occ(a.occId).next_fire_at).toBe(kyiv(2026, 11, 8, 12, 0));
     expect((await cmd("snooze", { id: 999 })).data.content).toContain("Открытого дела");
-    expect((await cmd("snooze", { id: a.itemId, when: "когда-нибудь" })).data.content).toContain("Не понял время");
+    expect((await cmd("snooze", { id: a.itemId, when: "когда-нибудь" })).data.content).toContain("Не поняла время");
 
     const c = await cmd("cancel", { id: b.itemId });
     expect(c.data.content).toBe("Отменено: Оплатить ФОП");

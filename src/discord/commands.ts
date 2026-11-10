@@ -16,7 +16,7 @@ export const COMMANDS = [
   },
   { name: "list", description: "Открытые дела", type: 1, integration_types: BOTH, contexts: EVERYWHERE },
   { name: "week", description: "Что на ближайшие 7 дней", type: 1, integration_types: BOTH, contexts: EVERYWHERE },
-  { name: "menu", description: "Кнопочное меню: сегодня, добавить дело, ещё (видно только вам)", type: 1, integration_types: BOTH, contexts: EVERYWHERE, options: [{ type: 5, name: "panel", description: "Поставить закреплённую панель с кнопками в канал «бот»", required: false }] },
+  { name: "menu", description: "Кнопочное меню: сегодня, добавить дело, ещё (видно только вам)", type: 1, integration_types: BOTH, contexts: EVERYWHERE },
   { name: "settings", description: "Настройки: как часто напоминать, тишина, сводки, характер", type: 1, integration_types: BOTH, contexts: EVERYWHERE },
   { name: "setup", description: "Редко: завести каналы бота на этом сервере (один раз)", type: 1, integration_types: [0], contexts: [0] },
   // Команда из меню сообщения (долгое нажатие -> Приложения). Описание у такой команды не указывается.
