@@ -83,6 +83,8 @@ export function reminderMessage(a: {
       ].filter(Boolean);
       lines.push(`Срок: ${formatWhen(due, now, tz)}${extra.length ? ` · ${extra.join(", ")}` : ""} · ${ref}`);
     }
+    // пояснение дела (дела-сопровождение, календарь: варианты поздравления) — под сроком
+    if (occ.item_body) lines.push(clip(occ.item_body, 900));
     content = lines.join("\n");
   }
   const body: MessageBody = { content, components: [row(...buttons)], allowed_mentions: { users: [ownerId] } };

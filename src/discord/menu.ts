@@ -85,8 +85,13 @@ export function homeMessage(st: HomeStats): MessageBody {
 export function moreMessage(prefix: "mn" | "pn" = "mn", frozen = 0): MessageBody {
   return body("**Ещё**", [
     row(btn("🎭 Настроение", `${prefix}:mo`), btn("⚙ Настройки", `${prefix}:st`), btn("🩺 Состояние", `${prefix}:ss`), ...(frozen > 0 ? [btn(`🧊 Заморожено ${frozen}`, `${prefix}:ls:z:0`)] : [])),
-    row(btn("🏠 Меню", `${prefix}:home`)),
+    row(btn("📆 Календарь", `${prefix}:cal`), btn("🏠 Меню", `${prefix}:home`)),
   ]);
+}
+
+/** «Календарь» (этап 5): список годовых дат; добавление и удаление — текстом в канале «бот» (кнопок и команд не прибавилось). */
+export function calendarMessage(text: string, prefix: "mn" | "pn" = "mn"): MessageBody {
+  return body(text, [row(btn("◀ Назад", `${prefix}:more`), btn("🏠 Меню", `${prefix}:home`))]);
 }
 
 /**

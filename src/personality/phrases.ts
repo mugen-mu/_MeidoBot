@@ -65,7 +65,10 @@ export type Situation =
   | "tail_review"
   // этап 4: источник замолчал (сразу) и всё ещё молчит (раз в неделю в итоге)
   | "source_down"
-  | "source_week";
+  | "source_week"
+  // этап 5: календарь сюрпризов — сезонное «между прочим» и «Год с Хару» (фразы берутся у родственных ситуаций, пока своего пула нет)
+  | "seasonal"
+  | "year_with";
 
 export const SITUATIONS: Situation[] = [
   "reminder", "reminder_repeat", "missed_first", "missed", "done", "done_late", "streak_praise", "relief",
@@ -73,7 +76,7 @@ export const SITUATIONS: Situation[] = [
   "summary_morning", "summary_evening", "summary_weekly", "empty_list", "empty_today", "holiday", "birthday_soon",
   "draft", "cancelled", "stopped", "snoozed", "deleted", "reply_unknown", "reply_past", "reply_closed",
   "snooze_5", "good_streak", "achieve_tail", "achieve_week_clean", "achieve_week_ontime",
-  "tail_clear", "tail_review", "source_down", "source_week",
+  "tail_clear", "tail_review", "source_down", "source_week", "seasonal", "year_with",
 ];
 
 /** Если у настроения нет фраз для ситуации, берём ближайшую «родственную» из того же настроения. */
@@ -100,6 +103,8 @@ export const FALLBACK_SITUATION: Partial<Record<Situation, Situation>> = {
   tail_review: "summary_weekly",
   source_down: "summary_weekly",
   source_week: "summary_weekly",
+  seasonal: "greeting",
+  year_with: "summary_weekly",
 };
 
 export type Phrases = Record<string, Partial<Record<Situation, string[]>>>;

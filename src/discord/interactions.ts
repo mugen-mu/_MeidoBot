@@ -44,6 +44,7 @@ import { describeLead, describeRecipe, formatWhen } from "../time/format.ts";
 import { normalizeEvery, parseInput, parseWhen } from "../time/parse.ts";
 import { quickDue } from "../time/quick.ts";
 import { DAY, MINUTE, fmtHHMM, nextTimeOfDay, parseHHMM, wallOf } from "../time/tz.ts";
+import { type Annual, calendarListText } from "../calendar.ts";
 import { LIGHT_ASK_BUTTON_PREFIX } from "../lightAsk.ts";
 import {
   type ListFilter,
@@ -60,6 +61,7 @@ import {
   isSection,
   listMessage,
   menuPhrase,
+  calendarMessage,
   moreMessage,
   nextKaomoji,
   nextSfx,
@@ -912,6 +914,17 @@ async function onMenu(c: C, parts: string[], values: string[]): Promise<Reply> {
     }
     case "more":
       return show(moreMessage(panel ? "pn" : "mn", (await c.repo.frozenCount(0)).total));
+    case "cal": {
+      // «Календарь» (этап 5): список годовых дат; если таблицы ещё нет (миграция 0009 не применена) — честное сообщение
+      let text: string;
+      try {
+        const w = wallOf(c.now, c.s.tz);
+        text = calendarListText(await c.repo.all<Annual>("SELECT id, kind, name, month AS mo, day AS d, year, marked FROM annuals ORDER BY id"), { y: w.y, mo: w.mo, d: w.d });
+      } catch {
+        text = "**Календарь**\nТаблица календаря ещё не создана на сервере (нужна миграция 0009). Скажите об этом тому, кто выкладывает бота.";
+      }
+      return show(calendarMessage(text, panel ? "pn" : "mn"));
+    }
     case "ss": {
       // «Состояние» (этап 4): паспорт источников; всё берём из меты, которая уже прочитана, — лишних подзапросов нет
       const text = statusText(parsePassport(c.meta.get(PASSPORT_KEY)), { light: !!c.s.lightGroup, water: c.s.waterWords.length > 0, gas: c.s.gasWords.length > 0 }, c.now, c.s.tz);

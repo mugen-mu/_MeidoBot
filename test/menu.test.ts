@@ -58,10 +58,10 @@ describe("меню: главный экран и навигация", () => {
   it("«Ещё»: настроение, настройки (на экране и из панели); свет — на главном экране", async () => {
     const r = await click("mn:more");
     expect(r.type).toBe(7);
-    expect(ids(r)).toEqual(["mn:mo", "mn:st", "mn:ss", "mn:home"]);
+    expect(ids(r)).toEqual(["mn:mo", "mn:st", "mn:ss", "mn:cal", "mn:home"]);
     const p = await click("pn:more");
     expect(p.type).toBe(4);
-    expect(ids(p)).toEqual(["pn:mo", "pn:st", "pn:ss", "pn:home"]);
+    expect(ids(p)).toEqual(["pn:mo", "pn:st", "pn:ss", "pn:cal", "pn:home"]);
   });
 
   it("кнопка панели открывает тот же экран отдельным сообщением «только вам»", async () => {

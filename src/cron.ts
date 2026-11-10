@@ -1,7 +1,7 @@
 // Цикл cron раз в минуту (DESIGN §8). Worker без памяти: всё состояние в базе, любой сбой подхватит следующий запуск.
 // На бесплатном плане за запуск можно сделать 50 подзапросов (D1 и Discord вместе): считаем их и оставляем запас
 // на запись результата и пинг сторожу.
-import { BudgetExceeded, type Repo, deleteMeta, event, releaseLocks, rememberMessage, setMeta, setSetting, updateOcc } from "./db/repo.ts";
+import { BudgetExceeded, type Repo, deleteMeta, event, op, releaseLocks, rememberMessage, setMeta, setSetting, updateOcc } from "./db/repo.ts";
 import type { OccView, Op } from "./db/types.ts";
 import { type DiscordApi, DiscordError } from "./discord/types.ts";
 import {
@@ -33,6 +33,10 @@ import { handleReply } from "./reply.ts";
 import { YASNO_ATTEMPTS, fetchYasno, groupsFor, lightFullText, lightLines, publishedFor, tomorrowDigest, type LightData } from "./light.ts";
 import { isLightQuestion, lightAskMessage } from "./lightAsk.ts";
 import { isWeatherQuestion, weatherAskMessage } from "./weatherAsk.ts";
+import {
+  type Annual, CAL_HOUR, SEASON_TEXT, addedReply, calendarListText, dstItem, dstWarning, dueStage, isYearReviewDay, markValue, parseCalendarMessage,
+  seasonKey, seasonStarting, stageItem, yearBounds, yearReviewText, ymdText,
+} from "./calendar.ts";
 import { detectSecret } from "./secrets.ts";
 import { withSound } from "./sound.ts";
 import { choreMetaKey, choreParsed, choresDue, periodKey } from "./chores.ts";
@@ -70,7 +74,7 @@ function parseLightRetry(raw: string | undefined): LightRetry | null {
 import { MOOD_CONFIG } from "./personality/config.ts";
 import { planFire } from "./ladder.ts";
 import { freezeOps, ladderFor, newItemOps, nextSeriesOps, scrubOps } from "./service.ts";
-import { calmMessage, reviewMessage } from "./discord/ui.ts";
+import { calmMessage, headVoice, reviewMessage } from "./discord/ui.ts";
 import { freezeCandidates, isTail, shouldNoteTail, soonFrozen } from "./tail.ts";
 import { type AppSettings, inQuietHours } from "./settings.ts";
 import { MINUTE, addDaysWall, localDate, nextTimeOfDay, wallOf } from "./time/tz.ts";
@@ -403,6 +407,44 @@ ${n.text}` } : n;
             }
             continue;
           }
+          // календарь сюрпризов (этап 5, F3): «календарь» — список, «календарь» + строки — внести списком одним сообщением, «календарь убрать Имя»
+          const cal = parseCalendarMessage(m.content);
+          if (cal && room2(6)) {
+            report.intake++;
+            let text: string;
+            const LIST_SQL = "SELECT id, kind, name, month AS mo, day AS d, year, marked FROM annuals ORDER BY id";
+            try {
+              const wc = wallOf(now, s.tz);
+              const t = { y: wc.y, mo: wc.mo, d: wc.d };
+              if (cal.kind === "secret") text = SECRET_REPLY;
+              else if (cal.kind === "list") text = calendarListText(await repo.all<Annual>(LIST_SQL), t);
+              else if (cal.kind === "remove") {
+                const all = await repo.all<Annual>(LIST_SQL);
+                const hit = all.filter((a) => a.name.toLowerCase() === cal.name.toLowerCase());
+                if (hit.length) await repo.exec(hit.map((a) => op("DELETE FROM annuals WHERE id = ?", a.id)));
+                text = hit.length ? `Убрала из календаря: ${hit.length}.` : "Такой записи в календаре нет. Список — «⋯ Ещё» → «📆 Календарь».";
+              } else if (!cal.entries.length) text = addedReply(0, 0, cal.bad);
+              else {
+                const res = await repo.exec(
+                  cal.entries.map((e) => op("INSERT OR IGNORE INTO annuals (kind, name, month, day, year, created_at) VALUES (?, ?, ?, ?, ?, ?)", e.kind, e.name, e.mo, e.d, e.year, now)),
+                );
+                const added = res.filter((r) => Number((r.meta as { changes?: number } | undefined)?.changes ?? 0) > 0).length;
+                text = addedReply(added, cal.entries.length - added, cal.bad);
+                ops2.push(deleteMeta("cal_day")); // новые записи: сегодняшний шаг пересчитаем сразу, а не завтра
+                meta.delete("cal_day");
+              }
+            } catch (e) {
+              if (e instanceof BudgetExceeded) break;
+              text = "Не получилось обратиться к календарю. Если сообщение повторится — применена ли миграция 0009 (README, «Выкладка»)?";
+            }
+            try {
+              await api.postMessage(ch, { content: text, allowed_mentions: { parse: [] } });
+            } catch (e) {
+              if (e instanceof BudgetExceeded) break;
+              report.notes.push("календарь: не удалось ответить в канале");
+            }
+            continue;
+          }
           // свет текстом: «дай график света», «что со светом» — график, а не дело (этап 1 ретроспективы 2); без модели.
           // Слово «свет» в обычном деле («оплатить свет», «в 18:00 свет») сюда не попадает; промах поправит кнопка «Это было дело».
           if (isLightQuestion(m.content) && !detectSecret(m.content).secret && room2(YASNO_ATTEMPTS + 4)) {
@@ -567,6 +609,88 @@ ${n.text}` } : n;
         ops2.push(setMeta(choreMetaKey(c.id), periodKey(now, s.tz)));
       }
       if (all) ops2.push(setMeta("chores_day", today));
+    }
+
+    // 2а3. календарь сюрпризов (этап 5, группа F): раз в сутки после 10:00 годовые даты → дела-предупреждения (за месяц, неделю, день; в день рождения — сам день),
+    // каждое — отдельное обычное дело с «Готово»; плюс предупреждение о переводе часов (за день). Имена и даты в события и журнал не пишем.
+    // Таблицы `annuals` ещё может не быть (миграция 0009 не применена): тогда тихо пропускаем сутки и пишем событие, а не падаем каждую минуту.
+    if (owner && !away && minuteOfDay >= CAL_HOUR * 60 && meta.get("cal_day") !== today && room2(8)) {
+      try {
+        const wc = wallOf(now, s.tz);
+        const t = { y: wc.y, mo: wc.mo, d: wc.d };
+        const list = await repo.all<Annual>("SELECT id, kind, name, month AS mo, day AS d, year, marked FROM annuals ORDER BY id");
+        for (const a of list) {
+          const due = dueStage(a, t);
+          if (!due) continue;
+          const it = stageItem(a, due, now, s.tz);
+          ops2.push(
+            ...newItemOps({ parsed: it.parsed, source: "menu", settings: s, now, body: it.body }).ops,
+            op("UPDATE annuals SET marked = ? WHERE id = ?", markValue(due), a.id),
+            event(now, "calendar_item", null, `stage=${due.stage}`),
+          );
+          report.notes.push(`календарь: предупреждение (${due.stage})`);
+        }
+        // разовые сроки, которые уже прошли, из таблицы убираем (годовые остаются)
+        ops2.push(op("DELETE FROM annuals WHERE year IS NOT NULL AND year * 10000 + month * 100 + day < ?", t.y * 10000 + t.mo * 100 + t.d));
+        const dst = dstWarning(now, s.tz);
+        if (dst && meta.get("dst_warned") !== ymdText(dst.tomorrow)) {
+          ops2.push(...newItemOps({ parsed: dstItem(dst, now, s.tz), source: "menu", settings: s, now, body: null }).ops, setMeta("dst_warned", ymdText(dst.tomorrow)), event(now, "calendar_dst", null, `dir=${dst.direction}`));
+          report.notes.push("календарь: перевод часов");
+        }
+        ops2.push(setMeta("cal_day", today));
+      } catch (e) {
+        if (!(e instanceof BudgetExceeded)) {
+          ops2.push(setMeta("cal_day", today), event(now, "calendar_failed"));
+          report.notes.push("календарь: не удалось прочитать таблицу (миграция 0009 применена?)");
+        }
+      }
+    }
+
+    // 2а4. сезонное «между прочим» (F8, раз в сезон, пока нет вопроса важнее — вопроса про аниме) и «Год с Хару» (F9, одно сообщение в конце декабря).
+    // Только днём (12:00–20:00) и не в отъезде; каждое отправляется один раз.
+    if (owner && s.chRemind && !away && minuteOfDay >= 12 * 60 && minuteOfDay < 20 * 60 && room2(5)) {
+      const wc = wallOf(now, s.tz);
+      const t = { y: wc.y, mo: wc.mo, d: wc.d };
+      const season = seasonStarting(t);
+      const sKey = season ? seasonKey(season, t.y) : null;
+      const sendSeason = !!season && !!sKey && meta.get("season_sent") !== sKey && !meta.get("anime_weekq");
+      const sendYear = isYearReviewDay(t) && meta.get("year_review") !== String(t.y);
+      if (sendSeason || sendYear) {
+        try {
+          if (sendSeason && season && sKey) {
+            let line: string | null = null;
+            if (mood) {
+              await mood.load();
+              line = await mood.sayLive("seasonal", { facts: "началось новое время года" });
+            }
+            await api.postMessage(s.chRemind, { content: headVoice(line, SEASON_TEXT[season]), allowed_mentions: { parse: [] } });
+            ops2.push(setMeta("season_sent", sKey), event(now, "calendar_season", null, season));
+            report.notes.push(`календарь: между прочим (${season})`);
+          } else if (sendYear) {
+            const { from, to } = yearBounds(t.y, s.tz);
+            const row = await repo.first<{ done: number; created: number; open: number; frozen: number }>(
+              `SELECT (SELECT COUNT(*) FROM occurrences WHERE kind = 'main' AND state = 'done' AND closed_at >= ? AND closed_at < ?) AS done,
+                      (SELECT COUNT(*) FROM items WHERE created_at >= ? AND created_at < ?) AS created,
+                      (SELECT COUNT(*) FROM occurrences WHERE kind = 'main' AND state IN ('draft','planned','fired','snoozed','overdue')) AS open,
+                      (SELECT COUNT(*) FROM occurrences WHERE state = 'cancelled' AND closed_reason = 'frozen') AS frozen`,
+              from, to, from, to,
+            );
+            let line: string | null = null;
+            if (mood) {
+              await mood.load();
+              line = await mood.sayLive("year_with", { facts: `закрыто дел за год: ${row?.done ?? 0}` });
+            }
+            await api.postMessage(s.chRemind, { content: headVoice(line, yearReviewText({ year: t.y, done: row?.done ?? 0, created: row?.created ?? 0, open: row?.open ?? 0, frozen: row?.frozen ?? 0 })), allowed_mentions: { parse: [] } });
+            ops2.push(setMeta("year_review", String(t.y)), event(now, "calendar_year", null, String(t.y)));
+            report.notes.push("календарь: «Год с Хару»");
+          }
+        } catch (e) {
+          if (!(e instanceof BudgetExceeded)) {
+            healthy = false;
+            ops2.push(event(now, "calendar_post_failed"));
+          }
+        }
+      }
     }
 
     // 2б. возвращение из отъезда и сводки
