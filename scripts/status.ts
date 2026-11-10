@@ -5,7 +5,7 @@ import { realRunner } from "./lib/runner.ts";
 const now = Date.now();
 const since = now - 24 * 3600_000;
 const sql = [
-  "SELECT key, value FROM meta WHERE key IN ('alive_at','owner_id','dm_channel_id')",
+  "SELECT key, value FROM meta WHERE key IN ('alive_at','owner_id','dm_channel_id','usage')",
   "SELECT key, value FROM settings WHERE key IN ('ch_remind','ch_bot','ch_today','intake')",
   "SELECT state, COUNT(*) AS n FROM occurrences WHERE kind = 'main' AND state IN ('draft','planned','fired','snoozed','overdue') GROUP BY state",
   `SELECT kind, COUNT(*) AS n FROM events WHERE at > ${since} AND kind IN ('send_failed','rate_limited','cron_error','summary_failed','panel_failed','intake_blind') GROUP BY kind`,

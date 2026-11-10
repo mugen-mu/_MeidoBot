@@ -1,5 +1,7 @@
 // Чистые помощники для скриптов установки и проверки (тесты — test/setup.test.ts).
 
+import { parseUsage, statusLines } from "../../src/usage.ts";
+
 const UUID = "[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}";
 export const PLACEHOLDER_DB_ID = "REPLACE_WITH_D1_DATABASE_ID";
 
@@ -133,6 +135,8 @@ export function summarizeStatus(rows: StatusRows, now: number): string[] {
     const min = Math.round((now - alive) / 60_000);
     out.push(min <= 3 ? `Cron: работает (последний запуск ${min} мин назад).` : `Cron: ПРОПАЛ — последний запуск ${min} мин назад.`);
   }
+  // запас бесплатных лимитов Cloudflare (бот считает сам, src/usage.ts): сегодня и худшее за неделю
+  out.push(...statusLines(parseUsage(meta.get("usage")), now));
   out.push(meta.get("owner_id") ? "Хозяин бота: назначен." : "Хозяин бота: не назначен (выполните /setup в Discord).");
   out.push(
     set.get("ch_remind") && set.get("ch_bot") && set.get("ch_today")

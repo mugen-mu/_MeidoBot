@@ -20,6 +20,7 @@ import {
   weeklyLimitsLine,
 } from "../src/usage.ts";
 import { DAY_MS } from "../src/usage.ts";
+import { summarizeStatus } from "../scripts/lib/helpers.ts";
 import { MINUTE } from "../src/time/tz.ts";
 import { NOW, TZ, kyiv } from "./helpers.ts";
 import { OWNER, World } from "./world.ts";
@@ -191,6 +192,15 @@ describe("usage: итог недели и status", () => {
     expect(lines).toHaveLength(2);
     expect(lines[0]).toContain("сегодня");
     expect(lines[1]).toContain("ТЕСНО");
+  });
+
+  it("npm run status печатает запас лимитов из строки usage базы", () => {
+    const now = NOW;
+    const rows = { meta: [{ key: "alive_at", value: String(now - MINUTE) }, { key: "usage", value: JSON.stringify([day({ sub: 40 })]) }], settings: [], open: [], problems: [] };
+    const out = summarizeStatus(rows, now).filter((l) => l.startsWith("Лимиты Cloudflare"));
+    expect(out).toHaveLength(2);
+    expect(out[1]).toContain("ТЕСНО");
+    expect(summarizeStatus({ ...rows, meta: rows.meta.slice(0, 1) }, now).some((l) => l.includes("данных ещё нет"))).toBe(true);
   });
 
   it("нормы совпадают с бесплатным планом Cloudflare (страницы документации 2026-11-10)", () => {
