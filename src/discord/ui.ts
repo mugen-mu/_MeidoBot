@@ -252,10 +252,34 @@ export function listText(items: OccView[], now: number, tz: string, ch: Characte
 
 const isBurning = (o: OccView) => o.state === "overdue" || o.state === "fired";
 
-export function panelText(items: OccView[], now: number, tz: string, ch: Character = "neutral"): string {
+/** «Что горит / что висит»: дела, которые ждут «Готово» или просрочены (ответ на вопрос текстом; с 2026-11-11 панели «Горит» в канале нет). */
+export function hotText(items: OccView[], now: number, tz: string, ch: Character = "neutral"): string {
   const hot = items.filter(isBurning);
   if (hot.length === 0) return withTired("**Висит**\nНичего не висит.", tired(ch, "panelEmpty", 0));
   return joinLines("**Висит**", hot.map((o) => itemLine(o, now, tz)));
+}
+
+/** «Что на сегодня»: то, что висит, и дела со сроком на сегодня по порядку времени. */
+export function todayText(items: OccView[], now: number, tz: string, ch: Character = "neutral"): string {
+  const t0 = startOfDay(now, tz);
+  const t1 = t0 + 24 * 60 * MINUTE;
+  const hot = items.filter(isBurning);
+  const today = items
+    .filter((o) => !isBurning(o) && o.state !== "draft")
+    .map((o) => ({ o, at: o.state === "snoozed" && o.next_fire_at ? o.next_fire_at : o.due_at }))
+    .filter((x): x is { o: OccView; at: number } => x.at !== null && x.at >= t0 && x.at < t1)
+    .sort((a, b) => a.at - b.at);
+  const lines: string[] = [];
+  if (hot.length) lines.push("Висит:", ...hot.map((o) => itemLine(o, now, tz)));
+  if (today.length) {
+    lines.push("По времени:");
+    for (const { o, at } of today) {
+      const w = wallOf(at, tz);
+      lines.push(`• ${fmtHHMM(w.h * 60 + w.mi)} ${clip(o.title, 80)} (#${o.item_id})`);
+    }
+  }
+  if (lines.length === 0) return withTired("На сегодня дел нет.", tired(ch, "listEmpty", now));
+  return joinLines("**Сегодня**", lines);
 }
 
 export function weekText(items: OccView[], now: number, tz: string, ch: Character = "neutral"): string {

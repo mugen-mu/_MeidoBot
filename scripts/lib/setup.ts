@@ -156,7 +156,7 @@ export async function runSetup(d: SetupDeps): Promise<SetupResult> {
   log(`1) Developer Portal → ваше приложение → General Information → Interactions Endpoint URL: вставьте\n   ${url}/interactions\n   и нажмите Save Changes (Discord проверит адрес; ошибка значит, что Public Key введён неверно).`);
   log(`2) Добавьте бота на свой сервер по ссылке:\n   ${links.server}`);
   log(`   и (по желанию) на свой аккаунт, чтобы команды работали в любом чате:\n   ${links.user}`);
-  log("3) На своём сервере выполните команду /setup — бот заведёт каналы «напоминания», «бот», «сегодня».");
+  log("3) На своём сервере выполните команду /setup — бот заведёт каналы «почта» и «бот».");
   log("Проверка состояния в любой момент: npm run status");
   return { ok: true, url };
 }

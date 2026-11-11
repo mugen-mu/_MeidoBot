@@ -1,10 +1,10 @@
-// «Личка» (решение 2026-11-11): напоминания, сводки, панель «Горит» и ввод дел — всё в личном чате с ботом; выключение возвращает каналы сервера.
+// «Личка» (решение 2026-11-11): напоминания, сводки и ввод дел — всё в личном чате с ботом; выключение возвращает каналы сервера.
 import { beforeEach, describe, expect, it } from "vitest";
 import { type Interaction, handleInteraction } from "../src/discord/interactions.ts";
 import { setMeta, setSetting } from "../src/db/repo.ts";
 import { dmAllOn } from "../src/settings.ts";
 import { NOW } from "./helpers.ts";
-import { CH_BOT, CH_REMIND, CH_TODAY, OWNER, World } from "./world.ts";
+import { CH_BOT, CH_REMIND, OWNER, World } from "./world.ts";
 
 const MINUTE = 60_000;
 const DM = `dm-${OWNER}`;
@@ -27,20 +27,20 @@ const meta = async () => (await w.repo().loadConfig()).meta;
 beforeEach(async () => {
   w = new World();
   pending = [];
-  await w.seed({ today: true, intake: true, settings: { summary_morning: "off", summary_evening: "off", weekly: "off" } });
+  await w.seed({ intake: true, settings: { summary_morning: "off", summary_evening: "off", weekly: "off" } });
 });
 
 describe("личка: включение и выключение", () => {
-  it("включение: напоминания, «бот», панель и приём — в личку; прежние каналы запомнены", async () => {
+  it("включение: напоминания, «бот» и приём — в личку; прежние каналы запомнены", async () => {
     const r = await toggle();
     expect(r.data.content).toContain("Личка: вкл");
     const s = await w.settings();
-    expect([s.chRemind, s.chBot, s.chToday]).toEqual([DM, DM, DM]);
+    expect([s.chRemind, s.chBot]).toEqual([DM, DM]);
     expect(s.intake).toEqual([DM]);
     const m = await meta();
     expect(m.get("dm_channel_id")).toBe(DM);
     expect(dmAllOn(s, m)).toBe(true);
-    expect(JSON.parse(m.get("dm_backup") as string)).toEqual({ remind: CH_REMIND, bot: CH_BOT, today: CH_TODAY, intake: [CH_BOT] });
+    expect(JSON.parse(m.get("dm_backup") as string)).toEqual({ remind: CH_REMIND, bot: CH_BOT, intake: [CH_BOT] });
   });
 
   it("выключение возвращает каналы сервера как были", async () => {
@@ -48,7 +48,7 @@ describe("личка: включение и выключение", () => {
     const r = await toggle();
     expect(r.data.content).toContain("Личка: выкл");
     const s = await w.settings();
-    expect([s.chRemind, s.chBot, s.chToday]).toEqual([CH_REMIND, CH_BOT, CH_TODAY]);
+    expect([s.chRemind, s.chBot]).toEqual([CH_REMIND, CH_BOT]);
     expect(s.intake).toEqual([CH_BOT]);
     const m = await meta();
     expect(m.get("dm_backup")).toBeUndefined();
@@ -73,7 +73,7 @@ describe("личка: включение и выключение", () => {
     await toggle();
     const s = await w.settings();
     expect(s.chRemind).toBeNull();
-    expect(s.chToday).toBeNull();
+    expect(s.chBot).toBeNull();
     expect(s.intake).toEqual([]);
   });
 
@@ -81,7 +81,7 @@ describe("личка: включение и выключение", () => {
     const before = await call({ type: 3, data: { custom_id: "mn:s:a" }, message: { id: "m1" } });
     expect(before.data.content).toContain("Личка: выкл. Всё идёт в каналы сервера");
     const after = await toggle();
-    expect(after.data.content).toContain("Личка: вкл. Напоминания, сводки, панель «Горит» и запись дел — всё здесь");
+    expect(after.data.content).toContain("Личка: вкл. Напоминания, сводки и запись дел — всё здесь");
   });
 });
 
@@ -104,32 +104,6 @@ describe("личка: как работает бот после включени
     expect(w.d1.q("SELECT title FROM items")).toEqual([{ title: "Купить хлеб" }]);
     expect(w.discord.live(DM).some((p) => p.body.content?.includes("Записано"))).toBe(true);
     expect(w.discord.live(CH_BOT)).toHaveLength(0);
-  });
-
-  it("панель «Горит» появляется в личке, закрепляется один раз и правится на месте", async () => {
-    await toggle();
-    await w.run(NOW); // минута кратна 5
-    const panel = w.discord.live(DM).filter((p) => p.body.content?.includes("Ничего не висит"));
-    expect(panel).toHaveLength(1);
-    expect(w.discord.pins).toEqual([{ channel: DM, id: panel[0].id }]);
-    expect(w.discord.live(CH_TODAY)).toHaveLength(0);
-    await w.create("через 5 минут позвонить");
-    await w.run(NOW + 5 * MINUTE);
-    expect(w.discord.pins).toHaveLength(1); // новое сообщение не закрепляется
-    expect(w.discord.edits.some((e) => e.channel === DM && e.id === panel[0].id)).toBe(true);
-  });
-
-  it("панель, уже стоявшая в канале, после включения публикуется заново в личке (старый id и хеш сброшены)", async () => {
-    await w.run(NOW);
-    const old = w.discord.live(CH_TODAY);
-    expect(old).toHaveLength(1);
-    expect(w.discord.pins).toHaveLength(0); // в канале «сегодня» панель отдельная — не закрепляем
-    await toggle();
-    const m = await meta();
-    expect(m.get("panel_msg_id")).toBeUndefined();
-    expect(m.get("panel_hash")).toBeUndefined();
-    await w.run(NOW + 5 * MINUTE);
-    expect(w.discord.live(DM).filter((p) => p.body.content?.includes("Ничего не висит"))).toHaveLength(1);
   });
 
   it("ответы бота в личке видны сразу и остаются, а не «только вам»", async () => {

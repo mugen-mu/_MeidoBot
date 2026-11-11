@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it } from "vitest";
-import { event } from "../src/db/repo.ts";
+import { event, setMeta } from "../src/db/repo.ts";
+import { DiscordError } from "../src/discord/types.ts";
 import { doneOps, snoozeOps } from "../src/service.ts";
 import { MINUTE } from "../src/time/tz.ts";
 import { NOW, kyiv } from "./helpers.ts";
@@ -309,19 +310,42 @@ describe("cron: сводки, панель, сторож", () => {
     expect(w.discord.posted.some((p) => p.body.content?.includes("Итоги недели"))).toBe(true);
   });
 
-  it("панель «Горит»: создаётся, правится на месте и только при изменении", async () => {
+  it("панели «Горит» больше нет: ничего не публикуется и не правится", async () => {
     await w.seed({ today: true, settings: { summary_morning: "off", summary_evening: "off", weekly: "off" } });
     const t0 = kyiv(2026, 11, 7, 12, 0); // минута кратна 5
     await w.create("через 5 минут позвонить");
     await w.run(t0);
-    expect(w.discord.live(CH_TODAY)).toHaveLength(1);
-    expect(w.discord.live(CH_TODAY)[0].body.content).toContain("Ничего не висит");
-    await w.run(t0 + 5 * MINUTE); // дело сработало -> в панели
-    expect(w.discord.live(CH_TODAY)).toHaveLength(1); // то же сообщение
-    expect(w.discord.edits).toHaveLength(1);
-    expect(w.discord.edits[0].body.content).toContain("Позвонить");
-    await w.run(t0 + 10 * MINUTE); // без изменений — не трогаем
-    expect(w.discord.edits).toHaveLength(1);
+    await w.run(t0 + 5 * MINUTE);
+    await w.run(t0 + 10 * MINUTE);
+    expect(w.discord.live(CH_TODAY)).toHaveLength(0);
+    expect(w.discord.edits).toHaveLength(0);
+    expect(w.discord.pins).toHaveLength(0);
+  });
+
+  it("остаток прежней панели: сообщения уже нет (404) — забываем; временный сбой Discord (500) — повторим в следующую минуту", async () => {
+    await w.seed({ today: true, settings: { summary_morning: "off", summary_evening: "off", weekly: "off" } });
+    await w.repo().exec([setMeta("panel_msg_id", "555"), setMeta("panel_hash", "123")]);
+    w.discord.deleteMessage = async () => {
+      throw new DiscordError(500, "Discord 500");
+    };
+    await w.run(NOW);
+    expect(w.d1.q("SELECT 1 FROM meta WHERE key = 'panel_msg_id'")).toHaveLength(1);
+    w.discord.deleteMessage = async () => {
+      throw new DiscordError(404, "Unknown Message");
+    };
+    await w.run(NOW + MINUTE);
+    expect(w.d1.q("SELECT 1 FROM meta WHERE key IN ('panel_msg_id', 'panel_hash')")).toHaveLength(0);
+  });
+
+  it("остаток прежней панели: её сообщение удаляется один раз и забывается", async () => {
+    await w.seed({ today: true, settings: { summary_morning: "off", summary_evening: "off", weekly: "off" } });
+    const old = await w.discord.postMessage(CH_TODAY, { content: "**Висит** Ничего не висит." });
+    await w.repo().exec([setMeta("panel_msg_id", old.id), setMeta("panel_hash", "123")]);
+    await w.run(NOW);
+    expect(w.discord.deletes).toEqual([{ channel: CH_TODAY, id: old.id }]);
+    expect(w.d1.q("SELECT 1 FROM meta WHERE key IN ('panel_msg_id', 'panel_hash')")).toHaveLength(0);
+    await w.run(NOW + MINUTE); // повторно не трогаем
+    expect(w.discord.deletes).toHaveLength(1);
   });
 
   it("сторож: пинг раз в 10 минут, при ошибке — /fail", async () => {

@@ -69,15 +69,17 @@ describe("доступ", () => {
     expect((await cmd("list", {}, {}, { user: "u-first" })).data.content).toContain("Открытых дел нет");
   });
 
-  it("/setup заводит три канала, второй раз — те же; id сохраняются, канал «бот» становится каналом приёма", async () => {
+  it("/setup заводит два канала (панели «Горит» больше нет), второй раз — те же; id сохраняются, канал «бот» становится каналом приёма", async () => {
     w = new World();
     await cmd("setup");
-    expect(w.discord.created.map((c) => c.name)).toEqual(["почта", "бот", "сегодня"]);
+    expect(w.discord.created.map((c) => c.name)).toEqual(["почта", "бот"]);
     expect(w.discord.originals[0].body.content).toContain("Готово");
+    expect(w.discord.originals[0].body.content).not.toContain("Горит");
     await cmd("setup");
-    expect(w.discord.created).toHaveLength(3);
+    expect(w.discord.created).toHaveLength(2);
     const s = await w.settings();
-    expect([s.chRemind, s.chBot, s.chToday].every(Boolean)).toBe(true);
+    expect([s.chRemind, s.chBot].every(Boolean)).toBe(true);
+    expect(s.chToday).toBeNull();
     expect(s.intake).toEqual([s.chBot]);
   });
 
@@ -85,7 +87,7 @@ describe("доступ", () => {
     w = new World();
     w.discord.channels.push({ id: "77", name: "напоминания", type: 0 });
     await cmd("setup");
-    expect(w.discord.created.map((c) => c.name)).toEqual(["бот", "сегодня"]);
+    expect(w.discord.created.map((c) => c.name)).toEqual(["бот"]);
     expect((await w.settings()).chRemind).toBe("77");
   });
 

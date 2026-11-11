@@ -139,7 +139,7 @@ export function summarizeStatus(rows: StatusRows, now: number): string[] {
   out.push(...statusLines(parseUsage(meta.get("usage")), now));
   out.push(meta.get("owner_id") ? "Хозяин бота: назначен." : "Хозяин бота: не назначен (выполните /setup в Discord).");
   out.push(
-    set.get("ch_remind") && set.get("ch_bot") && set.get("ch_today")
+    set.get("ch_remind") && set.get("ch_bot")
       ? "Каналы: заведены."
       : "Каналы: не заведены (выполните /setup на сервере).",
   );

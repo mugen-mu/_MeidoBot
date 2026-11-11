@@ -21,7 +21,8 @@ import { fetchYasno, lightFullText, normalizeGroup } from "../light.ts";
 import { newPowerKey, readPower } from "../power.ts";
 import { type AnimeCtx, handleAddModal, handleAnimeButton, handleEpModal } from "../anime/handlers.ts";
 import { listAnime } from "../anime/store.ts";
-import { animeListMessage, weekAnimeText } from "../anime/ui.ts";
+import { tasksAnswer } from "../tasksAsk.ts";
+import { animeListMessage } from "../anime/ui.ts";
 import { detectSecret } from "../secrets.ts";
 import { META_KEY as PASSPORT_KEY, SILENT_BOT_TEXT, parsePassport, statusText } from "../sources.ts";
 import {
@@ -99,7 +100,6 @@ import {
   subtext,
   summModal,
   summaryParts,
-  weekText,
   whenModal,
 } from "./ui.ts";
 
@@ -413,7 +413,7 @@ async function setup(c: C): Promise<Reply> {
         const existing = await c.api.listGuildChannels(guildId);
         const ids: Record<string, string> = {};
         const created: string[] = [];
-        for (const name of ["почта", "бот", "сегодня"]) {
+        for (const name of ["почта", "бот"]) {
           // канал напоминаний с 2026-11-08 называется «почта»; прежнее имя «напоминания» тоже узнаём (чтобы не заводить второй)
           const names = name === "почта" ? ["почта", "напоминания"] : [name];
           const found = names.map((n) => existing.find((ch) => ch.type === 0 && ch.name === n)).find(Boolean);
@@ -428,11 +428,10 @@ async function setup(c: C): Promise<Reply> {
         await c.repo.exec([
           setSetting("ch_remind", ids["почта"]),
           setSetting("ch_bot", ids["бот"]),
-          setSetting("ch_today", ids["сегодня"]),
           setSetting("intake", JSON.stringify([...intake])),
           setMeta("guild_id", guildId),
         ]);
-        text = `Готово. Каналы: <#${ids["почта"]}> (почта: напоминания и сводки), <#${ids["бот"]}> (пишите сюда обычным текстом), <#${ids["сегодня"]}> (панель «Горит»).${created.length ? ` Создано: ${created.join(", ")}.` : " Все каналы уже были."}${tired(c.s.character, "setupDone") ? `\n-# ${tired(c.s.character, "setupDone")}` : ""}`;
+        text = `Готово. Каналы: <#${ids["почта"]}> (почта: напоминания и сводки), <#${ids["бот"]}> (пишите сюда обычным текстом).${created.length ? ` Создано: ${created.join(", ")}.` : " Все каналы уже были."}${tired(c.s.character, "setupDone") ? `\n-# ${tired(c.s.character, "setupDone")}` : ""}`;
       } catch {
         text = "Не получилось создать каналы. Проверьте, что у бота есть право «Управлять каналами», и повторите /setup.";
       }
@@ -701,13 +700,12 @@ async function snoozeTo(c: C, occ: OccView, target: number, resetCount = false):
 }
 
 /**
- * «Личка» (решение 2026-11-11): всё — напоминания, сводки, панель «Горит» и ввод дел — в личный чат с ботом.
+ * «Личка» (решение 2026-11-11): всё — напоминания, сводки и ввод дел — в личный чат с ботом.
  * Включая, запоминаем прежние каналы (мета `dm_backup`); выключая, возвращаем их как были. Каналы сервера бот не трогает и не удаляет.
- * Панель «Горит» после переключения публикуется заново на новом месте (старый id и хеш сбрасываем).
  */
 async function dmToggle(c: C): Promise<{ ops: Op[]; on: boolean }> {
   const on = await dmOn(c);
-  const ops: Op[] = [deleteMeta("panel_msg_id"), deleteMeta("panel_hash")];
+  const ops: Op[] = [];
   if (!on) {
     let dm = c.meta.get("dm_channel_id");
     if (!dm) {
@@ -715,15 +713,14 @@ async function dmToggle(c: C): Promise<{ ops: Op[]; on: boolean }> {
       ops.push(setMeta("dm_channel_id", dm));
     }
     ops.push(
-      setMeta(DM_BACKUP_KEY, JSON.stringify({ remind: c.s.chRemind, bot: c.s.chBot, today: c.s.chToday, intake: c.s.intake })),
+      setMeta(DM_BACKUP_KEY, JSON.stringify({ remind: c.s.chRemind, bot: c.s.chBot, intake: c.s.intake })),
       setSetting("ch_remind", dm),
       setSetting("ch_bot", dm),
-      setSetting("ch_today", dm),
       setSetting("intake", JSON.stringify([dm])),
     );
     return { ops, on: true };
   }
-  let back: { remind?: string | null; bot?: string | null; today?: string | null; intake?: unknown } = {};
+  let back: { remind?: string | null; bot?: string | null; intake?: unknown } = {};
   try {
     back = JSON.parse(c.meta.get(DM_BACKUP_KEY) ?? "{}") ?? {};
   } catch {
@@ -733,7 +730,6 @@ async function dmToggle(c: C): Promise<{ ops: Op[]; on: boolean }> {
   ops.push(
     setSetting("ch_remind", back.remind ?? ""),
     setSetting("ch_bot", back.bot ?? ""),
-    setSetting("ch_today", back.today ?? ""),
     setSetting("intake", JSON.stringify(intake)),
     deleteMeta(DM_BACKUP_KEY),
   );
@@ -752,11 +748,7 @@ const animeCtx = (c: C): AnimeCtx => ({ repo: c.repo, now: c.now, tz: c.s.tz, ch
 
 /** Неделя: дела и строка про аниме (что выходит). */
 async function weekWithAnime(c: C): Promise<string> {
-  const base = weekText(await c.repo.openMain(100), c.now, c.s.tz, c.s.character);
-  const anime = weekAnimeText(await listAnime(c.repo), c.now, c.s.tz);
-  return anime ? `${base}
-
-${anime}` : base;
+  return tasksAnswer("week", await c.repo.openMain(100), c.now, c.s.tz, c.s.character, await listAnime(c.repo));
 }
 
 /** Добавить строку навигации к ответу-обновлению (если это обновление сообщения). */

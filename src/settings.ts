@@ -23,6 +23,7 @@ export interface AppSettings {
   weekly: { dow: number; at: number } | null;
   chRemind: string | null;
   chBot: string | null;
+  /** канал убранной панели «Горит» (2026-11-11): читаем только, чтобы один раз удалить её старое сообщение; новых записей нет */
   chToday: string | null;
   chForum: string | null;
   chArchive: string | null;
@@ -62,7 +63,7 @@ export interface AppSettings {
 export const DM_BACKUP_KEY = "dm_backup";
 
 /**
- * «Личка» (решение 2026-11-11, DECISIONS): напоминания, сводки, панель «Горит» и ввод дел идут в личный чат с ботом.
+ * «Личка» (решение 2026-11-11, DECISIONS): напоминания, сводки и ввод дел идут в личный чат с ботом.
  * Включена, когда канал напоминаний — это и есть личка; одна лишь запись дел в личке (прежний режим) — не «Личка».
  */
 export function dmAllOn(s: Pick<AppSettings, "chRemind">, meta: Map<string, string>): boolean {

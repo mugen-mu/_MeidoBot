@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it } from "vitest";
 import { type Character, parseCharacter, tired } from "../src/flavor.ts";
 import { type Interaction, handleInteraction } from "../src/discord/interactions.ts";
-import { doneMessage, listText, panelText, summaryText, weekText, weeklyText } from "../src/discord/ui.ts";
+import { doneMessage, listText, hotText, summaryText, weekText, weeklyText } from "../src/discord/ui.ts";
 import { sectionMessage } from "../src/discord/menu.ts";
 import { readSettings } from "../src/settings.ts";
 import { kyiv, NOW } from "./helpers.ts";
@@ -38,7 +38,7 @@ describe("характер: тексты", () => {
   it("нейтральные тексты не изменились (без параметра и с «neutral»)", () => {
     expect(listText([], NOW, TZ)).toBe("Открытых дел нет.");
     expect(listText([], NOW, TZ, "neutral")).toBe("Открытых дел нет.");
-    expect(panelText([], NOW, TZ)).toBe("**Висит**\nНичего не висит.");
+    expect(hotText([], NOW, TZ)).toBe("**Висит**\nНичего не висит.");
     expect(weekText([], NOW, TZ)).toBe("На ближайшие 7 дней дел нет.");
     expect(doneMessage("купить хлеб").content).toBe("Готово: купить хлеб");
   });
@@ -46,7 +46,7 @@ describe("характер: тексты", () => {
   it("горничная: пустые списки и «Готово» с усталой ноткой, суть сообщения сохранена", () => {
     expect(listText([], NOW, TZ, MAID)).toContain("Открытых дел нет");
     expect(listText([], NOW, TZ, MAID)).not.toBe("Открытых дел нет.");
-    expect(panelText([], NOW, TZ, MAID)).toContain("Ничего не висит");
+    expect(hotText([], NOW, TZ, MAID)).toContain("Ничего не висит");
     expect(weekText([], NOW, TZ, MAID)).toContain("дел нет");
     const d = doneMessage("купить хлеб", MAID, 2).content ?? "";
     expect(d.endsWith("**купить хлеб** — готово")).toBe(true); // фраза горничной первой, суть хвостом

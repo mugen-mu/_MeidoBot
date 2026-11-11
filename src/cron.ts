@@ -6,7 +6,6 @@ import type { OccView, Op } from "./db/types.ts";
 import { type DiscordApi, DiscordError } from "./discord/types.ts";
 import {
   type Look,
-  panelText,
   reminderMessage,
   summaryMoreRow,
   summaryParts,
@@ -34,6 +33,7 @@ import { YASNO_ATTEMPTS, fetchYasno, groupsFor, lightFullText, lightLines, publi
 import { isLightQuestion, lightAskMessage } from "./lightAsk.ts";
 import { isWeatherQuestion, weatherAskMessage } from "./weatherAsk.ts";
 import { parseNumberCommand } from "./bulk.ts";
+import { parseTasksQuestion, tasksAnswer } from "./tasksAsk.ts";
 import {
   type Annual, CAL_HOUR, SEASON_TEXT, addedReply, calendarListText, dstItem, dstWarning, dueStage, isYearReviewDay, markValue, parseCalendarMessage,
   seasonKey, seasonStarting, stageItem, yearBounds, yearReviewText, ymdText,
@@ -131,7 +131,6 @@ export interface CronReport {
   deferred: number;
   failed: number;
   summaries: string[];
-  panel: boolean;
   intake: number;
   ping: "ok" | "fail" | "skip";
   subrequests: number;
@@ -139,12 +138,6 @@ export interface CronReport {
 }
 
 export { localDate };
-
-function hash(s: string): string {
-  let h = 5381;
-  for (let i = 0; i < s.length; i++) h = ((h << 5) + h + s.charCodeAt(i)) | 0;
-  return String(h >>> 0);
-}
 
 const defer = (id: number, at: number): Op => updateOcc(id, { next_fire_at: at, lock_until: null, lock_token: null });
 
@@ -154,7 +147,7 @@ export async function runCron(d: CronDeps): Promise<CronReport> {
   /** привязка модели с подсчётом нейронов: расход виден в итоге недели и в предупреждениях (usage.ts) */
   const ai = countedAi(d.ai, repo.counter);
   const token = d.token ?? crypto.randomUUID();
-  const report: CronReport = { claimed: 0, sent: 0, deferred: 0, failed: 0, summaries: [], panel: false, intake: 0, ping: "skip", subrequests: 0, notes: [] };
+  const report: CronReport = { claimed: 0, sent: 0, deferred: 0, failed: 0, summaries: [], intake: 0, ping: "skip", subrequests: 0, notes: [] };
   const pre = await repo.prelude(now, d.maxSends ?? MAX_SENDS, token);
   const meta = pre.meta;
   // «тихий день»: старые приписки «уставшей горничной» (сводки, пустые списки, аниме) тоже молчат — как нейтральный характер
@@ -505,6 +498,21 @@ ${n.text}` } : n;
             } catch (e) {
               if (e instanceof BudgetExceeded) break;
               report.notes.push("погода: не удалось ответить на вопрос в канале");
+            }
+            continue;
+          }
+          // вопрос про свои дела текстом: «что у меня горит», «какие дела», «что на сегодня», «что на неделю» — список вместо дела
+          // (решение 2026-11-11: панели «Горит» нет); без модели, промах поправит кнопка «Это было дело»
+          const tasksQ = parseTasksQuestion(m.content);
+          if (tasksQ && !detectSecret(m.content).secret && room2(5)) {
+            report.intake++;
+            try {
+              const open = await repo.openMain(100);
+              const text = tasksAnswer(tasksQ, open, now, s.tz, s.character, tasksQ === "week" ? await listAnime(repo) : []);
+              await api.postMessage(ch, lightAskMessage(text, m.content));
+            } catch (e) {
+              if (e instanceof BudgetExceeded) break;
+              report.notes.push("дела: не удалось ответить на вопрос в канале");
             }
             continue;
           }
@@ -1099,44 +1107,17 @@ ${n.text}` } : n;
       if (!r.healthy) healthy = false;
     }
 
-    // 2в. панель «Горит»: правим одно сообщение, раз в 5 минут и только если изменилась
-    if (!away && s.chToday && Math.floor(now / MINUTE) % 5 === 0 && room2(3)) {
-      const text = panelText(await getItems(), now, s.tz, s.character);
-      const h = hash(text);
-      if (meta.get("panel_hash") !== h) {
-        const body = { content: text, allowed_mentions: { parse: [] } };
-        const id = meta.get("panel_msg_id");
-        try {
-          let msgId = id;
-          let done = false;
-          if (id) {
-            try {
-              await api.editMessage(s.chToday, id, body);
-              done = true;
-            } catch (e) {
-              if (!(e instanceof DiscordError && e.status === 404)) throw e;
-            }
-          }
-          if (!done) {
-            msgId = (await api.postMessage(s.chToday, body)).id;
-            // панель и напоминания в одном чате (личка): закрепляем, чтобы панель не тонула в переписке; не вышло — не беда
-            if (s.chToday === s.chRemind) {
-              try {
-                await api.pinMessage(s.chToday, msgId);
-              } catch {
-                /* закрепление необязательно */
-              }
-            }
-          }
-          ops2.push(setMeta("panel_msg_id", msgId as string), setMeta("panel_hash", h));
-          report.panel = true;
-        } catch (e) {
-          if (!(e instanceof BudgetExceeded)) {
-            healthy = false;
-            ops2.push(event(now, "panel_failed"));
-          }
-        }
+    // 2в. остаток убранной панели «Горит» (решение 2026-11-11): её сообщение, которое бот правил раз в 5 минут, удаляем один раз;
+    // сама панель больше не публикуется. Удаление снимает и закрепление. Постоянная ошибка 4xx (сообщения уже нет) — тоже «убрано».
+    const stalePanel = meta.get("panel_msg_id");
+    if (stalePanel && room2(2)) {
+      let gone = true;
+      try {
+        if (s.chToday) await api.deleteMessage(s.chToday, stalePanel);
+      } catch (e) {
+        if (!(e instanceof DiscordError && e.status >= 400 && e.status < 500 && e.status !== 429)) gone = false;
       }
+      if (gone) ops2.push(deleteMeta("panel_msg_id"), deleteMeta("panel_hash"));
     }
   } catch (e) {
     healthy = false;

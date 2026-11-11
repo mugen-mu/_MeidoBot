@@ -1,6 +1,6 @@
 // Сухой прогон: сутки работы бота на базе-заглушке и поддельном Discord, по минутам.
 // Запуск: npm run dry-run. Ничего не отправляет наружу и не трогает настоящие базы.
-import { CH_REMIND, CH_TODAY, World } from "../test/world.ts";
+import { CH_REMIND, World } from "../test/world.ts";
 import { kyiv } from "../test/helpers.ts";
 import { MINUTE } from "../src/time/tz.ts";
 
@@ -28,7 +28,7 @@ for (let t = start; t < start + 24 * 60 * MINUTE; t += MINUTE) {
   sentTotal += rep.sent;
   for (const p of w.discord.posted.slice(before)) {
     const first = (p.body.content ?? "").split("\n")[0].replace(/<@\d+>\s*/, "");
-    console.log(`${fmt(t)} -> #${p.channel === CH_REMIND ? "напоминания" : p.channel === CH_TODAY ? "сегодня" : p.channel}: ${first}`);
+    console.log(`${fmt(t)} -> #${p.channel === CH_REMIND ? "напоминания" : p.channel}: ${first}`);
   }
 }
 console.log(`\nИтого за сутки: отправлено напоминаний ${sentTotal}, сообщений в канале ${w.discord.posted.length}, удалено ${w.discord.deletes.length}.`);
