@@ -58,6 +58,18 @@ export interface AppSettings {
   choresOn: boolean;
 }
 
+/** Ключ меты с копией каналов до включения «Личка» (по нему выключение возвращает всё как было). */
+export const DM_BACKUP_KEY = "dm_backup";
+
+/**
+ * «Личка» (решение 2026-11-11, DECISIONS): напоминания, сводки, панель «Горит» и ввод дел идут в личный чат с ботом.
+ * Включена, когда канал напоминаний — это и есть личка; одна лишь запись дел в личке (прежний режим) — не «Личка».
+ */
+export function dmAllOn(s: Pick<AppSettings, "chRemind">, meta: Map<string, string>): boolean {
+  const dm = meta.get("dm_channel_id");
+  return !!dm && s.chRemind === dm;
+}
+
 export const SETTING_KEYS = [
   "tz", "default_ladder", "default_time", "quiet_enabled", "quiet_from", "quiet_to", "away_until",
   "summary_morning", "summary_evening", "weekly", "ch_remind", "ch_bot", "ch_today", "ch_forum", "ch_archive", "intake", "light", "water", "gas", "character", "mood_on",

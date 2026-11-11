@@ -39,7 +39,7 @@ import {
   touchOps,
   unfreezeOps,
 } from "../service.ts";
-import { type AppSettings, timeOpts } from "../settings.ts";
+import { type AppSettings, DM_BACKUP_KEY, dmAllOn, timeOpts } from "../settings.ts";
 import { describeLead, describeRecipe, formatWhen } from "../time/format.ts";
 import { normalizeEvery, parseInput, parseWhen } from "../time/parse.ts";
 import { quickDue } from "../time/quick.ts";
@@ -533,10 +533,7 @@ async function settingsReply(c: C): Promise<Reply> {
   return msg({ ...settingsHomeMessage(c.s, c.now), flags: 64 });
 }
 
-const dmOn = async (c: C): Promise<boolean> => {
-  const dm = c.meta.get("dm_channel_id");
-  return !!dm && c.s.intake.includes(dm);
-};
+const dmOn = async (c: C): Promise<boolean> => dmAllOn(c.s, c.meta);
 
 // ---------- автодополнение номера дела ----------
 
@@ -703,22 +700,44 @@ async function snoozeTo(c: C, occ: OccView, target: number, resetCount = false):
   return update(snoozedMessage({ occId: occ.id, title: occ.title, whenText: formatWhen(target, c.now, c.s.tz), itemId: occ.item_id, line: await react(c, occ.snooze_count + 1 >= SNOOZE_TEASE_AT ? "snooze_5" : "snoozed", occ) }));
 }
 
-/** Включить или выключить приём дел в личке: какие записи сделать и каким станет состояние. */
+/**
+ * «Личка» (решение 2026-11-11): всё — напоминания, сводки, панель «Горит» и ввод дел — в личный чат с ботом.
+ * Включая, запоминаем прежние каналы (мета `dm_backup`); выключая, возвращаем их как были. Каналы сервера бот не трогает и не удаляет.
+ * Панель «Горит» после переключения публикуется заново на новом месте (старый id и хеш сбрасываем).
+ */
 async function dmToggle(c: C): Promise<{ ops: Op[]; on: boolean }> {
   const on = await dmOn(c);
-  let dm = c.meta.get("dm_channel_id");
-  const intake = new Set(c.s.intake);
-  const ops: Op[] = [];
-  if (on && dm) intake.delete(dm);
-  else {
+  const ops: Op[] = [deleteMeta("panel_msg_id"), deleteMeta("panel_hash")];
+  if (!on) {
+    let dm = c.meta.get("dm_channel_id");
     if (!dm) {
       dm = (await c.api.createDm(c.owner)).id;
       ops.push(setMeta("dm_channel_id", dm));
     }
-    intake.add(dm);
+    ops.push(
+      setMeta(DM_BACKUP_KEY, JSON.stringify({ remind: c.s.chRemind, bot: c.s.chBot, today: c.s.chToday, intake: c.s.intake })),
+      setSetting("ch_remind", dm),
+      setSetting("ch_bot", dm),
+      setSetting("ch_today", dm),
+      setSetting("intake", JSON.stringify([dm])),
+    );
+    return { ops, on: true };
   }
-  ops.push(setSetting("intake", JSON.stringify([...intake])));
-  return { ops, on: !on };
+  let back: { remind?: string | null; bot?: string | null; today?: string | null; intake?: unknown } = {};
+  try {
+    back = JSON.parse(c.meta.get(DM_BACKUP_KEY) ?? "{}") ?? {};
+  } catch {
+    /* копии нет или она повреждена: каналы сервера придётся завести заново (/setup) */
+  }
+  const intake = Array.isArray(back.intake) ? back.intake.map(String) : [];
+  ops.push(
+    setSetting("ch_remind", back.remind ?? ""),
+    setSetting("ch_bot", back.bot ?? ""),
+    setSetting("ch_today", back.today ?? ""),
+    setSetting("intake", JSON.stringify(intake)),
+    deleteMeta(DM_BACKUP_KEY),
+  );
+  return { ops, on: false };
 }
 
 // ---------- кнопочное меню (экраны — menu.ts) ----------
@@ -761,7 +780,7 @@ async function onMenu(c: C, parts: string[], values: string[]): Promise<Reply> {
   const gonePage = (f: ListFilter, p: number): Reply => show(resultMessage("Это дело уже закрыто или удалено.", f, p));
   const sectionScreen = async (sec: Section, cfg?: { settings: AppSettings; meta: Map<string, string> }): Promise<Reply> => {
     const s = cfg?.settings ?? c.s;
-    const dm = cfg ? (() => { const id = cfg.meta.get("dm_channel_id"); return !!id && s.intake.includes(id); })() : await dmOn(c);
+    const dm = cfg ? dmAllOn(s, cfg.meta) : await dmOn(c);
     return show(sectionMessage(s, sec, c.now, dm));
   };
 
@@ -1183,8 +1202,7 @@ async function onModal(c: C): Promise<Reply> {
 async function settingsUpdate(c: C, ops: Op[], sec?: Section): Promise<Reply> {
   if (ops.length) await c.repo.exec(ops);
   const cfg = await c.repo.loadConfig();
-  const dm = cfg.meta.get("dm_channel_id");
-  const dmOnNow = !!dm && cfg.settings.intake.includes(dm);
+  const dmOnNow = dmAllOn(cfg.settings, cfg.meta);
   return update(sec ? sectionMessage(cfg.settings, sec, c.now, dmOnNow) : settingsHomeMessage(cfg.settings, c.now));
 }
 

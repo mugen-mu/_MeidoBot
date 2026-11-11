@@ -1117,7 +1117,17 @@ ${n.text}` } : n;
               if (!(e instanceof DiscordError && e.status === 404)) throw e;
             }
           }
-          if (!done) msgId = (await api.postMessage(s.chToday, body)).id;
+          if (!done) {
+            msgId = (await api.postMessage(s.chToday, body)).id;
+            // панель и напоминания в одном чате (личка): закрепляем, чтобы панель не тонула в переписке; не вышло — не беда
+            if (s.chToday === s.chRemind) {
+              try {
+                await api.pinMessage(s.chToday, msgId);
+              } catch {
+                /* закрепление необязательно */
+              }
+            }
+          }
           ops2.push(setMeta("panel_msg_id", msgId as string), setMeta("panel_hash", h));
           report.panel = true;
         } catch (e) {
