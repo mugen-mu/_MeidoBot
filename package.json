@@ -12,6 +12,7 @@
     "deploy": "node scripts/wrangler.ts deploy",
     "register": "node scripts/register-commands.ts",
     "dry-run": "node scripts/dry-run.ts",
+    "rain-check": "node scripts/rain-check.ts",
     "setup": "node scripts/setup.ts",
     "status": "node scripts/status.ts",
     "export": "node scripts/export.ts",

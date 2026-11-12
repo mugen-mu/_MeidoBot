@@ -77,7 +77,11 @@ import { planFire } from "./ladder.ts";
 import { cancelItemOps, doneOps, freezeOps, ladderFor, newItemOps, nextSeriesOps, scrubOps } from "./service.ts";
 import { calmMessage, headVoice, reviewMessage } from "./discord/ui.ts";
 import { freezeCandidates, isTail, shouldNoteTail, soonFrozen } from "./tail.ts";
-import { type AppSettings, inQuietHours } from "./settings.ts";
+import { type AppSettings, dmAllOn, inQuietHours } from "./settings.ts";
+import {
+  RAIN_CONFIG, RAIN_NEXT_KEY, RAIN_OUTBOX_KEY, RAIN_SLACK_MS, RAIN_STATE_KEY, type RainOutboxItem,
+  fetchRain, logStamp, parseRainOutbox, parseRainState, planRain, serializeRainState,
+} from "./rain.ts";
 import { MINUTE, addDaysWall, localDate, nextTimeOfDay, wallOf } from "./time/tz.ts";
 
 export const RESERVE = 3;
@@ -105,6 +109,8 @@ export interface CronDeps {
   rand?: () => number;
   /** быстрый опрос приёма внутри минуты (шаг 4); без него — как раньше, раз в минуту */
   fastPoll?: FastPoll;
+  /** строки журнала (дождь: что решено и почему, со временем по Киеву); в Worker — console.log, в тестах по умолчанию молчит */
+  log?: (line: string) => void;
 }
 
 /**
@@ -324,7 +330,7 @@ export async function runCron(d: CronDeps): Promise<CronReport> {
     return line ? { ...n, text: `${line}
 ${n.text}` } : n;
   };
-  const enabledSources = { light: !!s.lightGroup, water: s.waterWords.length > 0, gas: s.gasWords.length > 0 };
+  const enabledSources = { light: !!s.lightGroup, water: s.waterWords.length > 0, gas: s.gasWords.length > 0, rain: s.rainOn };
   /** Реакция-эмодзи по настроению на сообщение хозяина (этап Х3): редко, на серьёзные темы — никогда; сбой реакции не страшен. */
   const react = async (ch: string, messageId: string, always: boolean, text = ""): Promise<void> => {
     if (!mood?.loaded || mood.silent || !room2(1) || isSeriousTopic(text)) return;
@@ -987,7 +993,7 @@ ${n.text}` } : n;
     }
 
     /** Отправить очередь сообщений коммуналки в «почту»; что не ушло (сбой Discord, лимит) — остаётся на следующую минуту. */
-    const flushOutbox = async (outbox: { text: string; mention: boolean }[], what: string) => {
+    const flushOutbox = async <T extends { text: string; mention: boolean }>(outbox: T[], what: string): Promise<T[]> => {
       while (outbox.length && room2(2)) {
         const m = outbox[0];
         try {
@@ -1094,6 +1100,53 @@ ${n.text}` } : n;
       if (JSON.stringify(st) + JSON.stringify(outbox) !== before) {
         ops2.push(setMeta("gas_state", JSON.stringify(st)), outbox.length ? setMeta("gas_outbox", JSON.stringify(outbox)) : deleteMeta("gas_outbox"));
       }
+    }
+
+    // 2б5в. дождь (просьба владельца 2026-11-12, src/rain.ts): раз в RAIN_CONFIG.checkEveryMinutes читаем Open-Meteo, автомат DRY ⇄ RAINING,
+    // сообщение «в Днепре начался дождь» / «дождь закончился» (и по желанию «скоро»). Сбой сайта в чат не пишем: журнал и «Состояние», следующий круг.
+    // Тихие часы и «я в отъезде»: состояние ведём, но сообщения не шлём (дождь «начался» вчера ночью утром никому не нужен).
+    if (s.rainOn && owner && s.chRemind) {
+      let st = parseRainState(meta.get(RAIN_STATE_KEY));
+      let outbox: RainOutboxItem[] = parseRainOutbox(meta.get(RAIN_OUTBOX_KEY), now);
+      const stBefore = meta.get(RAIN_STATE_KEY) ?? "";
+      const obBefore = meta.get(RAIN_OUTBOX_KEY) ?? "";
+      let next: string | null = null;
+      if (now >= (Number(meta.get(RAIN_NEXT_KEY) ?? 0) || 0) && room2(4)) {
+        repo.counter.spend(1);
+        const got = await fetchRain(d.fetchFn ?? fetch, now);
+        next = String(now + RAIN_CONFIG.checkEveryMinutes * MINUTE - RAIN_SLACK_MS); // при сбое — то же: «на следующем цикле»
+        const stamp = logStamp(now, RAIN_CONFIG.timezone);
+        if (got.ok) {
+          note("rain", true);
+          const plan = planRain(st, got.reading, now, s.rainEarly);
+          st = plan.state;
+          for (const line of plan.log) {
+            d.log?.(`[дождь ${stamp} Киев] ${line}`);
+            report.notes.push(`дождь: ${line}`);
+          }
+          const silent = away || inQuietHours(s, minuteOfDay);
+          const loudOk = !dmAllOn(s, meta); // в личке звук и так есть, упоминание не нужно
+          for (const n of plan.notices) {
+            if (silent) {
+              d.log?.(`[дождь ${stamp} Киев] «${n.text}» не отправлено: тихие часы или отъезд`);
+              report.notes.push("дождь: сообщение не отправлено (тихие часы или отъезд)");
+            } else {
+              outbox.push({ text: n.text, mention: n.loud && loudOk, at: now });
+              ops2.push(event(now, `rain_${n.kind}`, null, `mm=${got.reading.mm}`));
+            }
+          }
+        } else {
+          note("rain", false);
+          d.log?.(`[дождь ${stamp} Киев] Open-Meteo не прочитался: ${got.why}`);
+          report.notes.push(`дождь: не прочиталось (${got.why})`);
+        }
+      }
+      outbox = await flushOutbox(outbox, "rain");
+      if (next) ops2.push(setMeta(RAIN_NEXT_KEY, next));
+      const stAfter = st ? serializeRainState(st) : "";
+      if (stAfter && stAfter !== stBefore) ops2.push(setMeta(RAIN_STATE_KEY, stAfter));
+      const obAfter = outbox.length ? JSON.stringify(outbox) : "";
+      if (obAfter !== obBefore) ops2.push(obAfter ? setMeta(RAIN_OUTBOX_KEY, obAfter) : deleteMeta(RAIN_OUTBOX_KEY));
     }
 
     // 2б6. аниме: ночное обновление расписания и утреннее «посмотрели?»

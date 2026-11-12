@@ -4,6 +4,7 @@ import { type StyleConfig, parseStyle } from "./personality/animeStyle.ts";
 import { type MonthDay, parseBirthday } from "./personality/occasions.ts";
 import { DEFAULT_SPEC, type LadderSpec, parseSpec } from "./ladder.ts";
 import { DEFAULT_TZ, parseHHMM } from "./time/tz.ts";
+import { RAIN_CONFIG, type RainMode } from "./rain.ts";
 import { parseWaterWords } from "./water.ts";
 
 export interface AppSettings {
@@ -57,6 +58,10 @@ export interface AppSettings {
   soundAll: boolean;
   /** бот сам заводит дела-сопровождение (копия базы, зависимости, модели, ключи; этап 4); вкл по умолчанию */
   choresOn: boolean;
+  /** уведомление «в Днепре начался дождь» (src/rain.ts): вкл по умолчанию (просьба владельца 2026-11-12) */
+  rainOn: boolean;
+  /** и предупреждение «скоро может пойти дождь»: по умолчанию как в `RAIN_CONFIG.earlyWarning` (выкл) */
+  rainEarly: boolean;
 }
 
 /** Ключ меты с копией каналов до включения «Личка» (по нему выключение возвращает всё как было). */
@@ -75,7 +80,7 @@ export const SETTING_KEYS = [
   "tz", "default_ladder", "default_time", "quiet_enabled", "quiet_from", "quiet_to", "away_until",
   "summary_morning", "summary_evening", "weekly", "ch_remind", "ch_bot", "ch_today", "ch_forum", "ch_archive", "intake", "light", "water", "gas", "character", "mood_on",
   "style_level", "style_script", "style_sfx", "style_honorifics", "style_kaomoji", "hints_on", "llm_on", "live_on", "birthday",
-  "time_morning", "time_evening", "recent_on", "sound_all", "chores",
+  "time_morning", "time_evening", "recent_on", "sound_all", "chores", "rain",
 ] as const;
 
 function minutes(v: string | undefined, fallback: number | null): number | null {
@@ -132,7 +137,18 @@ export function readSettings(rows: { key: string; value: string }[]): AppSetting
     recentOn: m.get("recent_on") === "1",
     soundAll: m.get("sound_all") === "1",
     choresOn: m.get("chores") !== "0",
+    rainOn: rainMode(m.get("rain")) !== "off",
+    rainEarly: rainMode(m.get("rain")) === "early",
   };
+}
+
+/** Режим дождя по готовым настройкам (для экрана и переключателя). */
+export const rainModeOf = (s: Pick<AppSettings, "rainOn" | "rainEarly">): RainMode => (!s.rainOn ? "off" : s.rainEarly ? "early" : "on");
+
+/** Значение настройки `rain` -> режим; нет значения — как задано в `RAIN_CONFIG`. */
+export function rainMode(v: string | undefined): RainMode {
+  if (v === "off" || v === "on" || v === "early") return v;
+  return RAIN_CONFIG.earlyWarning ? "early" : "on";
 }
 
 /** Настройки времени для разбора фраз: одни и те же «утро» и «вечер» везде, где бот читает время. */

@@ -6,7 +6,7 @@ import { groupsFor, lightLines } from "./light.ts";
 import { formatDate, usDate } from "./time/format.ts";
 import { fmtHHMM, wallOf } from "./time/tz.ts";
 
-export type SourceId = "light" | "water" | "gas" | "shikimori" | "anilibria" | "weather";
+export type SourceId = "light" | "water" | "gas" | "shikimori" | "anilibria" | "weather" | "rain";
 
 export interface SourceInfo {
   id: SourceId;
@@ -22,6 +22,7 @@ export const SOURCES: SourceInfo[] = [
   { id: "shikimori", name: "Аниме: расписание (Shikimori)", icon: "🎬" },
   { id: "anilibria", name: "Аниме: озвучка (AniLibria)", icon: "🎧" },
   { id: "weather", name: "Погода", icon: "⛅" },
+  { id: "rain", name: "Дождь (Open-Meteo)", icon: "🌧" },
 ];
 
 export const META_KEY = "src_passport";
@@ -125,7 +126,8 @@ export function weekSourceLines(p: Passport, now: number, tz: string, enabled: E
   const out: string[] = [];
   for (const s of SOURCES) {
     const r = p[s.id];
-    if (s.id === "weather" || enabled[s.id] === false || !isBroken(r)) continue;
+    // дождь о сбое в чат не пишет (просьба владельца): сбой виден только на экране «Состояние»
+    if (s.id === "weather" || s.id === "rain" || enabled[s.id] === false || !isBroken(r)) continue;
     const ok = r?.ok !== undefined ? staleStamp(r.ok, now, tz) : "данных пока нет";
     out.push(`${s.icon} ${s.name}: не отвечает с ${whenText(r?.since ?? r?.try ?? now, now, tz)}, ${ok}.`);
   }

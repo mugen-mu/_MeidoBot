@@ -3,7 +3,8 @@
 // `pn:…` (постоянная панель в канале «бот»: нажатие открывает такой же экран отдельным сообщением «только вам»).
 import { CHARACTER_LABELS } from "../flavor.ts";
 import { PRESET_LABELS, describeSpec } from "../ladder.ts";
-import type { AppSettings } from "../settings.ts";
+import { type AppSettings, rainModeOf } from "../settings.ts";
+import { RAIN_CONFIG, rainModeWord } from "../rain.ts";
 import { describeRecipe, formatWhen } from "../time/format.ts";
 import { MINUTE, fmtHHMM, startOfDay } from "../time/tz.ts";
 import type { OccView } from "../db/types.ts";
@@ -417,6 +418,7 @@ export function sectionMessage(s: AppSettings, sec: Section, now: number, dmOn: 
             : `Личка: выкл. Всё идёт в каналы сервера (канал «бот»: ${s.chBot ? "заведён" : "не создан, /setup"}). Включите — и всё переедет в личные сообщения.`,
           `Недавние дела в «Добавить»: ${onOff(s.recentOn)}. Нажали «Добавить» — три последних дела кнопками, чтобы повторить в два касания.`,
           `Звук для всего: ${onOff(s.soundAll)}. Выкл — упоминание (звук) только у настоящих напоминаний; вкл — и у сводок, подтверждений и реплик Хару.`,
+          `Дождь в Днепре: ${rainModeWord(rainModeOf(s))}. Раз в ${RAIN_CONFIG.checkEveryMinutes} минут бот смотрит погодную модель Open-Meteo и пишет, когда начался дождь и когда закончился (не в тихие часы); это модель, а не радар, поэтому возможны опоздания. «Скоро» — ещё и предупреждает примерно за 15 минут.`,
         ].join("\n"),
         [
           row(
@@ -424,6 +426,7 @@ export function sectionMessage(s: AppSettings, sec: Section, now: number, dmOn: 
             btn(dmOn ? "Личка: выключить" : "Личка: включить", "mn:tg:dm:a", dmOn ? 3 : 2),
             btn(s.recentOn ? "Недавние дела: выключить" : "Недавние дела: включить", "mn:tg:rc:a", s.recentOn ? 3 : 2),
             btn(s.soundAll ? "Звук для всего: выключить" : "Звук для всего: включить", "mn:tg:snd:a", s.soundAll ? 3 : 2),
+            btn(`Дождь: ${rainModeWord(rainModeOf(s))}`, "mn:tg:rn:a", s.rainOn ? 3 : 2),
           ),
           row(btn("Слова Хару", "mn:gl"), btn("Сбросить настроение…", "mn:rs", 4)),
           back,

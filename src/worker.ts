@@ -83,6 +83,6 @@ export default {
     const cronEnv: CronEnv = { ownerId: env.OWNER_ID, watchdogUrl: env.WATCHDOG_URL };
     // await, а не ctx.waitUntil: запуск живёт до ~55 с (быстрый опрос приёма, FAST_POLL). Для scheduled документация даёт 15 минут
     // на сам обработчик; «30 секунд после возврата» (waitUntil) описаны только для HTTP — на них не полагаемся.
-    await runCron({ repo, api, now: Date.now(), env: cronEnv, ai: env.AI, fastPoll: FAST_POLL });
+    await runCron({ repo, api, now: Date.now(), env: cronEnv, ai: env.AI, fastPoll: FAST_POLL, log: (line) => console.log(line) });
   },
 };

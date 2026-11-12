@@ -40,7 +40,8 @@ import {
   touchOps,
   unfreezeOps,
 } from "../service.ts";
-import { type AppSettings, DM_BACKUP_KEY, dmAllOn, timeOpts } from "../settings.ts";
+import { type AppSettings, DM_BACKUP_KEY, dmAllOn, rainModeOf, timeOpts } from "../settings.ts";
+import { nextRainMode } from "../rain.ts";
 import { describeLead, describeRecipe, formatWhen } from "../time/format.ts";
 import { normalizeEvery, parseInput, parseWhen } from "../time/parse.ts";
 import { quickDue } from "../time/quick.ts";
@@ -912,7 +913,7 @@ async function onMenu(c: C, parts: string[], values: string[]): Promise<Reply> {
     }
     case "ss": {
       // «Состояние» (этап 4): паспорт источников; всё берём из меты, которая уже прочитана, — лишних подзапросов нет
-      const text = statusText(parsePassport(c.meta.get(PASSPORT_KEY)), { light: !!c.s.lightGroup, water: c.s.waterWords.length > 0, gas: c.s.gasWords.length > 0 }, c.now, c.s.tz);
+      const text = statusText(parsePassport(c.meta.get(PASSPORT_KEY)), { light: !!c.s.lightGroup, water: c.s.waterWords.length > 0, gas: c.s.gasWords.length > 0, rain: c.s.rainOn }, c.now, c.s.tz);
       return show(statusMessage(text, panel ? "pn" : "mn"));
     }
     case "sq": {
@@ -1018,6 +1019,9 @@ async function onMenu(c: C, parts: string[], values: string[]): Promise<Reply> {
           break;
         case "snd":
           ops.push(setSetting("sound_all", c.s.soundAll ? "0" : "1"));
+          break;
+        case "rn":
+          ops.push(setSetting("rain", nextRainMode(rainModeOf(c.s))));
           break;
         default:
           return eph("Это действие бот не знает.");

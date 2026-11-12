@@ -39,6 +39,11 @@ export class World {
   /** AniLibria: расписание недели (массив); null — не отвечает */
   voice: unknown[] | null = [];
   voiceFetches = 0;
+  /** Open-Meteo (дождь): ответ-объект; функция — по текущему времени запуска; null — не отвечает; Error — сбой сети */
+  rain: unknown | ((now: number) => unknown) | Error | null = null;
+  rainFetches = 0;
+  /** строки журнала, которые cron передал через log */
+  logs: string[] = [];
 
   /** Репозиторий с новым счётчиком (как новый запуск Worker). */
   repo(limit = 50): Repo {
@@ -52,6 +57,7 @@ export class World {
     if (opts.intake) ops.push(setSetting("ch_bot", CH_BOT), setSetting("intake", JSON.stringify([CH_BOT])));
     // с 2026-11-08 характер включён по умолчанию; старые тесты проверяют нейтральный тон — выключаем явно (settings перекрывает)
     ops.push(setSetting("mood_on", "0"), setSetting("character", "neutral"), setSetting("chores", "0")); // дела-сопровождение (этап 4) включают только свои тесты
+    ops.push(setSetting("rain", "off")); // дождь (src/rain.ts) включают только его тесты: иначе старые тесты считали бы лишние запросы
     for (const [k, v] of Object.entries(opts.settings ?? {})) ops.push(setSetting(k, v));
     await this.repo().exec(ops);
   }
@@ -77,6 +83,12 @@ export class World {
         return this.water === null ? new Response("down", { status: 503 }) : Response.json(this.water);
       }
       const url = String(typeof input === "string" ? input : (input as { url?: string; href?: string })?.url ?? (input as { href?: string })?.href);
+      if (url.includes("open-meteo")) {
+        this.rainFetches++;
+        const r = typeof this.rain === "function" ? (this.rain as (n: number) => unknown)(now) : this.rain;
+        if (r instanceof Error) throw r;
+        return r === null ? new Response("down", { status: 503 }) : Response.json(r);
+      }
       if (url.includes("anilibria")) {
         this.voiceFetches++;
         return this.voice === null ? new Response("down", { status: 503 }) : Response.json(this.voice);
@@ -102,7 +114,7 @@ export class World {
       this.lightFetches++;
       return this.light === null ? new Response("down", { status: 503 }) : Response.json(this.light);
     }) as unknown as typeof fetch;
-    return runCron({ repo, api, now, env, fetchFn, ping: async (u) => void this.pings.push(u) });
+    return runCron({ repo, api, now, env, fetchFn, ping: async (u) => void this.pings.push(u), log: (l) => void this.logs.push(l) });
   }
 
   occ(id: number) {
