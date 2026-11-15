@@ -2,11 +2,11 @@
 // Одна запись в таблице `meta` (`src_passport`): читается вместе со всей метой в начале запуска, пишется вместе с остальным — подзапросов не добавляет.
 // Чистая логика без базы и Discord: время «сейчас» приходит аргументом.
 import type { LightData } from "./light.ts";
-import { groupsFor, lightLines } from "./light.ts";
+import { groupsFor, hasSchedule, lightLines } from "./light.ts";
 import { formatDate, usDate } from "./time/format.ts";
 import { fmtHHMM, wallOf } from "./time/tz.ts";
 
-export type SourceId = "light" | "water" | "gas" | "shikimori" | "anilibria" | "weather" | "rain";
+export type SourceId = "light" | "water" | "gas" | "shikimori" | "anilibria" | "weather" | "rain" | "ukrenergo";
 
 export interface SourceInfo {
   id: SourceId;
@@ -17,6 +17,7 @@ export interface SourceInfo {
 
 export const SOURCES: SourceInfo[] = [
   { id: "light", name: "Свет (Yasno)", icon: "💡" },
+  { id: "ukrenergo", name: "Свет: Укрэнерго (Telegram)", icon: "⚡" },
   { id: "water", name: "Вода (водоканал)", icon: "💧" },
   { id: "gas", name: "Газ (газовики)", icon: "🔥" },
   { id: "shikimori", name: "Аниме: расписание (Shikimori)", icon: "🎬" },
@@ -167,7 +168,7 @@ export function lastKnownLightLines(last: LightLast | null, which: "today" | "to
   const view: LightData = {};
   for (const g of groupsFor(group, last.data)) {
     const days = [last.data[g].today, last.data[g].tomorrow];
-    const day = days.find((d) => d.date === date && d.status === "ScheduleApplies");
+    const day = days.find((d) => d.date === date && hasSchedule(d));
     if (day) view[g] = { today: day, tomorrow: day };
   }
   if (!Object.keys(view).length) return null;

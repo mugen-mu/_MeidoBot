@@ -913,7 +913,7 @@ async function onMenu(c: C, parts: string[], values: string[]): Promise<Reply> {
     }
     case "ss": {
       // «Состояние» (этап 4): паспорт источников; всё берём из меты, которая уже прочитана, — лишних подзапросов нет
-      const text = statusText(parsePassport(c.meta.get(PASSPORT_KEY)), { light: !!c.s.lightGroup, water: c.s.waterWords.length > 0, gas: c.s.gasWords.length > 0, rain: c.s.rainOn }, c.now, c.s.tz);
+      const text = statusText(parsePassport(c.meta.get(PASSPORT_KEY)), { light: !!c.s.lightGroup, ukrenergo: !!c.s.lightGroup, water: c.s.waterWords.length > 0, gas: c.s.gasWords.length > 0, rain: c.s.rainOn }, c.now, c.s.tz);
       return show(statusMessage(text, panel ? "pn" : "mn"));
     }
     case "sq": {

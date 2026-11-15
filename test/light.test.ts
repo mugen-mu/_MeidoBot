@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it } from "vitest";
-import { fetchYasno, groupsFor, lightLines, normalizeGroup, parseYasno } from "../src/light.ts";
+import { checkSchedule, fetchYasno, groupsFor, lightLines, normalizeGroup, nowLine, parseYasno, publishedFor } from "../src/light.ts";
 import { setSetting } from "../src/db/repo.ts";
 import { kyiv } from "./helpers.ts";
 import { World } from "./world.ts";
@@ -45,6 +45,25 @@ describe("график света: разбор и подписи", () => {
     expect(lightLines("tomorrow", "3", pub, "2026-11-08")[0]).toBe("Свет завтра (группа 3): света не будет 00:00–03:00.");
     const none = parseYasno(yasno({ status: "ScheduleApplies", slots: WAIT }));
     expect(lightLines("tomorrow", "3", none, "2026-11-08")[0]).toContain("отключений нет");
+  });
+
+  it("статус Yasno NoOutages (15.11.2026: у всех групп «отключений нет»): это известный график, а не «не опубликован»", () => {
+    const raw = { "3.1": { today: day("2026-11-07", "NoOutages", WAIT), tomorrow: day("2026-11-08", "WaitingForSchedule", WAIT) } };
+    const data = parseYasno(raw);
+    expect(lightLines("today", "3.1", data, "2026-11-07")).toEqual(["Свет сегодня (группа 3.1): отключений нет."]);
+    expect(lightLines("tomorrow", "3.1", data, "2026-11-08")).toEqual(["Свет завтра (группа 3.1): график ещё не опубликован."]);
+    expect(publishedFor("today", "3.1", data, "2026-11-07")).toBe(true); // иначе бот весь день ждал бы «публикации» графика
+    expect(publishedFor("tomorrow", "3.1", data, "2026-11-08")).toBe(false);
+    expect(nowLine(kyiv(2026, 11, 7, 12, 0), "3.1", data, "Europe/Kyiv")).toBe("Сейчас по графику свет есть, сегодня отключений нет.");
+    expect(checkSchedule(kyiv(2026, 11, 7, 12, 0), "3.1", data, "Europe/Kyiv").verdict).toBe("no");
+  });
+
+  it("статус EmergencyShutdowns: графики не действуют — вердикт «emergency», строка света это объясняет", () => {
+    const raw = { "3.1": { today: day("2026-11-07", "EmergencyShutdowns", WAIT), tomorrow: day("2026-11-08", "WaitingForSchedule", WAIT) } };
+    const data = parseYasno(raw);
+    expect(checkSchedule(kyiv(2026, 11, 7, 12, 0), "3.1", data, "Europe/Kyiv").verdict).toBe("emergency");
+    expect(lightLines("today", "3.1", data, "2026-11-07")[0]).toContain("аварийные отключения");
+    expect(publishedFor("today", "3.1", data, "2026-11-07")).toBe(false);
   });
 
   it("подгруппы с разными графиками: обе строки и подсказка выбрать свою", () => {

@@ -23,6 +23,8 @@ import { maidEmbed, pickReaction, wantSprite } from "./personality/look.ts";
 import { isPolite, isSeriousTopic } from "./personality/moodEngine.ts";
 import { detectUserWord } from "./personality/userWords.ts";
 import { announceOutage } from "./power.ts";
+import { outageLinesFor } from "./outages.ts";
+import { UKR_CHECK_EVERY, UKR_LAST_KEY, UKR_NEXT_KEY, UKR_OUTBOX_KEY, UKR_STATE_KEY, fetchUkrenergo, parseUkrLast, parseUkrState, planUkrenergo, type UkrNotice } from "./ukrenergo.ts";
 import { parseAnimePhrase } from "./anime/core.ts";
 import { runAnime } from "./anime/cron.ts";
 import { handlePhrase } from "./anime/handlers.ts";
@@ -330,7 +332,7 @@ export async function runCron(d: CronDeps): Promise<CronReport> {
     return line ? { ...n, text: `${line}
 ${n.text}` } : n;
   };
-  const enabledSources = { light: !!s.lightGroup, water: s.waterWords.length > 0, gas: s.gasWords.length > 0, rain: s.rainOn };
+  const enabledSources = { light: !!s.lightGroup, ukrenergo: !!s.lightGroup, water: s.waterWords.length > 0, gas: s.gasWords.length > 0, rain: s.rainOn };
   /** Реакция-эмодзи по настроению на сообщение хозяина (этап Х3): редко, на серьёзные темы — никогда; сбой реакции не страшен. */
   const react = async (ch: string, messageId: string, always: boolean, text = ""): Promise<void> => {
     if (!mood?.loaded || mood.silent || !room2(1) || isSeriousTopic(text)) return;
@@ -800,6 +802,14 @@ ${n.text}` } : n;
             ops2.push(setMeta("light_tmr", localDate(addDaysWall(now, 1, s.tz), s.tz)));
           }
         }
+        // свет по датчику: что реально было за сутки (утром) или за сегодня (вечером); отключений не было — строки нет
+        if ((kind === "morning" || kind === "evening") && room2(3)) {
+          try {
+            extra = [...extra, ...(await outageLinesFor(repo, meta, now, s.tz, kind))];
+          } catch (e) {
+            if (!(e instanceof BudgetExceeded)) report.notes.push("свет: не удалось собрать отключения за сутки");
+          }
+        }
         // «Коммуналка»: свет, вода (газ — позже) одним блоком; про воду — только если что-то идёт или скоро будет
         if (s.waterWords.length) extra = [...extra, ...waterSummaryLines(parseWaterState(meta.get("water_state")), now, s.tz)];
         if (s.gasWords.length) extra = [...extra, ...gasSummaryLines(parseGasState(meta.get("gas_state")), now, s.tz)];
@@ -1057,6 +1067,44 @@ ${n.text}` } : n;
       if (JSON.stringify(st) + JSON.stringify(outbox) !== before) {
         ops2.push(setMeta("water_state", JSON.stringify(st)), outbox.length ? setMeta("water_outbox", JSON.stringify(outbox)) : deleteMeta("water_outbox"));
       }
+    }
+
+    // 2б4а. Укрэнерго: раз в 10 минут лента канала; посты про нашу область (аварийные отключения, последствия атак) — в «почту»
+    // выдержкой и ссылкой. Читается вместе с графиком света (отдельной кнопки в настройках нет, правило кнопок). Очередь, как у воды:
+    // сбой Discord не теряет сообщение. Первое чтение только запоминает, до какого поста дошли.
+    if (s.lightGroup && owner && s.chRemind) {
+      let outbox: UkrNotice[] = [];
+      try {
+        const v = JSON.parse(meta.get(UKR_OUTBOX_KEY) ?? "[]");
+        if (Array.isArray(v)) outbox = v;
+      } catch {
+        /* повреждено: пусто */
+      }
+      const before = JSON.stringify(outbox);
+      let stateRaw: string | null = null;
+      let lastRaw: string | null = null;
+      let next: string | null = null;
+      if (now >= (Number(meta.get(UKR_NEXT_KEY) ?? 0) || 0) && room2(5)) {
+        repo.counter.spend(1);
+        const posts = await fetchUkrenergo(d.fetchFn ?? fetch);
+        next = String(now + UKR_CHECK_EVERY);
+        if (posts) {
+          const r = planUkrenergo(parseUkrState(meta.get(UKR_STATE_KEY)), posts, now, s.tz, parseUkrLast(meta.get(UKR_LAST_KEY)));
+          outbox.push(...r.notices);
+          stateRaw = JSON.stringify(r.state);
+          if (r.last) lastRaw = JSON.stringify(r.last);
+          note("ukrenergo", true);
+          if (r.notices.length) report.notes.push(`Укрэнерго: новых сообщений ${r.notices.length}`);
+        } else {
+          note("ukrenergo", false);
+          report.notes.push("Укрэнерго: лента не прочиталась");
+        }
+      }
+      outbox = (await flushOutbox(outbox, "ukrenergo")).slice(-4);
+      if (next) ops2.push(setMeta(UKR_NEXT_KEY, next));
+      if (stateRaw && stateRaw !== meta.get(UKR_STATE_KEY)) ops2.push(setMeta(UKR_STATE_KEY, stateRaw));
+      if (lastRaw && lastRaw !== meta.get(UKR_LAST_KEY)) ops2.push(setMeta(UKR_LAST_KEY, lastRaw));
+      if (JSON.stringify(outbox) !== before) ops2.push(outbox.length ? setMeta(UKR_OUTBOX_KEY, JSON.stringify(outbox)) : deleteMeta(UKR_OUTBOX_KEY));
     }
 
     // 2б5. газ: раз в час главная страница газовиков (файл с графиком — только когда ссылка новая и раз в сутки);

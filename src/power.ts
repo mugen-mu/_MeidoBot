@@ -11,6 +11,7 @@ import { QUIET_META_KEY, isQuietNow } from "./personality/day.ts";
 import { MoodSession, makeCtx } from "./personality/director.ts";
 import type { Situation } from "./personality/phrases.ts";
 import { MINUTE, fmtHHMM, wallOf } from "./time/tz.ts";
+import { UKR_LAST_KEY, ukrAnnounceLine } from "./ukrenergo.ts";
 
 /** Моргание короче этого времени в канал не пишется: сообщение «пропал» уходит, только если света нет дольше. */
 export const BLINK_MS = 60_000;
@@ -117,22 +118,31 @@ export async function powerLine(d: { repo: Repo; now: number; ownerId: string | 
 /** Фраза Хару первой после упоминания, дальше факты: «@вы Фраза. Свет вернулся …». */
 const withPhrase = (text: string, ownerId: string, line: string | null): string => (line ? text.replace(`<@${ownerId}> `, () => `<@${ownerId}> ${voiceText(line)} `) : text);
 
-/** Подпись сверки с графиком; null — группа в настройках не задана, ничего не пишем. */
-export function scheduleNote(at: number, s: AppSettings, data: LightData | null): string | null {
-  if (!s.lightGroup) return null;
-  if (!data) return "график недоступен";
+/**
+ * Сверка с графиком: подпись для сообщения и метка для журнала отключений (`sched=` в событии power_announced).
+ * Метка: none — группа не задана; unavailable — Yasno не ответил; иначе вердикт checkSchedule (yes / no / mixed / unknown / emergency).
+ * Подпись null — группа в настройках не задана, ничего не пишем.
+ */
+export function scheduleInfo(at: number, s: AppSettings, data: LightData | null): { note: string | null; tag: string } {
+  if (!s.lightGroup) return { note: null, tag: "none" };
+  if (!data) return { note: "график недоступен", tag: "unavailable" };
   const r = checkSchedule(at, s.lightGroup, data, s.tz);
   switch (r.verdict) {
     case "yes":
-      return `по графику: да, ${r.range}`;
+      return { note: `по графику: да, ${r.range}`, tag: "yes" };
     case "no":
-      return "по графику: нет";
+      // света нет, а график в это время отключений не обещал (или Yasno пишет «отключений нет»): это уже не по плану
+      return { note: "вне графика, похоже на аварийное отключение", tag: "no" };
+    case "emergency":
+      return { note: "Yasno: аварийные отключения, графики не действуют", tag: "emergency" };
     case "mixed":
-      return "по графику: зависит от подгруппы";
+      return { note: "по графику: зависит от подгруппы", tag: "mixed" };
     default:
-      return "график на это время неизвестен";
+      return { note: "график на это время неизвестен", tag: "unknown" };
   }
 }
+
+export const scheduleNote = (at: number, s: AppSettings, data: LightData | null): string | null => scheduleInfo(at, s, data).note;
 
 export interface PowerDeps {
   repo: Repo;
@@ -189,8 +199,11 @@ export async function announceOutage(d: PowerDeps & { meta: Map<string, string>;
     data = await fetchYasno(d.fetchFn ?? fetch);
   }
   const line = await powerLine({ repo: d.repo, now: d.now, ownerId: d.ownerId, s: d.s, meta: d.meta }, "power_off");
+  const sched = scheduleInfo(p.since, d.s, data);
+  // свежее сообщение Укрэнерго про область (аварийные отключения, последствия атак): причина и масштаб, которых нет ни у Yasno, ни у датчика
+  const ukr = ukrAnnounceLine(d.meta.get(UKR_LAST_KEY), d.now, d.s.tz);
   await d.api.postMessage(d.s.chRemind, {
-    content: withPhrase(offMessage({ ownerId: d.ownerId, since: p.since, tz: d.s.tz, schedule: scheduleNote(p.since, d.s, data) }), d.ownerId, line),
+    content: withPhrase(offMessage({ ownerId: d.ownerId, since: p.since, tz: d.s.tz, schedule: sched.note }), d.ownerId, line) + (ukr ? `\n${ukr}` : ""),
     allowed_mentions: { users: [d.ownerId] },
   });
   // отметка «сообщили» ставится, только пока свет всё ещё считается пропавшим (гонка с запросом «появился»)
@@ -199,6 +212,7 @@ export async function announceOutage(d: PowerDeps & { meta: Map<string, string>;
       sql: "UPDATE meta SET value = '1' WHERE key = 'power_announced' AND EXISTS (SELECT 1 FROM meta WHERE key = 'power_state' AND value = 'off')",
       params: [],
     },
-    event(d.now, "power_announced"),
+    // метка сверки с графиком нужна журналу отключений (сводка «за сутки … из них вне графика», src/outages.ts)
+    event(d.now, "power_announced", null, `sched=${sched.tag}`),
   ];
 }

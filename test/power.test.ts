@@ -178,13 +178,33 @@ describe("свет: сверка с графиком Yasno", () => {
     expect(w.lightFetches).toBe(1);
   });
 
-  it("вне графика: «по графику: нет»", async () => {
+  it("вне графика: «вне графика, похоже на аварийное отключение»; в журнале событий метка sched=no", async () => {
     await w.repo().exec([setSetting("light", "3")]);
     w.light = yasno();
     const t = kyiv(2026, 11, 7, 15, 10);
     await signal("off", t);
     await w.run(t + 2 * MINUTE);
-    expect(remindPosts()[0].body.content).toBe(`<@${OWNER}> Света нет с 15:10 (по графику: нет)`);
+    expect(remindPosts()[0].body.content).toBe(`<@${OWNER}> Света нет с 15:10 (вне графика, похоже на аварийное отключение)`);
+    expect(w.d1.q<{ detail: string | null }>("SELECT detail FROM events WHERE kind = 'power_announced'")).toEqual([{ detail: "sched=no" }]);
+  });
+
+  it("Yasno пишет «отключений нет» (статус NoOutages): свет пропал — это вне графика, а не «график неизвестен»", async () => {
+    await w.repo().exec([setSetting("light", "3")]);
+    const quiet = { today: day("2026-11-07", "NoOutages", WAIT), tomorrow: day("2026-11-08", "WaitingForSchedule", WAIT) };
+    w.light = { "3.1": quiet, "3.2": quiet };
+    await signal("off", T0);
+    await w.run(T0 + 2 * MINUTE);
+    expect(remindPosts()[0].body.content).toBe(`<@${OWNER}> Света нет с 17:42 (вне графика, похоже на аварийное отключение)`);
+  });
+
+  it("Yasno показывает «аварийные отключения»: так и пишем, в журнале sched=emergency", async () => {
+    await w.repo().exec([setSetting("light", "3")]);
+    const emergency = { today: day("2026-11-07", "EmergencyShutdowns", WAIT), tomorrow: day("2026-11-08", "WaitingForSchedule", WAIT) };
+    w.light = { "3.1": emergency, "3.2": emergency };
+    await signal("off", T0);
+    await w.run(T0 + 2 * MINUTE);
+    expect(remindPosts()[0].body.content).toBe(`<@${OWNER}> Света нет с 17:42 (Yasno: аварийные отключения, графики не действуют)`);
+    expect(w.d1.q<{ detail: string | null }>("SELECT detail FROM events WHERE kind = 'power_announced'")).toEqual([{ detail: "sched=emergency" }]);
   });
 
   it("Yasno не отвечает: «график недоступен», сообщение всё равно уходит", async () => {

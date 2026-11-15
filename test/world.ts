@@ -27,6 +27,9 @@ export class World {
   gasHome: string | null = null;
   gasDocx: Uint8Array | null = null;
   gasFetches = 0;
+  /** лента Укрэнерго (html страницы t.me/s/Ukrenergo); null — не отвечает */
+  ukr: string | null = null;
+  ukrFetches = 0;
   /** Shikimori: ответ на поиск (массив) и на «один тайтл» по номеру; null — не отвечает */
   shikiSearch: unknown[] | null = [];
   shikiById: Record<number, unknown> = {};
@@ -110,6 +113,10 @@ export class World {
         const isFile = url.endsWith(".docx");
         const body = isFile ? this.gasDocx : this.gasHome;
         return body === null ? new Response("down", { status: 503 }) : new Response(body as BodyInit);
+      }
+      if (url.includes("t.me/s/")) {
+        this.ukrFetches++;
+        return this.ukr === null ? new Response("down", { status: 503 }) : new Response(this.ukr);
       }
       this.lightFetches++;
       return this.light === null ? new Response("down", { status: 503 }) : Response.json(this.light);

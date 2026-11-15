@@ -15,6 +15,12 @@ export interface LightDay {
 
 export type LightData = Record<string, { today: LightDay; tomorrow: LightDay }>;
 
+/**
+ * График дня известен: «есть график» или «отключений нет». Со второй половины ноября 2026 Yasno помечает день без отключений
+ * статусом `NoOutages` (все слоты «NotPlanned»); раньше бот не знал такого статуса и писал «график не опубликован».
+ */
+export const hasSchedule = (d: LightDay): boolean => d.status === "ScheduleApplies" || d.status === "NoOutages";
+
 type RawSlot = { start?: number; end?: number; type?: string };
 type RawDay = { slots?: RawSlot[]; date?: string; status?: string };
 
@@ -88,7 +94,7 @@ export function lightLines(which: "today" | "tomorrow", group: string, data: Lig
   const describe = (d: LightDay): string => {
     if (d.status === "WaitingForSchedule" || d.date !== expectedDate) return "график ещё не опубликован";
     if (d.status === "EmergencyShutdowns") return "Yasno сейчас показывает «аварийные отключения» без часов, график не опубликован (проверьте сайт ДТЭК)";
-    if (d.status !== "ScheduleApplies") return `график не опубликован (статус Yasno «${d.status}»)`;
+    if (!hasSchedule(d)) return `график не опубликован (статус Yasno «${d.status}»)`;
     return d.off.length ? `света не будет ${d.off.map(range).join(", ")}` : "отключений нет";
   };
   const days = keys.map((k) => data[k][which]);
@@ -106,7 +112,8 @@ export function normalizeGroup(text: string): string | null {
 }
 
 export interface ScheduleCheck {
-  verdict: "yes" | "no" | "mixed" | "unknown";
+  /** emergency — Yasno сейчас показывает «аварийные отключения»: графики не действуют */
+  verdict: "yes" | "no" | "mixed" | "unknown" | "emergency";
   /** интервал «света не будет», в который попал момент, например «17:30–20:30» */
   range?: string;
 }
@@ -125,7 +132,11 @@ export function checkSchedule(at: number, group: string, data: LightData, tz: st
   const results: ScheduleCheck[] = [];
   for (const k of groupsFor(group, data)) {
     const day = [data[k].today, data[k].tomorrow].find((d) => d.date === date);
-    if (!day || day.status !== "ScheduleApplies") {
+    if (day?.status === "EmergencyShutdowns") {
+      results.push({ verdict: "emergency" });
+      continue;
+    }
+    if (!day || !hasSchedule(day)) {
       results.push({ verdict: "unknown" });
       continue;
     }
@@ -141,7 +152,7 @@ export function checkSchedule(at: number, group: string, data: LightData, tz: st
 /** Опубликован ли график на «сегодня» или «завтра» для всех подгрупп группы (на нужную дату). */
 export function publishedFor(which: "today" | "tomorrow", group: string, data: LightData, expectedDate: string): boolean {
   const keys = groupsFor(group, data);
-  return keys.length > 0 && keys.every((k) => data[k][which].status === "ScheduleApplies" && data[k][which].date === expectedDate);
+  return keys.length > 0 && keys.every((k) => hasSchedule(data[k][which]) && data[k][which].date === expectedDate);
 }
 
 /** «Сейчас по графику…»: идёт ли отключение и когда следующее. null — график на сегодня неизвестен или подгруппы расходятся. */
@@ -152,7 +163,7 @@ export function nowLine(now: number, group: string, data: LightData, tz: string)
   const lines = new Set<string>();
   for (const k of groupsFor(group, data)) {
     const day = data[k].today;
-    if (day.status !== "ScheduleApplies" || day.date !== date) return null;
+    if (!hasSchedule(day) || day.date !== date) return null;
     const inside = day.off.find((s) => minute >= s.start && minute < s.end);
     const next = day.off.find((s) => s.start > minute);
     lines.add(
@@ -160,7 +171,9 @@ export function nowLine(now: number, group: string, data: LightData, tz: string)
         ? `Сейчас по графику света нет, включат около ${fmtHHMM(inside.end)}.`
         : next
           ? `Сейчас по графику свет есть, ближайшее отключение в ${fmtHHMM(next.start)}.`
-          : "Сейчас по графику свет есть, сегодня отключений больше нет.",
+          : day.status === "NoOutages"
+            ? "Сейчас по графику свет есть, сегодня отключений нет."
+            : "Сейчас по графику свет есть, сегодня отключений больше нет.",
     );
   }
   return lines.size === 1 ? [...lines][0] : null;
