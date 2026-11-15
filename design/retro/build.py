@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Собирает design/retro/page.html (страница «Ретроспектива Meido» для claude.ai) из шаблона tools/questions-page/template.html.
+"""Собирает design/retro/page.html (страница «Ретроспектива Meido» для claude.ai) из шаблона design/template.html.
 
 Данные — data1.js … data4.js (группы и вопросы, склеиваются по порядку). Остальное (стили, сохранение ответов в базу страницы)
 берётся из шаблона. Запуск: python design/retro/build.py. Проверки: синтаксис скриптов (node), уникальные id,
@@ -12,8 +12,8 @@ import sys
 from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
-ROOT = HERE.parent.parent.parent  # D:\_Automation
-TEMPLATE = ROOT / "tools" / "questions-page" / "template.html"
+ROOT = HERE.parent.parent  # D:\_MeidoBot
+TEMPLATE = ROOT / "design" / "template.html"
 OUT = HERE / "page.html"
 PARTS = ["data1.js", "data2.js", "data3.js", "data4.js"]
 

@@ -65,7 +65,7 @@ describe("разбор графика", () => {
   it("мусор — пустой график", () => {
     expect(parseGasSchedule(["Привіт", "ще текст"])).toEqual({});
   });
-  const real = "D:/_Automation/DiscordBot/data/recon/gas_dp_schedule_2026-11.docx";
+  const real = "D:/_MeidoBot/data/recon/gas_dp_schedule_2026-11.docx";
   it.skipIf(!existsSync(real))("настоящий ноябрьский файл (лежит только локально): 8 дат", async () => {
     const xml = await unzipEntry(new Uint8Array(readFileSync(real)), "word/document.xml");
     const s = parseGasSchedule(docxParagraphs(new TextDecoder().decode(xml!)));

@@ -1,0 +1,715 @@
+<title>Вопросы к NEXT-STEPS</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Лист решений: шапка со счётчиками, ниже группы вопросов; каждая группа привязана к плану, который ждёт ответов */
+:root {
+  --bg: #f2f5f7; --panel: #ffffff; --ink: #17222c; --muted: #5a6875; --line: #d6dde4;
+  --accent: #1f5f8b; --accent-text: #1f5f8b; --accent-on: #ffffff; --accent-soft: #e2eef6;
+  --ok: #2e7d4f; --ok-soft: #e1f2e7; --defer: #9a6a00; --defer-soft: #f6ecd2;
+  --drop: #b3322a; --drop-soft: #f8e3e1; --deleg: #5b4aa0; --deleg-soft: #ebe7f6;
+  --font: "IBM Plex Sans", "Segoe UI", system-ui, sans-serif; --mono: "IBM Plex Mono", Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #1C1C1C; --panel: #2B2B2B; --ink: #F3F3F3; --muted: #A0A0A0; --line: #3D3D3D;
+  --accent: #14B8A6; --accent-soft: #10403C; --accent-text: #5EEAD4; --accent-on: #04201D;
+  --ok: #6fcf97; --ok-soft: #1d3428; --defer: #e2b552; --defer-soft: #3a3020;
+  --drop: #f08a80; --drop-soft: #3d2220; --deleg: #b4a6ec; --deleg-soft: #2b2745; color-scheme: dark } }
+:root[data-theme="dark"] {
+  --bg: #1C1C1C; --panel: #2B2B2B; --ink: #F3F3F3; --muted: #A0A0A0; --line: #3D3D3D;
+  --accent: #14B8A6; --accent-soft: #10403C; --accent-text: #5EEAD4; --accent-on: #04201D;
+  --ok: #6fcf97; --ok-soft: #1d3428; --defer: #e2b552; --defer-soft: #3a3020;
+  --drop: #f08a80; --drop-soft: #3d2220; --deleg: #b4a6ec; --deleg-soft: #2b2745; color-scheme: dark }
+body { background: var(--bg); color: var(--ink); font: 14px/1.5 var(--font); }
+.wrap { max-width: 880px; margin: 0 auto; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); padding-block: 20px 70px; display: grid; gap: 16px; }
+h1 { font-size: 22px; font-weight: 600; margin: 0; text-wrap: balance; }
+.sub { color: var(--muted); font-size: 13px; }
+.how { display: grid; gap: 4px; background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 10px 12px; font-size: 13px; }
+.how b { font-weight: 600; }
+.sticky { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 5; background: var(--bg); padding-block: 8px; display: grid; gap: 8px; border-bottom: 1px solid var(--line); }
+body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-area-inset-top, 0px); z-index: 10; background: var(--bg); }
+.bar { height: 8px; border-radius: 4px; background: var(--line); overflow: hidden; display: flex; }
+.bar i { display: block; height: 100%; }
+.b-ok { background: var(--ok); } .b-defer { background: var(--defer); } .b-drop { background: var(--drop); } .b-deleg { background: var(--deleg); }
+.nums { display: flex; flex-wrap: wrap; gap: 4px 14px; font-variant-numeric: tabular-nums; font-size: 13px; }
+.nums b { font-weight: 600; }
+.chips { display: flex; gap: 6px; overflow-x: auto; padding-bottom: 2px; }
+.chip { flex: none; font: inherit; font-size: 13px; border: 1px solid var(--line); background: var(--panel); color: var(--ink); border-radius: 999px; padding: 3px 11px; cursor: pointer; font-variant-numeric: tabular-nums; }
+.chip[aria-pressed="true"] { background: var(--accent); border-color: var(--accent); color: var(--accent-on); }
+button:focus-visible, textarea:focus-visible, input:focus-visible, summary:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.tools { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.tools button, .gh button { font: inherit; font-size: 13px; padding: 3px 11px; border-radius: 6px; border: 1px solid var(--line); background: transparent; color: var(--ink); cursor: pointer; }
+.tools button[aria-pressed="true"] { border-color: var(--accent); color: var(--accent-text); font-weight: 600; }
+.banner { border: 1px solid var(--defer); background: var(--defer-soft); border-radius: 8px; padding: 10px 12px; }
+.grp { display: grid; gap: 10px; }
+.gh { display: flex; flex-wrap: wrap; gap: 4px 12px; align-items: baseline; margin-top: 12px; }
+.gh h2 { font-size: 16px; font-weight: 600; margin: 0; }
+.gh .gate { color: var(--muted); font-size: 12.5px; flex: 1 1 260px; min-width: 0; }
+.gh .gcount { font-size: 12.5px; color: var(--muted); font-variant-numeric: tabular-nums; }
+.q { background: var(--panel); border: 1px solid var(--line); border-left: 4px solid var(--line); border-radius: 8px; padding: 12px 14px; display: grid; gap: 8px; min-width: 0; scroll-margin-top: 130px; }
+.q.s-choice, .q.s-note { border-left-color: var(--ok); }
+.q.s-defer { border-left-color: var(--defer); }
+.q.s-drop { border-left-color: var(--drop); }
+.q.s-delegate { border-left-color: var(--deleg); }
+.qh { display: flex; gap: 10px; align-items: baseline; }
+.qh h3 { font-size: 15px; font-weight: 600; margin: 0; text-wrap: balance; min-width: 0; }
+.qid { font-family: var(--mono); font-size: 12.5px; font-weight: 500; color: var(--accent-text); background: var(--accent-soft); border-radius: 4px; padding: 0 6px; flex: none; }
+.ctx { margin: 0; color: var(--muted); font-size: 13px; overflow-wrap: anywhere; }
+.meta { display: flex; flex-wrap: wrap; gap: 6px; }
+.tag { border: 1px solid var(--line); border-radius: 4px; padding: 0 6px; font-size: 11.5px; color: var(--muted); }
+fieldset.opts { border: 0; padding: 0; margin: 0; display: grid; gap: 6px; min-width: 0; }
+fieldset.opts legend { padding: 0; font-size: 12px; color: var(--muted); margin-bottom: 2px; }
+.opt { display: flex; gap: 10px; align-items: flex-start; border: 1px solid var(--line); border-radius: 8px; padding: 8px 10px; cursor: pointer; min-width: 0; }
+.opt:hover { border-color: var(--accent); }
+.opt:has(input:checked) { border-color: var(--accent); background: var(--accent-soft); }
+.opt input { margin: 3px 0 0; flex: none; accent-color: var(--accent); }
+.ob { display: grid; gap: 2px; min-width: 0; }
+.ot { font-weight: 500; overflow-wrap: anywhere; }
+.od { color: var(--muted); font-size: 12.5px; overflow-wrap: anywhere; }
+.recb { margin-left: 8px; font-size: 11px; font-weight: 600; color: var(--ok); background: var(--ok-soft); border-radius: 4px; padding: 0 6px; white-space: nowrap; }
+.acts { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.acts button { font: inherit; font-size: 13px; padding: 4px 12px; border-radius: 6px; border: 1px solid var(--line); background: transparent; color: var(--ink); cursor: pointer; }
+.acts button[data-act="defer"][aria-pressed="true"] { background: var(--defer-soft); border-color: var(--defer); color: var(--defer); font-weight: 600; }
+.acts button[data-act="drop"][aria-pressed="true"] { background: var(--drop-soft); border-color: var(--drop); color: var(--drop); font-weight: 600; }
+.acts button[data-act="delegate"][aria-pressed="true"] { background: var(--deleg-soft); border-color: var(--deleg); color: var(--deleg); font-weight: 600; }
+.acts button[data-act="clear"] { border-color: transparent; color: var(--muted); text-decoration: underline; padding-inline: 4px; }
+.acts .when { color: var(--muted); font-size: 12px; margin-left: auto; font-variant-numeric: tabular-nums; }
+textarea { width: 100%; box-sizing: border-box; font: inherit; font-size: 13px; padding: 6px 8px; border: 1px solid var(--line); border-radius: 6px; background: var(--bg); color: var(--ink); resize: vertical; min-height: 36px; }
+details.more { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 8px 14px; }
+details.more summary { cursor: pointer; font-weight: 600; }
+details.more ul { margin: 8px 0 4px; padding-left: 18px; display: grid; gap: 4px; color: var(--muted); font-size: 13px; }
+.empty { text-align: center; color: var(--muted); padding: 40px 0; }
+#exp { font-family: var(--mono); font-size: 16px; min-height: 220px; }
+@media (max-width: 600px) {
+  .tools button, .acts button, .gh button, .chip { min-height: 44px; }
+  .tools button { flex: 1 1 140px; }
+  .opt { min-height: 44px; align-items: center; }
+  .opt input { width: 20px; height: 20px; margin: 0; }
+  .acts button[data-act="clear"] { padding-inline: 10px; }
+  textarea { font-size: 16px; min-height: 64px; }
+}
+#toast { position: fixed; left: 50%; transform: translateX(-50%); bottom: calc(16px + env(safe-area-inset-bottom, 0px)); z-index: 30; background: var(--ink); color: var(--bg); padding: 8px 14px; border-radius: 8px; font-size: 13px; max-width: calc(100% - 32px); }
+@media (prefers-reduced-motion: no-preference) { .q, .opt { transition: border-color .15s, background .15s; } }
+</style>
+
+<div class="wrap">
+  <div style="display:grid;gap:6px">
+    <h1>Вопросы к NEXT-STEPS</h1>
+    <div class="sub" id="sub"></div>
+  </div>
+  <div class="how">
+    <div><b>Вариант</b> — выберите один (или несколько, где так сказано). Первым стоит вариант, который рекомендую.</div>
+    <div><b>Отложить</b> — вернёмся позже, ничего не решаем. <b>Не делать</b> — закрываем пункт, в NEXT-STEPS пометим отказ. <b>Решай сам</b> — выбираю по рекомендации и коротко сообщаю, что выбрал.</div>
+    <div>Свой вариант или уточнение — в поле комментария. Ответы сохраняются сразу; когда закончите, напишите в чате «ответил».</div>
+  </div>
+  <div class="banner" id="nodb" hidden>Ответы не уходят в базу страницы: войдите в аккаунт или откройте страницу из claude.ai. Пока они хранятся только в этом браузере, а кнопка «Скопировать ответы как Markdown» отдаст текст.</div>
+
+  <div class="sticky">
+    <div class="bar" id="bar"></div>
+    <div class="nums" id="nums"></div>
+    <div class="chips" id="chips"></div>
+    <div class="tools">
+      <button id="onlyOpen" aria-pressed="false">Только без ответа</button>
+      <button id="copy">Скопировать ответы как Markdown</button>
+    </div>
+  </div>
+
+  <div class="banner" id="exphint" hidden>Буфер недоступен. Выделите всё в поле ниже и скопируйте (долгое нажатие → «Выделить всё» → «Копировать»).</div>
+  <textarea id="exp" hidden readonly aria-label="Текст ответов"></textarea>
+  <div id="list"></div>
+
+  <details class="more">
+    <summary>Решаю сам, без вопросов (если что-то не так — скажите)</summary>
+    <ul>
+      <li>Убрать из NEXT-STEPS устаревшее: PassportLookup «Обновление приложения» (с 0.4.0 автообновление есть) и RadialMenuNavis «Интерфейс на ru/uk/en» (с 0.4.0 только английский).</li>
+      <li>Admin → Team: «убрать из Team» снимает человека со всех составов проектов; кэш чтения исполнителей — только если станет заметно.</li>
+      <li>Admin <code>--smoke</code>: печать в поле метки через WM_CHAR, чтобы не зависеть от раскладки.</li>
+      <li>«New Check»: прятать «Copy to My Checks» и «Archive» до первого сохранения; три абзаца про Ignored Worksets свести к одной фразе со ссылкой на справку.</li>
+      <li>«Lighting Height by Mark»: при пустой таблице подсказка «добавьте строку по марке» прямо в Logic.</li>
+      <li>Проверка из конвертера: «Description» собирать из сводки требований.</li>
+      <li>RadialMenuNavis (вместе с Revit-стороной, как пара): не показывать в каталоге поля ввода ленты (49 команд, из колеса не исполняются); выровнять текст «команда недоступна» с Revit-колесом.</li>
+      <li>Dashboard: <code>ActiveRulesFilter</code> с учётом «Applies to» и карта <code>RuleIdAliases</code> в <code>StatusBackfill</code> — вместе с вашим ответом на C6.</li>
+    </ul>
+  </details>
+  <details class="more">
+    <summary>Уже отложено или ждёт отзывов (не спрашиваю)</summary>
+    <ul>
+      <li>Остальные сочетания клавиш панели Fixes (отложено вами 22.10) и горячие клавиши Show / Isolate / Section Box (F-127).</li>
+      <li>Строки-«сводки» SPEC. REFERENCE при импорте паспорта (BACKLOG 23.10, ваша пометка «мысль отложить»).</li>
+      <li>Grounding BACKLOG: шаг креплений, нисходящие проводники, стержни — когда в моделях появится семейство стержня; фундаменты из связанной модели — только по вашему решению.</li>
+      <li>Закреплённая строка «Ignored Worksets — All Checks» в режиме «Таблица» — если попросят.</li>
+      <li>Мастер нового проекта: поле «пример имени модели» — когда появится первый новый проект. CSV в cp1251 с «х» вместо «x» принят как есть.</li>
+      <li>Живые проверки по этим файлам сюда не входят: они на странице Live Checks Sweep.</li>
+    </ul>
+  </details>
+</div>
+<div id="toast" hidden></div>
+
+<script>
+/* Данные: группы и вопросы. Варианты: первым стоит рекомендованный. */
+const o = (t, d, rec) => ({ t, d: d || ``, rec: !!rec });
+const GROUPS = [
+  { id: `P`, t: `Порядок работ`, gate: `Общее: в каком порядке запускать планы` },
+  { id: `N`, t: `Вложенные фильтры`, gate: `Перед планом «Вложенные фильтры» (пересмотр правила №1)` },
+  { id: `M`, t: `Механики конструктора`, gate: `Перед планом «Clash и Distance в одной механике + четыре кнопки What to Check»` },
+  { id: `S`, t: `Сортировка в Fixes`, gate: `Перед планом «Сортировка элементов в панели Fixes»` },
+  { id: `F`, t: `Параметры и поиск`, gate: `Перед планом «Список параметров в конструкторе и поиск в Fixes»` },
+  { id: `L`, t: `LightMode`, gate: `Перед планом «LightMode»` },
+  { id: `E`, t: `Edit in Constructor`, gate: `Перед доработкой «Edit in Constructor» (хвост пачки 63)` },
+  { id: `R`, t: `Правила и находки`, gate: `Перед пачкой «Исправления встроенных правил» (пачки 63, 65, Grounding)` },
+  { id: `C`, t: `Компания и доступ`, gate: `Без плана: ваши решения и действия` },
+  { id: `U`, t: `Мелочи интерфейса`, gate: `BACKLOG пачек 35 и 36: решить одним махом` },
+  { id: `X`, t: `Другие проекты`, gate: `PassportLookup и RadialMenuNavis` }
+];
+const Q = [
+  /* ---------- P: порядок ---------- */
+  { id: `P1`, g: `P`, title: `В каком порядке запускать планы?`,
+    ctx: `В NEXT-STEPS за 26.10 набралось шесть крупных направлений. Вы писали: сначала доработать модульность и движок проверок (вложенные фильтры), стандартные проверки после. Список параметров в конструкторе назвали обязательным: «что-то сделать».`,
+    src: `NEXT-STEPS 26.10, приоритет`, multi: false, opts: [
+      o(`Список параметров → вложенные фильтры → Clash/Distance и четыре кнопки → сортировка → поиск → LightMode`, `Коллеги сразу получают удобный список, потом движок по вашему приоритету.`, true),
+      o(`Вложенные фильтры первыми, всё остальное после`, `Строго по вашему приоритету. Список параметров ждёт своей очереди.`),
+      o(`LightMode первым`, `Ответ на отзыв R&D «сложно в управлении»: сначала проще для исполнителей, потом глубже для проверяющих.`),
+      o(`Сначала мелкое (список параметров, поиск, сортировка), потом движок`, `Видно в каждой сессии сразу; движок получит больше времени на проработку.`)
+    ] },
+
+  /* ---------- N: вложенные фильтры ---------- */
+  { id: `N1`, g: `N`, title: `Записываю пересмотр правила №1 в DECISIONS в таком виде?`,
+    ctx: `Сейчас правило №1 в CLAUDE.md OnePassQA запрещает цепочки A–B–C и «проверку как фильтр другой проверки». Вы сказали, что полноценные вложенные фильтры нужны в любом случае. Без записи решения план не начинаем.`,
+    src: `NEXT-STEPS 26.10, вложенные фильтры`, multi: false, opts: [
+      o(`Да, записать как есть`, `«Конструктор получает вложенные фильтры на всех механиках: условие внутри условия, проверка по параметрам внутри continuity и наоборот. Формулы и скобки, скрипты и элементы связанных моделей по-прежнему вне конструктора.»`, true),
+      o(`Записать, но с правкой формулировки`, `Что поправить — в комментарии.`),
+      o(`Пока не записывать: сначала разбор «Давай разберёмся»`, `Ответ без правок, решение после обсуждения.`)
+    ] },
+  { id: `N2`, g: `N`, title: `Какая глубина вложенности нужна?`,
+    ctx: `Пример: бенд → его соседний кондуит → условие на этот кондуит. Глубже: сосед соседа. От глубины зависят модель данных и сложность окна.`,
+    src: `NEXT-STEPS 26.10, вложенные фильтры`, multi: false, opts: [
+      o(`В файлах любая глубина, в окне до трёх уровней`, `«Бенд → сосед → сосед соседа» покрыт. Лимит окна снимается позже без миграции сохранённых проверок.`, true),
+      o(`Строго один уровень`, `Проще окно и быстрее проверка; «сосед соседа» не получится.`),
+      o(`Любая глубина и в окне`, `Полная модульность. Окно и скорость сложнее, коллеги могут запутаться.`)
+    ] },
+  { id: `N3`, g: `N`, title: `Как записывать «вертикальный» и «горизонтальный» кондуит?`,
+    ctx: `Пример с радиусом изгиба только у вертикальных бендов. Сейчас это два сравнения Elevation from Host на концах. Готовое свойство «Orientation» проще, но вы писали, что оно может и не понадобиться.`,
+    src: `NEXT-STEPS 26.10, вложенные фильтры`, multi: false, opts: [
+      o(`Не добавлять сейчас: сначала движок, потом решим по факту`, `Пробную проверку «вертикальные бенды» старым путём не собираем.`, true),
+      o(`Добавить готовое свойство «Orientation» (Horizontal / Vertical / Sloped)`, `Коллега выбирает слово вместо двух сравнений.`),
+      o(`Только сравнение двух параметров (Elevation)`, `Универсальнее, но сложнее для коллег.`)
+    ] },
+  { id: `N4`, g: `N`, title: `Как показывать вложенность в окне, не усложняя его?`,
+    ctx: `Окно «Настройки QA» и так насыщенное. Отметьте всё, что хотите видеть. Связь с LightMode — отдельный вопрос L1.`,
+    src: `NEXT-STEPS 26.10, вложенные фильтры`, multi: true, opts: [
+      o(`Вложенный блок появляется только по кнопке «+ Add Nested Filter»`, `У простых проверок окно не меняется.`, true),
+      o(`Дерево с отступами «Когда → внутри → внутри» в одной карточке`, `Видно всю цепочку условий сразу.`, true),
+      o(`Сводка вложенных условий одной строкой в карточке проверки`, `Читается без раскрытия: «Bend where connected conduit is vertical…».`, true),
+      o(`Редактор вложенности в отдельном диалоге`, `Основное окно остаётся чистым, но лишний клик.`),
+      o(`В LightMode вложенность не показывать, только сводку`, `Исполнитель видит смысл, но не правит.`)
+    ] },
+  { id: `N5`, g: `N`, title: `Ветки «ИНАЧЕ ЕСЛИ» в одной проверке: куда их?`,
+    ctx: `Из пачки 26 (F-078): одна карточка — несколько пар «Когда → Требования», срабатывает первая подходящая. Сейчас это две проверки с взаимоисключающими «Когда».`,
+    src: `NEXT-STEPS 19.10, пачка 26`, multi: false, opts: [
+      o(`Разобрать в том же плане, что вложенные фильтры, выпустить отдельным шагом`, `Общая модель условий, меньше переделок.`, true),
+      o(`Отдельным планом после вложенных фильтров`, `Не раздуваем первый план.`),
+      o(`Не делать: две проверки с взаимоисключающими «Когда» достаточно`)
+    ] },
+
+  /* ---------- M: механики ---------- */
+  { id: `M1`, g: `M`, title: `Какие направления зазора нужны в первой версии Clash/Distance?`,
+    ctx: `Clash и Distance становятся одной механикой с переключателем «жёсткое пересечение / минимальная дистанция». Отдельный «виртуальный клиренс» для J-box и pull box не нужен: это дистанция «вниз». Одна проверка может иметь несколько направлений.`,
+    src: `NEXT-STEPS 26.10, Clash и Distance`, multi: true, opts: [
+      o(`Вверх / вниз (по оси Z проекта)`, `J-box и pull box: зона зазора под коробкой, даже если её нет в семействе.`, true),
+      o(`От / к хосту (по нормали к поверхности хоста)`, `Например, от щита до ближайшей стены при условиях.`, true),
+      o(`Вдоль оси элемента`, ``, true),
+      o(`По осям проекта X / Y`),
+      o(`По нормали лицевой стороны семейства`),
+      o(`По осям самого элемента (не проекта)`)
+    ] },
+  { id: `M2`, g: `M`, title: `Как назвать вторую кнопку в «What to Check»?`,
+    ctx: `Whole Run и Segment Between Pull Points склеиваются в одну механику с переключателем «весь ран / участок между pull points». Остальные кнопки: Each Element, Connected Elements, Clash Detection. Название должно сразу объяснять, что внутри.`,
+    src: `NEXT-STEPS 26.10, четыре кнопки`, multi: false, opts: [
+      o(`Run or Segment`, `Не привязано к Conduit: подойдёт и для лотков.`, true),
+      o(`Conduit Run`, `Коротко, но про лотки и другие раны не скажет.`),
+      o(`Run Between Pull Points`, `Точно про участок, но не про весь ран.`),
+      o(`Run / Segment`)
+    ] },
+
+  /* ---------- S: сортировка ---------- */
+  { id: `S1`, g: `S`, title: `Где хранить сортировку элементов в Fixes?`,
+    ctx: `Сейчас порядок строк задаёт ран и TAG ID, как бы ни была устроена проверка. Нужна возможность выбрать параметр и направление; по умолчанию всё как сейчас.`,
+    src: `NEXT-STEPS 26.10, сортировка`, multi: false, opts: [
+      o(`В самой проверке (едет с общим списком и личными копиями)`, `У всех одинаковый порядок; задаётся в конструкторе.`, true),
+      o(`Режим панели Fixes у каждого пользователя`, `Каждый настраивает под себя; проверка о порядке ничего не знает.`),
+      o(`И то и другое: проверка задаёт порядок по умолчанию, пользователь может переопределить`, `Гибче, но два места настроек.`)
+    ] },
+  { id: `S2`, g: `S`, title: `Нужна ли многоуровневая сортировка?`,
+    ctx: `Например: сначала по уровню, потом по марке, потом по TAG ID.`,
+    src: `NEXT-STEPS 26.10, сортировка`, multi: false, opts: [
+      o(`До трёх уровней`, `Три строки «параметр + направление» в окне.`, true),
+      o(`Один параметр и направление`, `Проще всего, хватает в большинстве случаев.`),
+      o(`Любое число уровней`)
+    ] },
+  { id: `S3`, g: `S`, title: `У проверок про пары «A рядом с B»: по какому элементу сортировать?`,
+    ctx: `В паре два элемента, а строка в Fixes одна.`,
+    src: `NEXT-STEPS 26.10, сортировка`, multi: false, opts: [
+      o(`По A по умолчанию, в окне можно выбрать B`, `A — тот, у кого нарушение; для моделлера это естественно.`, true),
+      o(`Всегда по A`),
+      o(`По величине нарушения (расстояние, зазор)`)
+    ] },
+  { id: `S4`, g: `S`, title: `Как сортировка уживётся с группировкой «по правилу» и кнопками Next / Previous?`,
+    ctx: `Навигация сейчас строится по внутреннему порядку строк, его надо согласовать с тем, что видит глаз.`,
+    src: `NEXT-STEPS 26.10, сортировка`, multi: false, opts: [
+      o(`Сортировка действует внутри группы, Next / Previous идут в порядке на экране`, `Что видите, то и листаете.`, true),
+      o(`Сортировка заменяет группировку по правилу`, `Один плоский список.`),
+      o(`Next / Previous остаются по рану и TAG ID, сортировка только визуальная`, `Проще, но Next будет «прыгать» по списку.`)
+    ] },
+  { id: `S5`, g: `S`, title: `Пройтись по коду и перечислить, где проверка «пахнет Conduit»?`,
+    ctx: `Плагин задуман универсальным, но ран и TAG ID зашиты как допущение. Разбор — чтение кода, итог — короткий список в NEXT-STEPS: что мешает проверкам по оборудованию, щитам, светильникам.`,
+    src: `NEXT-STEPS 26.10, универсальность`, multi: false, opts: [
+      o(`Да, отдельным разбором до планов сортировки и вложенных фильтров`, `Планы не наступят дважды на одни и те же допущения.`, true),
+      o(`Вместе с планом вложенных фильтров`, `Меньше сессий, но разбор растворится в плане.`),
+      o(`Нет, найдём по ходу`)
+    ] },
+
+  /* ---------- F: параметры и поиск ---------- */
+  { id: `F1`, g: `F`, title: `Что сделать со списком параметров в конструкторе?`,
+    ctx: `Список длинный и плоский, открывается не на выбранном значении («Panel Name» выбран, а показан участок «C…–E…»), порядок выглядит не по алфавиту. Вы назвали это приоритетом: «обязательно что-то сделать».`,
+    src: `NEXT-STEPS 26.10, список параметров`, multi: true, opts: [
+      o(`Поиск по набору букв прямо в списке`, ``, true),
+      o(`Открывать список на выбранном значении`, ``, true),
+      o(`Алфавит без учёта регистра; пробелы и подчёркивания не ломают порядок`, ``, true),
+      o(`То же в остальных выпадающих списках (значения параметров, исключения)`, ``, true),
+      o(`Группы: параметры проекта / общие / встроенные Revit`, `Полезно, но нужно знать происхождение параметра.`),
+      o(`Недавно использованные сверху`)
+    ] },
+  { id: `F2`, g: `F`, title: `По каким полям искать в панели Fixes по умолчанию?`,
+    ctx: `Запрос «xfmr» в THM5A-DC1-TRI-ELEC-AG ничего не нашёл: оборудование обозначено Panel Name, а не TAG ID. Сейчас по элементу ищется только Element ID, категория и уровень; по рану — метка, RunId, тип сервиса и щит рана. Подсказка под полем обещает больше, чем есть.`,
+    src: `NEXT-STEPS 26.10, поиск в Fixes`, multi: true, opts: [
+      o(`TAG ID и Panel Name`, ``, true),
+      o(`Mark, Type Mark, Description`, ``, true),
+      o(`Имя семейства и типа`, ``, true),
+      o(`То, что ищется сейчас: Element ID, категория, уровень, метка и щит рана`, ``, true),
+      o(`Любые параметры, которые читает сама проверка`),
+      o(`Ключевые параметры оборудования из настройки проекта`, `Одна настройка питает поиск, сортировку и подпись строки; её ещё нет.`)
+    ] },
+  { id: `F3`, g: `F`, title: `Откуда брать значения параметров для поиска?`,
+    ctx: `В снимке нарушения есть не все параметры элемента. Расширить снимок — быстрый поиск, но снимки растут (в общей папке на них 94% места). Читать из модели — свежо, но нужна открытая модель и это медленнее.`,
+    src: `NEXT-STEPS 26.10, поиск в Fixes`, multi: false, opts: [
+      o(`Расширить снимок, но только списком ключевых параметров`, `Поиск мгновенный, рост снимков ограничен.`, true),
+      o(`Снимок для быстрого поиска, плюс кнопка «Search in Model» для остального`, `Гибче, но два пути.`),
+      o(`Читать из модели при поиске`, `Всегда свежо; только при открытой модели и медленнее.`),
+      o(`Оставить только то, что уже есть в снимке`, `Дёшево, но «xfmr» по Panel Name найдётся не везде.`)
+    ] },
+  { id: `F4`, g: `F`, title: `Как настраивать поиск?`,
+    ctx: `Жёстко «только TAG ID или Panel Name» не годится. Нужна гибкость без лишних окон.`,
+    src: `NEXT-STEPS 26.10, поиск в Fixes`, multi: true, opts: [
+      o(`Меню у строки поиска «Search in: ☑ …», у каждого пользователя своё`, `Широкий набор по умолчанию, чтобы «xfmr» находилось сразу.`, true),
+      o(`Синтаксис «поле:значение» в строке (например panel:xfmr)`, `Для тех, кому нужна точность.`),
+      o(`Одна общая настройка проекта «ключевые параметры оборудования»`, `Питает поиск, сортировку и подпись строки.`)
+    ] },
+
+  /* ---------- L: LightMode ---------- */
+  { id: `L1`, g: `L`, title: `Что остаётся в LightMode?`,
+    ctx: `LightMode — минимальный интерфейс и урезанный функционал для исполнителя, который только чинит нарушения. Полный режим остаётся для проверяющего и BIM-лида. Отметьте, что должно остаться; всё остальное прячется.`,
+    src: `NEXT-STEPS 26.10, LightMode`, multi: true, opts: [
+      o(`Список нарушений и группировка по рану`, ``, true),
+      o(`Next / Previous, Show, Isolate, Select, Section Box`, ``, true),
+      o(`Re-check`, ``, true),
+      o(`Комментарии и «Принять как исключение» (с причиной)`, ``, true),
+      o(`Поиск и простые фильтры`),
+      o(`Ссылка «Switch to Full Mode» всегда на виду`, ``, true)
+    ] },
+  { id: `L2`, g: `L`, title: `Режим привязан к роли или это настройка пользователя?`,
+    ctx: `Роли в плагине: исполнитель, модератор, администратор.`,
+    src: `NEXT-STEPS 26.10, LightMode`, multi: false, opts: [
+      o(`По роли: исполнитель получает LightMode по умолчанию, остальные полный; переключатель есть у всех`, ``, true),
+      o(`Только настройка пользователя, по умолчанию полный режим`),
+      o(`Только настройка, по умолчанию LightMode у всех`),
+      o(`Жёстко по роли, без переключателя`)
+    ] },
+  { id: `L3`, g: `L`, title: `Какой режим видит новичок, у которого ещё нет роли и настроек?`,
+    ctx: `Связь с онбордингом «без боли»: первый экран должен подсказывать, что делать.`,
+    src: `NEXT-STEPS 26.10, LightMode`, multi: false, opts: [
+      o(`LightMode со ссылкой «Switch to Full Mode»`, `Первый экран проще; ONBOARDING.md обновляю в той же пачке.`, true),
+      o(`При первом запуске спросить: «Я чиню» / «Я проверяю»`, `Один вопрос вместо догадок, выбор запоминается.`),
+      o(`Полный режим, как сейчас`)
+    ] },
+
+  /* ---------- E: Edit in Constructor ---------- */
+  { id: `E1`, g: `E`, title: `«Restore» встроенного правила, которое заменила проверка: что делать с задвоением?`,
+    ctx: `После «Restore» запущены и правило, и проверка-замена, нарушения дублируются.`,
+    src: `NEXT-STEPS 23.10, Edit in Constructor`, multi: false, opts: [
+      o(`Предупреждение в «Restore» с предложением архивировать проверку`, `Двойных нарушений по невнимательности не будет.`, true),
+      o(`«Restore» сам архивирует проверку-замену`, `Без вопросов; проверка остаётся в архиве, правку не потерять.`),
+      o(`Ничего не делать, ждать жалоб`)
+    ] },
+  { id: `E2`, g: `E`, title: `Mounting Height в «Edit in Constructor»: что с ней?`,
+    ctx: `Правило не вошло: оно берёт первый подошедший шаблон имени, габарит. Конструктору для этого нужен «первый подходящий шаблон» — расширение правила №1.`,
+    src: `NEXT-STEPS 23.10, Edit in Constructor`, multi: false, opts: [
+      o(`Отложить до итогов вложенных фильтров и вернуться`, `Не расширяем конструктор отдельным решением раньше времени.`, true),
+      o(`Правило остаётся только кодом`),
+      o(`Добавить «первый подходящий шаблон» в конструктор сейчас`)
+    ] },
+  { id: `E3`, g: `E`, title: `Значения «Правила модели» при замене на проверку: как быть?`,
+    ctx: `У модели с переопределением правила после замены значение «висит» на архивном правиле и не переходит в проверку.`,
+    src: `NEXT-STEPS 23.10, Edit in Constructor`, multi: false, opts: [
+      o(`Показывать такие модели в подтверждении замены`, `Модератор видит, у каких моделей переопределение «повиснет», и решает сам.`, true),
+      o(`Переносить значения в отдельные проверки модели`, `Работает само, но в списке появляются лишние строки; дороже.`),
+      o(`Ждать жалоб`)
+    ] },
+  { id: `E4`, g: `E`, title: `Выгрузка фактов DC1 для сверки конвертеров: когда сделаете?`,
+    ctx: `Файла <code>_test_rvt_projects\\facts\\*.json.gz</code> нет. Нужен Revit: «Инструменты → Проверить вид и сохранить данные для теста» на модели THM5A-DC1 (LIVE-CHECKS A9). Тест <code>RuleConvertersRealFactsTests</code> сейчас пропускается с причиной.`,
+    src: `NEXT-STEPS 23.10, Edit in Constructor`, multi: false, opts: [
+      o(`Сделаю вместе с общим обходом живых проверок`, `Один заход в Revit на всё.`, true),
+      o(`Сделаю отдельно в ближайшие дни`),
+      o(`Не нужна: конвертеры проверены тестами, закрыть пункт`)
+    ] },
+
+  /* ---------- R: правила и находки ---------- */
+  { id: `R1`, g: `R`, title: `Как делаем исправления правил, которые меняют находки?`,
+    ctx: `Разбор 50 встроенных правил нашёл 8 расхождений: Grounding Depth (UG) смотрит на худший конец, а не на самый мелкий; Working Clearance исключает все пады модели, а не пад под оборудованием; Cover Depth (UG) читает список «Grade Level» одним именем, и «A|B» молча ничего не находит; Conduit Spacing не сравнивает два кондуита вне ранов; Support Spacing берёт для размера вне 12 строк значение 1 дюйма; два способа слить фитинги в один изгиб расходятся; NEC-пресеты Conduit Size для EMT/IMC и RMC/PVC затирают друг друга; длина элемента без геометрии считается нулём.`,
+    src: `NEXT-STEPS 23.10, разбор правил (пачка 63)`, multi: false, opts: [
+      o(`Одной пачкой с выпуском; «What's New» перечисляет, что изменится`, `Новые находки появятся один раз и объяснены; одна ревизия отпечатков правил.`, true),
+      o(`Только те, где правило молча ничего не находит (Cover Depth, Conduit Spacing, Support Spacing)`, `Остальное остаётся как привычно.`),
+      o(`По одному, когда подвернётся`, `Меньше сюрпризов за раз, больше выпусков.`)
+    ] },
+  { id: `R2`, g: `R`, title: `Forbidden Condulets: совпало семейство ИЛИ тип, или оба сразу?`,
+    ctx: `В описании правила: нарушение, если имя семейства ИЛИ типа совпало с шаблоном. В NEXT-STEPS записано: «при разрешающих операторах должны пройти и семейство, и тип; замысел уточнить». Рекомендации нет: нужен ваш замысел.`,
+    src: `NEXT-STEPS 23.10, разбор правил`, multi: false, opts: [
+      o(`Как в описании: достаточно совпадения семейства или типа`, `Ничего не меняем.`),
+      o(`Для разрешающих операторов должны проходить и семейство, и тип`, `Строже; часть condulets перестанет попадать в нарушения.`),
+      o(`Зависит от оператора`, `Опишите в комментарии.`)
+    ] },
+  { id: `R3`, g: `R`, title: `Flexible Conduit Length: предел светильника 72 дюйма заменяет меньший предел материала (FMC 36 дюймов). Так задумано?`,
+    ctx: `Ссылка в записи: NEC 410.117(C). Сегодня у светильника действует 72", даже если материал допускает меньше.`,
+    src: `NEXT-STEPS 23.10, разбор правил`, multi: false, opts: [
+      o(`Так задумано: для светильника действует предел светильника`, `Ничего не меняем.`),
+      o(`Брать меньший из двух пределов`, `Строже: для FMC у светильника будет 36 дюймов.`),
+      o(`Не уверен: сверить с проектной спецификацией и вернуться`)
+    ] },
+  { id: `R4`, g: `R`, title: `Какие расширения правил нужны, если понадобятся?`,
+    ctx: `Это расширение правила №1, поэтому пачка 63 их не делала. Отметьте те, что нужны.`,
+    src: `NEXT-STEPS 23.10, «Не делаем в пачке 63»`, multi: true, opts: [
+      o(`Измерение «материал» у Conduit Size`, `Заодно лечит затирание NEC-пресетов EMT/IMC и RMC/PVC.`, true),
+      o(`Открытые размеры у Support Spacing`, `Размеры вне 12 строк задаются, а не берутся от 1 дюйма.`),
+      o(`Глубина рабочей зоны по напряжению (NEC 110.26)`, `Working Clearance учитывает напряжение оборудования.`)
+    ] },
+  { id: `R5`, g: `R`, title: `Заземление в угловых правилах THM5A: игнорировать рабочий набор?`,
+    ctx: `Набор «09-LIGHTNING PROTECTION/GROUNDING» не игнорируется правилами углов и радиусов: отвод заземления попадает в conduit.bend-angle («угол 2.4°» в снимке DC2 от 07.10). Правка меняет отпечатки пяти правил (нужна запись в фикстуры совместимости) и сводку мастера.`,
+    src: `NEXT-STEPS 20.10, Grounding`, multi: false, opts: [
+      o(`Добавить набор в игнорируемые у пяти правил (углы, радиусы, continuity) в шаблоне THM5A`, `Ложные нарушения от отводов заземления уйдут; один выпуск.`, true),
+      o(`Сначала узнать имя набора заземления в UG-моделях (LIVE-CHECKS AE2), потом добавить`, `Не гадаем имя набора.`),
+      o(`Не добавлять: принимать такие нарушения исключением`)
+    ] },
+  { id: `R6`, g: `R`, title: `Допуски для Navisworks-тестов J-box и трапеций: откуда взять?`,
+    ctx: `Памятка <code>docs/NAVISWORKS-CLASH-TESTS.md</code> описывает тесты «J-box ↔ трубы, воздуховоды» и «трапеции ↔ трубы, воздуховоды, конструкции». Допуски и источник требования знаете вы.`,
+    src: `NEXT-STEPS 23.10, пачка 65`, multi: false, opts: [
+      o(`Напишу допуски в комментарии здесь`, `Числа и из какого документа.`),
+      o(`Пришлю позже файл или скриншот из Navisworks-тестов проекта`),
+      o(`Источник — спецификация или BEP, укажу раздел`),
+      o(`Памятка не нужна, не писать`)
+    ] },
+
+  /* ---------- C: компания и доступ ---------- */
+  { id: `C1`, g: `C`, title: `Правильная таблица команды (Name, Position, Account): когда пришлёте?`,
+    ctx: `В справочнике компании у 33 из 76 человек имя не совпадает с почтой (импорт 12.10 взял таблицу как есть). Дальше: Admin → Team → Import CSV → Apply → Save Roles.`,
+    src: `NEXT-STEPS 22.10, пачка 48`, multi: false, opts: [
+      o(`Пришлю таблицу в ближайшие дни`, `Дальше одно действие в Admin.`, true),
+      o(`Исправлю имена прямо в Admin → Team сам`, `Без новой таблицы, но дольше.`),
+      o(`Оставить как есть: имена не критичны`)
+    ] },
+  { id: `C2`, g: `C`, title: `Строка «Ihor Lypkyn — Serhii.Sh@b-eng-s.com» в справочнике: это нарочно?`,
+    ctx: `Вход Windows на этом ПК — Serhii.SH-BES, возможно, так и задумано.`,
+    src: `NEXT-STEPS 22.10, пачка 48`, multi: false, opts: [
+      o(`Нарочно, оставить`, `Роли привязаны к этому адресу, ничего не трогаем.`, true),
+      o(`Исправить на мой адрес Ihor.L@b-eng-s.com`, `Роли сверю после Save Roles.`),
+      o(`Не уверен: разберёмся при следующей правке команды`)
+    ] },
+  { id: `C3`, g: `C`, title: `Файл политики папки компании (policy.json): когда создавать?`,
+    ctx: `Минимальная версия плагина и заморозка работают только у тех, у кого 0.56.0 или новее; на 22.10 у 4 из 4 клиентов версия была ниже. Файл не создан. Поднимать версию — <code>OnePassQASetup/tools/set-policy.ps1</code> (сначала <code>-WhatIf</code>).`,
+    src: `NEXT-STEPS 22.10, пачка 51`, multi: false, opts: [
+      o(`Не создавать, пока на странице Team у всех 0.56.0 или новее`, `Иначе политика ни на кого не подействует.`, true),
+      o(`Посмотреть страницу Team сейчас и вернуться с цифрами`, `Если версия уже подтянулась, предложу создать файл.`),
+      o(`Создать policy.json сейчас с минимальной версией 0.56.0`, `Новые версии подчинятся, старые обновятся обычным путём.`)
+    ] },
+  { id: `C4`, g: `C`, title: `Сервер компании вместо OneDrive: решение 22.10 в силе?`,
+    ctx: `22.10 решили пока не переносить. Остались вопросы: что за сервер (офис через VPN, облако или SharePoint), кто обслуживает, сколько коллег работает из дома или других стран. Риск «папка компании в личном OneDrive» принят. В корневом CLAUDE.md есть отдельный план <code>PLAN-SERVER-STORAGE.md</code> (общие данные на lab-server).`,
+    src: `NEXT-STEPS 22.10, сервер компании`, multi: false, opts: [
+      o(`Решение в силе: пока не переносить`, `Пересмотр по условиям из DECISIONS 22.10.`, true),
+      o(`Вести отдельно планом PLAN-SERVER-STORAGE (lab-server)`, `Вопросы про сервер задаю там, не здесь.`),
+      o(`Перенести папку компании в SharePoint компании (полушаг)`, `Папка компании, а не человека; права на подпапки. 1–2 дня и переезд; нужен сайт и его владелец.`),
+      o(`Есть новые вводные, напишу в комментарии`)
+    ] },
+  { id: `C5`, g: `C`, title: `Подпись установщика и DLL сертификатом: как поступаем?`,
+    ctx: `Сертификат убрал бы предупреждение SmartScreen и вопрос Revit «Always Load» при установке: это два последних клика новичка. Подпись обновлений (Ed25519) — другое, она уже есть.`,
+    src: `NEXT-STEPS 20.10, онбординг`, multi: false, opts: [
+      o(`Спросить IT про корпоративный сертификат подписи кода`, `Одно ваше сообщение; решение сертификата не блокирует выпуски.`, true),
+      o(`Жить с SmartScreen и «Always Load», объяснять в онбординге`),
+      o(`Вернуться вместе с BES-конвейером (ROADMAP, Фаза 10)`)
+    ] },
+  { id: `C6`, g: `C`, title: `OnePassQA Dashboard: что делаем дальше?`,
+    ctx: `Приложение сделано. Рекомендация 22.10 — дать 1–2 модераторам на 2–3 недели и спросить, открывали ли второй раз. Руководство чаще спрашивает, где и когда нужны сотрудники QA/QC: это другой обзор.`,
+    src: `NEXT-STEPS 22.10, Dashboard`, multi: true, opts: [
+      o(`Дать 1–2 модераторам на 2–3 недели и спросить, открывали ли второй раз`, `Польза пока не доказана.`, true),
+      o(`Срез «где нужен QA/QC» по проектам и моделям`, `Нужно несколько проектов и месяц истории.`),
+      o(`Сводка раз в неделю (текст для Slack или руководства)`),
+      o(`Разрез по правилам в записи плагина, чтобы Fixed и Clean Runs не считали выключенные правила`, `Нужен выпуск плагина и повторный StatusBackfill.`),
+      o(`Диаграммы «Open by Project» и «Plugin Versions»`, `Оценены и не добавлены; вернуться, если попросят.`)
+    ] },
+
+  /* ---------- U: мелочи интерфейса ---------- */
+  { id: `U1`, g: `U`, title: `Подписи полей правил: обычные предложения или Title Case?`,
+    ctx: `Около 180 строк в <code>rules.en.json</code>: «Horizontal if slope up to» рядом с «Allowed Conduit Sizes». Выровнены только заголовки групп параметров.`,
+    src: `NEXT-STEPS 21.10, F-129`, multi: false, opts: [
+      o(`Оставить подписи полей обычными предложениями`, `Читаются как подсказки; Title Case только у названий и заголовков.`, true),
+      o(`Привести все подписи к Title Case`, `Единообразно, но правка около 180 строк.`)
+    ] },
+  { id: `U2`, g: `U`, title: `В форме своей проверки два «Category». Переименовать группу правила?`,
+    ctx: `Первое — группа правила в списке (рядом с Severity), второе — «Categories» элементов Revit ниже. Их путают.`,
+    src: `NEXT-STEPS 21.10, F-129`, multi: false, opts: [
+      o(`Переименовать первое в «Rule Group»`, ``, true),
+      o(`Оставить как есть`),
+      o(`Другое имя`, `Напишите в комментарии.`)
+    ] },
+  { id: `U3`, g: `U`, title: `Show / Isolate / Section Box для элементов связанных моделей: делать?`,
+    ctx: `Сейчас все три кнопки панели работают только с элементами хост-модели. Для связей нужны трансформ связи и выбор внутри связи. Проверки по связанным моделям пока пишутся только кодом.`,
+    src: `NEXT-STEPS 20.10, пачка 35`, multi: false, opts: [
+      o(`Отложить до первой проверки по связанным моделям`, ``, true),
+      o(`Делать сейчас`),
+      o(`Не нужно`)
+    ] },
+
+  /* ---------- X: другие проекты ---------- */
+  { id: `X1`, g: `X`, proj: `PassportLookup`, title: `Концепции интерфейса Passport Lookup: делать прототипы?`,
+    ctx: `Вы называли UI/UX «полётом фантазии». Предложение: 2–3 кликабельные концепции на настоящих паспортах THM5A и 2642, выбрать лучшую. Сейчас — «поиск прежде всего».`,
+    src: `PassportLookup NEXT-STEPS`, multi: false, opts: [
+      o(`Сделать оба прототипа на настоящих паспортах и дать выбрать`, `«Паспорт как документ» и «матрица проектов».`, true),
+      o(`Только «матрицу проектов»`, `Вопросы × проекты, расхождения подсвечены.`),
+      o(`Только «паспорт как документ»`, `Оглавление и чтение подряд, поиск — фильтром.`),
+      o(`Оставить «поиск прежде всего», как сейчас`)
+    ] },
+  { id: `X2`, g: `X`, proj: `PassportLookup`, title: `Что из доработок Passport Lookup делать, не дожидаясь отзывов коллег?`,
+    ctx: `Все пункты в NEXT-STEPS проекта помечены «если понадобится». Отметьте те, что хотите сейчас.`,
+    src: `PassportLookup NEXT-STEPS`, multi: true, opts: [
+      o(`Заголовок карточки в PRIORITY LIST: название задачи, а не тип работ`, `Сейчас заголовок — «COORDINATION», название лежит в полях.`, true),
+      o(`Проверять обновления паспортов не чаще раза в N часов`, `Полная 2642 — около 90 МБ на каждый запуск.`, true),
+      o(`Export Library / Import Library одним файлом`, `Поделиться библиотекой паспортов с коллегой.`),
+      o(`Фото рядом с подписью своего варианта`, `Сейчас фото идут у вопроса в порядке листа.`),
+      o(`Окно «Show Changes»: что изменилось (вопрос, было → стало)`),
+      o(`Запоминать размер и положение окна`)
+    ] },
+  { id: `X3`, g: `X`, proj: `RadialMenuNavis`, title: `Иконки колеса на тёмной ленте Navisworks: делать?`,
+    ctx: `Иконки нарисованы для светлой темы. Вариант: после старта найти кнопки в ленте AdWindows и подставлять картинку по теме. Внутренности ленты Navisworks не документированы, может ломаться между версиями. Для Navisworks тёмная тема по правилам проекта не обязательна.`,
+    src: `RadialMenuNavis NEXT-STEPS`, multi: false, opts: [
+      o(`Не делать`, `Светлые иконки остаются.`, true),
+      o(`Попробовать на Navisworks 2024 и 2026`, `Риск: недокументированная лента.`)
+    ] }
+];
+</script>
+
+<script>
+const $ = id => document.getElementById(id);
+const esc = s => String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+const KEYS = "abcdefghij";
+Q.forEach(q => q.opts.forEach((op, i) => { op.k = KEYS[i]; }));
+const byId = new Map(Q.map(q => [q.id, q]));
+const STATUS = { choice: "Выбрано", note: "Комментарий", defer: "Отложено", drop: "Не делать", delegate: "Решай сам" };
+const BTN = ["defer", "drop", "delegate"];
+const S = { ans: {}, db: null, filterG: "all", onlyOpen: false, writing: {}, dirty: {}, timers: {} };
+
+const optLabel = (q, k) => (q.opts.find(x => x.k === k) || {}).t || k;
+const hhmm = iso => { try { return new Date(iso).toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit" }); } catch (e) { return ""; } };
+function toast(msg) { const t = $("toast"); t.textContent = msg; t.hidden = false; clearTimeout(toast.h); toast.h = setTimeout(() => { t.hidden = true; }, 4000); }
+
+function get(id) { return S.ans[id] || (S.ans[id] = { btn: null, choice: [], note: "", bulk: false }); }
+function statusOf(id) {
+  const a = S.ans[id]; if (!a) return null;
+  return a.btn || (a.choice.length ? "choice" : (a.note || "").trim() ? "note" : null);
+}
+
+function cardHtml(q) {
+  const opts = q.opts.map(op =>
+    `<label class="opt"><input type="${q.multi ? "checkbox" : "radio"}" name="o-${q.id}" value="${op.k}"><span class="ob"><span class="ot">${esc(op.t)}${op.rec ? '<span class="recb">Рекомендую</span>' : ""}</span>${op.d ? `<span class="od">${esc(op.d)}</span>` : ""}</span></label>`).join("");
+  return `<article class="q" id="q-${q.id}" data-id="${q.id}">
+    <div class="qh"><span class="qid">${q.id}</span><h3>${esc(q.title)}</h3></div>
+    <p class="ctx">${q.ctx}</p>
+    <div class="meta"><span class="tag">${esc(q.proj || "OnePassQA")}</span><span class="tag">${esc(q.src)}</span></div>
+    <fieldset class="opts"><legend>${q.multi ? "Можно выбрать несколько" : "Выберите один вариант"}</legend>${opts}</fieldset>
+    <div class="acts">
+      <button type="button" data-act="defer" aria-pressed="false">Отложить</button>
+      <button type="button" data-act="drop" aria-pressed="false">Не делать</button>
+      <button type="button" data-act="delegate" aria-pressed="false">Решай сам</button>
+      <button type="button" data-act="clear" hidden>Сбросить выбор</button>
+      <span class="when"></span>
+    </div>
+    <textarea id="n-${q.id}" rows="2" placeholder="Комментарий или свой вариант…" aria-label="Комментарий к ${q.id}"></textarea>
+  </article>`;
+}
+
+function renderList() {
+  $("list").innerHTML = GROUPS.map(g => {
+    const qs = Q.filter(q => q.g === g.id);
+    return `<section class="grp" id="g-${g.id}" data-g="${g.id}">
+      <div class="gh"><h2>${esc(g.t)}</h2><span class="gcount" data-gcount="${g.id}"></span>
+        <span class="gate">${esc(g.gate)}</span>
+        <button type="button" data-bulk="${g.id}">Принять рекомендации в группе</button></div>
+      ${qs.map(cardHtml).join("")}</section>`;
+  }).join("");
+}
+
+function syncCard(id) {
+  const el = document.getElementById("q-" + id); if (!el) return;
+  const a = S.ans[id] || { btn: null, choice: [], note: "" };
+  el.querySelectorAll('input[name^="o-"]').forEach(i => { i.checked = a.choice.includes(i.value); });
+  el.querySelectorAll("[data-act]").forEach(b => { if (b.dataset.act !== "clear") b.setAttribute("aria-pressed", String(b.dataset.act === a.btn)); });
+  const st = statusOf(id);
+  el.className = "q" + (st ? " s-" + st : "");
+  const ta = el.querySelector("textarea");
+  if (document.activeElement !== ta && ta.value !== (a.note || "")) ta.value = a.note || "";
+  el.querySelector('[data-act="clear"]').hidden = !(a.btn || a.choice.length);
+  el.querySelector(".when").textContent = (st && a.at) ? "сохранено в " + hhmm(a.at) : "";
+}
+
+function counts() {
+  const c = { choice: 0, note: 0, defer: 0, drop: 0, delegate: 0, open: 0 };
+  Q.forEach(q => { c[statusOf(q.id) || "open"]++; });
+  return c;
+}
+function renderStats() {
+  const c = counts(), n = Q.length, pct = v => (100 * v / n).toFixed(2) + "%";
+  $("bar").innerHTML = `<i class="b-ok" style="width:${pct(c.choice + c.note)}"></i><i class="b-deleg" style="width:${pct(c.delegate)}"></i><i class="b-defer" style="width:${pct(c.defer)}"></i><i class="b-drop" style="width:${pct(c.drop)}"></i>`;
+  $("nums").innerHTML = `<span>Без ответа <b>${c.open}</b> из ${n}</span><span>Выбрано <b>${c.choice + c.note}</b></span><span>Решай сам <b>${c.delegate}</b></span><span>Отложено <b>${c.defer}</b></span><span>Не делать <b>${c.drop}</b></span>`;
+  GROUPS.forEach(g => {
+    const qs = Q.filter(q => q.g === g.id), done = qs.filter(q => statusOf(q.id)).length;
+    const el = document.querySelector(`[data-gcount="${g.id}"]`); if (el) el.textContent = `${done} из ${qs.length}`;
+  });
+}
+function renderChips() {
+  const all = [{ id: "all", t: "Все", done: Q.filter(q => statusOf(q.id)).length, n: Q.length }]
+    .concat(GROUPS.map(g => { const qs = Q.filter(q => q.g === g.id); return { id: g.id, t: g.t, done: qs.filter(q => statusOf(q.id)).length, n: qs.length }; }));
+  $("chips").innerHTML = all.map(c => `<button type="button" class="chip" data-chip="${c.id}" aria-pressed="${c.id === S.filterG}">${esc(c.t)} ${c.done}/${c.n}</button>`).join("");
+}
+function applyFilter() {
+  Q.forEach(q => {
+    const el = document.getElementById("q-" + q.id); if (!el) return;
+    el.hidden = (S.filterG !== "all" && q.g !== S.filterG) || (S.onlyOpen && !!statusOf(q.id));
+  });
+  GROUPS.forEach(g => {
+    const sec = document.getElementById("g-" + g.id);
+    sec.hidden = !Q.some(q => q.g === g.id && !document.getElementById("q-" + q.id).hidden);
+  });
+}
+function refreshAll() { Q.forEach(q => syncCard(q.id)); renderStats(); renderChips(); }
+function touch(id, delay) { syncCard(id); renderStats(); renderChips(); persist(id, delay); }
+
+/* Сохранение: один документ на вопрос, коллекция answers; запись по одной на документ */
+function persist(id, delay) {
+  clearTimeout(S.timers[id]);
+  S.timers[id] = setTimeout(() => { delete S.timers[id]; flush(id); }, delay || 0);
+}
+async function flush(id) {
+  if (!S.db) { saveLocal(); return; }
+  if (S.writing[id]) { S.dirty[id] = true; return; }
+  S.writing[id] = true;
+  try {
+    do { S.dirty[id] = false; await write(id); } while (S.dirty[id]);
+  } catch (e) { toast("Не сохранилось: " + (e.message || e.code) + ". Повторите действие."); }
+  finally { delete S.writing[id]; syncCard(id); }
+}
+async function write(id) {
+  const q = byId.get(id), a = S.ans[id], st = statusOf(id);
+  const ref = S.db.collection("answers").doc(id);
+  if (!st) { await ref.delete(); return; }
+  a.at = new Date().toISOString();
+  await ref.set({ qid: id, group: q.g, title: q.title, status: st, choice: a.choice, choiceLabels: a.choice.map(k => optLabel(q, k)), note: a.note || "", bulk: !!a.bulk, at: a.at });
+}
+function saveLocal() { try { localStorage.setItem("nsq-answers", JSON.stringify(S.ans)); } catch (e) { /* браузер не даёт хранить */ } }
+function loadLocal() { try { const v = JSON.parse(localStorage.getItem("nsq-answers") || "null"); if (v) S.ans = v; } catch (e) { /* пусто */ } }
+
+/* События */
+document.addEventListener("change", e => {
+  const i = e.target; if (!i.matches || !i.matches('input[name^="o-"]')) return;
+  const id = i.closest(".q").dataset.id, q = byId.get(id), a = get(id);
+  if (q.multi) { const set = new Set(a.choice); if (i.checked) set.add(i.value); else set.delete(i.value); a.choice = q.opts.map(x => x.k).filter(k => set.has(k)); }
+  else a.choice = [i.value];
+  a.btn = null; a.bulk = false;
+  touch(id);
+});
+document.addEventListener("input", e => {
+  const t = e.target; if (!t.matches || !t.matches(".q textarea")) return;
+  const id = t.closest(".q").dataset.id, a = get(id);
+  a.note = t.value; touch(id, 700);
+});
+document.addEventListener("click", e => {
+  const act = e.target.closest("[data-act]");
+  if (act) {
+    const id = act.closest(".q").dataset.id, a = get(id), v = act.dataset.act;
+    if (v === "clear") { a.btn = null; a.choice = []; a.bulk = false; }
+    else if (a.btn === v) { a.btn = null; }
+    else { a.btn = v; a.choice = []; a.bulk = false; }
+    touch(id); return;
+  }
+  const bulk = e.target.closest("[data-bulk]");
+  if (bulk) {
+    let applied = 0, skipped = 0;
+    Q.filter(q => q.g === bulk.dataset.bulk && !statusOf(q.id)).forEach(q => {
+      const rec = q.opts.filter(x => x.rec).map(x => x.k);
+      if (!rec.length) { skipped++; return; }
+      const a = get(q.id); a.btn = null; a.choice = q.multi ? rec : [rec[0]]; a.bulk = true; applied++; touch(q.id);
+    });
+    toast(applied ? `Принято рекомендаций: ${applied}` + (skipped ? `. Без рекомендации осталось: ${skipped}` : "") : "В группе нечего принимать: всё отвечено или без рекомендации.");
+    return;
+  }
+  const chip = e.target.closest("[data-chip]");
+  if (chip) { S.filterG = chip.dataset.chip; renderChips(); applyFilter(); return; }
+});
+$("onlyOpen").addEventListener("click", e => {
+  S.onlyOpen = !S.onlyOpen; e.currentTarget.setAttribute("aria-pressed", String(S.onlyOpen)); applyFilter();
+});
+/* Markdown для вставки в сессию Claude Code; порядок — как на странице (группы, внутри них вопросы) */
+function exportText() {
+  const L = [], ordered = GROUPS.flatMap(g => Q.filter(q => q.g === g.id));
+  let open = 0;
+  ordered.forEach(q => {
+    const st = statusOf(q.id); if (!st) { open++; return; }
+    const a = S.ans[q.id], note = (a.note || "").trim();
+    L.push(`### ${q.id}. ${q.title}`);
+    if (a.choice.length) L.push("Ответ: " + a.choice.map(k => optLabel(q, k)).join("; "));
+    else if (a.btn) L.push("Ответ: " + ({ defer: "Отложить", drop: "Не делать", delegate: "Решай сам" })[a.btn]);
+    if (note) L.push("Комментарий: " + note.replace(/[\r\n]+/g, " "));
+    L.push("");
+  });
+  L.push(`Без ответа: ${open}`);
+  return L.join("\n");
+}
+async function copyText(text) {
+  try { if (navigator.clipboard && navigator.clipboard.writeText) { await navigator.clipboard.writeText(text); return true; } } catch (e) { /* пробуем дальше */ }
+  const t = document.createElement("textarea");
+  t.value = text; t.setAttribute("readonly", ""); t.style.cssText = "position:fixed;top:0;left:0;opacity:0;font-size:16px";
+  document.body.appendChild(t); t.select(); t.setSelectionRange(0, text.length);
+  let ok = false; try { ok = document.execCommand("copy"); } catch (e) { ok = false; }
+  t.remove(); return ok;
+}
+$("copy").addEventListener("click", async () => {
+  const text = exportText(), box = $("exp"), hint = $("exphint");
+  if (await copyText(text)) { toast("Ответы скопированы как Markdown"); box.hidden = true; hint.hidden = true; return; }
+  box.value = text; box.hidden = false; hint.hidden = false; box.focus(); box.select(); box.setSelectionRange(0, text.length);
+  box.scrollIntoView({ block: "center" });
+});
+
+$("sub").textContent = `${Q.length} вопросов по NEXT-STEPS.md: OnePassQA, PassportLookup, RadialMenuNavis. Список собран 27.10.2026.`;
+renderList(); refreshAll(); applyFilter();
+
+(async () => {
+  const db = await (window.claude?.use?.("db") ?? null);
+  if (!db) { $("nodb").hidden = false; loadLocal(); refreshAll(); return; }
+  S.db = db;
+  db.collection("answers").limit(200).onSnapshot(snap => {
+    const seen = new Set();
+    snap.docs.forEach(d => {
+      const v = d.data(); if (!v || !byId.has(v.qid)) return; seen.add(v.qid);
+      if (S.writing[v.qid] || S.timers[v.qid]) return;
+      S.ans[v.qid] = { btn: BTN.includes(v.status) ? v.status : null, choice: v.choice || [], note: v.note || "", bulk: !!v.bulk, at: v.at };
+    });
+    Object.keys(S.ans).forEach(id => { if (!seen.has(id) && !S.writing[id] && !S.timers[id]) delete S.ans[id]; });
+    refreshAll();
+  }, e => toast("Хранилище недоступно: " + (e.message || e.code)));
+})();
+</script>

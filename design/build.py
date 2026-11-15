@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Собирает design/page.html (страница решений для claude.ai) из шаблона tools/questions-page/template.html.
+"""Собирает design/page.html (страница решений для claude.ai) из шаблона design/template.html.
 
 Берёт из шаблона стили и скрипт сохранения ответов (второй блок <script>), подставляет свои:
 extra.css, body.html и data.js (группы и вопросы). Запуск: python design/build.py
@@ -13,8 +13,8 @@ import sys
 from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
-ROOT = HERE.parent.parent  # D:\_Automation
-TEMPLATE = ROOT / "tools" / "questions-page" / "template.html"
+ROOT = HERE.parent  # D:\_MeidoBot
+TEMPLATE = ROOT / "design" / "template.html"
 OUT = HERE / "page.html"
 
 SUB = "Черновик дизайна от 7 ноября 2026. Бесплатный Cloudflare и личный Discord, всё внутри Discord. Сначала как работает и как выглядит, потом что умеет и чего нельзя, в конце 23 вопроса."
