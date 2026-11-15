@@ -55,7 +55,7 @@ beforeEach(async () => {
 
 describe("настроение: выключено по умолчанию", () => {
   it("без включения напоминание как раньше: без реплики и без записи в базу", async () => {
-    await w.create("через 5 минут оплатить счёт");
+    await w.create("через 5 минут разобрать почту");
     await run(min(5));
     const p = w.discord.live(CH_REMIND)[0];
     expect(p.body.content).not.toMatch(STYLE);
@@ -77,11 +77,11 @@ describe("настроение: cron", () => {
   });
 
   it("реплика под напоминанием; суть (название, срок) без изменений и читаема", async () => {
-    await w.create("через 5 минут оплатить счёт");
+    await w.create("через 5 минут разобрать почту");
     await run(min(5));
     const body = w.discord.live(CH_REMIND)[0].body;
     const c = body.content as string;
-    expect(c).toContain("**Оплатить счёт**");
+    expect(c).toContain("**Разобрать почту**");
     expect(c).toContain("Срок:");
     expect(c).not.toMatch(STYLE); // один слой: реплика не мелкой строкой под текстом
     expect(said(body).length).toBeGreaterThan(3); // а в первой строке: упоминание, фраза, название
@@ -96,7 +96,7 @@ describe("настроение: cron", () => {
   });
 
   it("дело стало «просрочено» = пропуск: tsundere, серия 1; повтор «просрочено» второй пропуск не создаёт", async () => {
-    const { occId } = await w.create("через 5 минут оплатить счёт");
+    const { occId } = await w.create("через 5 минут разобрать почту");
     for (const m of [0, 10, 20, 40, 120]) await run(min(5 + m));
     expect(w.occ(occId).state).toBe("overdue");
     expect(mood().miss_streak).toBe(1);
@@ -109,7 +109,7 @@ describe("настроение: cron", () => {
   });
 
   it("три разных дела просрочены подряд → yandere; журнал событий хранит переходы", async () => {
-    for (const t of ["оплатить счёт", "позвонить маме", "купить хлеб"]) await w.create(`через 5 минут ${t}`);
+    for (const t of ["разобрать почту", "позвонить маме", "купить хлеб"]) await w.create(`через 5 минут ${t}`);
     for (const m of [0, 10, 20, 40, 120]) await run(min(5 + m));
     expect(mood().miss_streak).toBe(3);
     expect(mood().current_mood).toBe("yandere");
@@ -118,11 +118,11 @@ describe("настроение: cron", () => {
   });
 
   it("«Готово» вовремя: серия +1, в ответе реплика; потом «Готово» после просрочки — с опозданием", async () => {
-    const a = await w.create("через 5 минут оплатить счёт");
+    const a = await w.create("через 5 минут разобрать почту");
     await run(min(5));
     const r = await click(`done:${a.occId}`, min(6));
-    expect(String(r.data.content)).toContain("**Оплатить счёт** — готово"); // смысл на месте
-    expect(String(r.data.content).length).toBeGreaterThan("**Оплатить счёт** — готово".length + 3); // и фраза Хару перед ним
+    expect(String(r.data.content)).toContain("**Разобрать почту** — готово"); // смысл на месте
+    expect(String(r.data.content).length).toBeGreaterThan("**Разобрать почту** — готово".length + 3); // и фраза Хару перед ним
     expect(mood().done_streak).toBe(1);
 
     const b = await w.create("через 5 минут позвонить", min(10));
@@ -134,7 +134,7 @@ describe("настроение: cron", () => {
   });
 
   it("при сбое отправки пропуск не засчитывается дважды", async () => {
-    const { occId } = await w.create("через 5 минут оплатить счёт");
+    const { occId } = await w.create("через 5 минут разобрать почту");
     for (const m of [0, 10, 20, 40]) await run(min(5 + m));
     w.discord.failPost = { status: 500, times: 1 };
     await run(min(125));

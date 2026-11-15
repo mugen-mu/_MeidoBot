@@ -22,6 +22,8 @@ export interface Item {
   critical: number;
   /** «Без стиля»: Хару не комментирует это дело */
   plain: number;
+  /** вес по метке хозяина: 0 — решает бот, 1 — мелочь, 2 — главное */
+  weight: number;
   archived_at: number | null;
   scrubbed_at: number | null;
 }
@@ -56,6 +58,8 @@ export interface OccView extends Occurrence {
   item_ladder: string | null;
   critical: number;
   plain: number;
+  /** метка веса дела из `items.weight`: 0 — решает бот, 1 — мелочь, 2 — главное */
+  item_weight: number;
   secret_flag: number;
   rule_recipe: string | null;
   rule_tz: string | null;

@@ -37,7 +37,7 @@ describe("cron: лестница настойчивости", () => {
   });
 
   it("повторы 0, +10, +20, +40: каждый раз новое сообщение, прежнее удаляется; потом «просрочено»", async () => {
-    const { occId } = await w.create("через 5 минут оплатить счёт");
+    const { occId } = await w.create("через 5 минут разобрать почту");
     const due = 5;
     for (const m of [0, 10, 20, 40]) await w.run(min(due + m));
     expect(w.discord.posted).toHaveLength(4);

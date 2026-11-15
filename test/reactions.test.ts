@@ -104,22 +104,22 @@ describe("в боте", () => {
 
   it("Reply «отмени»: ответ бота и правка сообщения с репликой Хару", async () => {
     const f = fakeAi();
-    await w.create("через 5 минут оплатить счёт");
+    await w.create("через 5 минут разобрать почту");
     await runCronAt(min(5), f.ai);
     const msg = w.discord.live(CH_REMIND)[0].id;
     w.discord.say(CH_REMIND, OWNER, "отмени", { ref: msg, at: min(6) });
     await runCronAt(min(7), f.ai);
     const reply = w.discord.live(CH_REMIND).at(-1)!;
-    // один слой: фраза первой, суть («Оплатить счёт» + «отменено») хвостом в той же строке
+    // один слой: фраза первой, суть («Разобрать почту» + «отменено») хвостом в той же строке
     expect(reply.body.content).toContain("Убрала. Одним делом меньше");
-    expect(reply.body.content).toContain("**Оплатить счёт** — отменено.");
+    expect(reply.body.content).toContain("**Разобрать почту** — отменено.");
     expect(reply.body.content).not.toContain("-# ");
     expect(w.discord.edits.at(-1)!.body.content).toContain("Убрала.");
-    expect(w.discord.edits.at(-1)!.body.content).toContain("**Оплатить счёт** — отменено");
+    expect(w.discord.edits.at(-1)!.body.content).toContain("**Разобрать почту** — отменено");
   });
 
   it("Reply «не понял»: модель недоступна — подсказка на месте и готовая фраза под ней", async () => {
-    await w.create("через 5 минут оплатить счёт");
+    await w.create("через 5 минут разобрать почту");
     await runCronAt(min(5), boom);
     const msg = w.discord.live(CH_REMIND)[0].id;
     w.discord.say(CH_REMIND, OWNER, "абракадабра", { ref: msg, at: min(6) });

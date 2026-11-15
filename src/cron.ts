@@ -21,6 +21,8 @@ import { QUIET_DAY_MS, QUIET_META_KEY, QUIET_OFF_REPLY, QUIET_ON_REPLY, isQuietN
 import { LIVE_TIMEOUT_CRON_MS } from "./personality/liveLines.ts";
 import { maidEmbed, pickReaction, wantSprite } from "./personality/look.ts";
 import { isPolite, isSeriousTopic } from "./personality/moodEngine.ts";
+import type { Situation } from "./personality/phrases.ts";
+import { weightOf } from "./personality/weight.ts";
 import { detectUserWord } from "./personality/userWords.ts";
 import { announceOutage } from "./power.ts";
 import { outageLinesFor } from "./outages.ts";
@@ -225,18 +227,21 @@ export async function runCron(d: CronDeps): Promise<CronReport> {
         if (mood && occ.kind === "main" && occ.item_kind === "reminder" && room(3)) {
           await mood.load();
           const becameOverdue = plan.phase === "overdue" && occ.state !== "overdue";
+          // вес дела (пакет «оживление»): пустяк почти не злит и серий не трогает, важное бьёт сильно
+          const wgt = weightOf(occ);
           if (becameOverdue) {
-            mood.apply({ type: "miss" });
-            mood.noteMiss();
+            mood.apply({ type: "miss", weight: wgt });
+            if (wgt !== "minor") mood.noteMiss();
           }
           if (canStyle(occ.title, occ.critical, occ.plain)) {
-            const situation = becameOverdue
+            const base: Situation = becameOverdue
               ? mood.state!.missStreak === 1 ? "missed_first" : "missed"
               : plan.phase === "overdue" ? "missed" : occ.fire_count === 0 && occ.state === "planned" ? "reminder" : "reminder_repeat";
+            const situation: Situation = wgt === "minor" && plan.phase === "overdue" ? "missed_minor" : wgt === "major" && becameOverdue ? "missed_major" : base;
             // повторное «просрочено» не должно каждый раз грозить: драма — с паузой, внутри say()
             flavor = await mood.sayLive(situation, { task: occ.title, itemId: occ.item_id });
             // карточка с цветом настроения; спрайт — редко, а в «кино-моменте» и при затяжных пропусках — всегда
-            if (flavor) look = { mood: mood.state!.mood, origin, sprite: wantSprite(mood.rand, mood.cinema || (situation === "missed" && mood.state!.missStreak >= 3)) };
+            if (flavor) look = { mood: mood.state!.mood, origin, sprite: wantSprite(mood.rand, mood.cinema || situation === "missed_major" || (situation === "missed" && mood.state!.missStreak >= 3)) };
           }
         }
         const body = reminderMessage({ occ, plan, ownerId: owner as string, tz: s.tz, now, flavor, look });
@@ -316,12 +321,15 @@ export async function runCron(d: CronDeps): Promise<CronReport> {
     note("light", r !== null);
     return r;
   };
-  /** Строка Хару перед сообщением о сломанном источнике (A5): только если характер включён и не «тихий день»; из готовых фраз, без модели. */
-  const haruLine = async (sit: "source_down" | "source_week"): Promise<string | null> => {
+  /**
+   * Строка Хару рядом с сообщением бота: только если характер включён и не «тихий день». Перед сообщением о сломанном источнике (A5) — из готовых фраз,
+   * без модели. Для дождя (`facts` задан) — с попыткой живой реплики от модели (в рамках дневного лимита и запаса подзапросов), иначе готовая фраза.
+   */
+  const haruLine = async (sit: "source_down" | "source_week" | "rain_start" | "rain_end" | "rain_early" | "weather_ask", facts?: string): Promise<string | null> => {
     if (!mood || mood.silent || !room2(3)) return null;
     try {
       await mood.load();
-      return mood.say(sit);
+      return facts === undefined ? mood.say(sit) : await mood.sayLive(sit, { facts });
     } catch (e) {
       if (e instanceof BudgetExceeded) return null;
       throw e;
@@ -502,7 +510,8 @@ ${n.text}` } : n;
           if (isWeatherQuestion(m.content) && !detectSecret(m.content).secret && room2(3)) {
             report.intake++;
             try {
-              await api.postMessage(ch, weatherAskMessage(m.content));
+              const line = await haruLine("weather_ask", "бот пока не читает прогноз погоды, только пишет, когда начался дождь");
+              await api.postMessage(ch, weatherAskMessage(m.content, line));
             } catch (e) {
               if (e instanceof BudgetExceeded) break;
               report.notes.push("погода: не удалось ответить на вопрос в канале");
@@ -1179,7 +1188,10 @@ ${n.text}` } : n;
               d.log?.(`[дождь ${stamp} Киев] «${n.text}» не отправлено: тихие часы или отъезд`);
               report.notes.push("дождь: сообщение не отправлено (тихие часы или отъезд)");
             } else {
-              outbox.push({ text: n.text, mention: n.loud && loudOk, at: now });
+              // факт («🌧 В Днепре начался дождь») первой строкой — он нужен в превью уведомления; под ним реплика Хару по настроению (пакет «оживление»)
+              const fact = n.text.replace(/[^\p{L}\p{N}\s,.«»-]/gu, "").replace(/\s+/g, " ").trim();
+              const line = await haruLine(`rain_${n.kind}`, fact);
+              outbox.push({ text: line ? `${n.text}\n${line}` : n.text, mention: n.loud && loudOk, at: now });
               ops2.push(event(now, `rain_${n.kind}`, null, `mm=${got.reading.mm}`));
             }
           }

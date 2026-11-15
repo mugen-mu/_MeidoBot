@@ -1,5 +1,11 @@
 // Все числа и пороги настроения в одном месте (ТЗ, раздел 4–7: «все числа вынеси в config»).
 // Подкручиваются здесь; логика в moodEngine.ts их не знает.
+export interface WeightEffect {
+  affection: number;
+  irritation: number;
+  streak: number;
+}
+
 export interface MoodConfig {
   /** как зовут горничную в /mood */
   name: string;
@@ -15,6 +21,16 @@ export interface MoodConfig {
     polite: { affection: number };
     /** «ара-ара», «ганбатте» и т.п. от хозяина (ТЗ, 5Д): +симпатия, не чаще раза в cooldownHours */
     userWord: { affection: number; cooldownHours: number };
+  };
+  /**
+   * Вес дела (пакет «оживление»): что делает пропуск и «Готово» с числами для мелочи и для главного; для обычного дела — `events` выше.
+   * streak — на сколько растёт серия (пропусков подряд при пропуске, выполненных подряд при «Готово»); 0 — серии не трогаем вовсе
+   * (мелочь не растит серию «подряд» и не гасит серию пропусков: чайник не искупает пропущенный день рождения).
+   */
+  weights: {
+    minor: { miss: WeightEffect; done: WeightEffect };
+    /** doneLate — «Готово» с опозданием: после пропуска главного раздражение отпускает заметнее обычного (30 от пропуска не висят сутками) */
+    major: { miss: WeightEffect; done: WeightEffect; doneLate: WeightEffect };
   };
   /** молчание: за каждые idleStepHours дневных часов +idleIrritation, всего не больше idleCap */
   idleStepHours: number;
@@ -65,6 +81,11 @@ export const MOOD_CONFIG: MoodConfig = {
     returnAfterPause: { affection: 2 },
     polite: { affection: 4 },
     userWord: { affection: 1, cooldownHours: 1 },
+  },
+  weights: {
+    minor: { miss: { affection: 0, irritation: 3, streak: 0 }, done: { affection: 0, irritation: -2, streak: 0 } },
+    // один пропуск главного = два обычных: сразу строгая реплика «missed», второй подряд — уже яндере-подколки
+    major: { miss: { affection: -5, irritation: 30, streak: 2 }, done: { affection: 6, irritation: -15, streak: 2 }, doneLate: { affection: 2, irritation: -12, streak: 0 } },
   },
   idleStepHours: 12,
   idleIrritation: 5,

@@ -115,13 +115,15 @@ describe("команды стиля", () => {
 describe("слой в работе: cron и словарь", () => {
   beforeEach(async () => {
     await click("mn:tg:mo:c");
+    // настроение, на которое «образ дня» не накладывается: проводка слоя не зависит от жребия этой даты (иначе «чопорная» дня говорила бы без японских слов)
+    await cmd("mood", [{ name: "set", value: "tsundere" }]);
   });
 
   it("напоминание со стилем: слова копятся в базе, /glossary их показывает, суть по-русски", async () => {
-    await w.create("через 5 минут оплатить счёт");
+    await w.create("через 5 минут разобрать почту");
     await run(min(5));
     const c = w.discord.live(CH_REMIND)[0].body.content as string;
-    expect(c).toContain("**Оплатить счёт**");
+    expect(c).toContain("**Разобрать почту**");
     expect(c).toContain("Срок:");
     const words = JSON.parse(row().style_data).words as Record<string, { u: number; l: number }>;
     expect(Object.keys(words).length).toBeGreaterThan(0);
@@ -132,7 +134,7 @@ describe("слой в работе: cron и словарь", () => {
   });
 
   it("манга-звук идёт в той же строке, что и фраза, курсивом (один слой, без мелкой строки «-# »)", async () => {
-    await w.create("через 5 минут оплатить счёт");
+    await w.create("через 5 минут разобрать почту");
     await run(min(5));
     const content = w.discord.live(CH_REMIND)[0].body.content as string;
     expect(content).not.toMatch(/\n-# /);
@@ -142,13 +144,13 @@ describe("слой в работе: cron и словарь", () => {
 
   it("уровень 0: в напоминании ни японских слов, ни манга-звука, слов в словаре нет", async () => {
     await cmd("style", [{ name: "level", value: 0 }]);
-    await w.create("через 5 минут оплатить счёт");
+    await w.create("через 5 минут разобрать почту");
     await run(min(5));
     const body = w.discord.live(CH_REMIND)[0].body;
     expect(body.content as string).not.toMatch(/[぀-ヿ]/u);
     expect(body.embeds).toBeUndefined();
     expect((body.content as string).split("\n")[0]).not.toMatch(/\*[^*]+\*(?!\*)/u); // без манга-звука
-    expect(body.content as string).toContain("**Оплатить счёт**");
+    expect(body.content as string).toContain("**Разобрать почту**");
     expect(JSON.parse(row().style_data).words).toEqual({});
   });
 
@@ -162,7 +164,7 @@ describe("слой в работе: cron и словарь", () => {
   });
 
   it("/reset_mood сбрасывает и выученные слова", async () => {
-    await w.create("через 5 минут оплатить счёт");
+    await w.create("через 5 минут разобрать почту");
     await run(min(5));
     expect(Object.keys(JSON.parse(row().style_data).words).length).toBeGreaterThan(0);
     await cmd("reset_mood");

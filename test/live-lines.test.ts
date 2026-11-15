@@ -142,9 +142,9 @@ describe("MoodSession.sayLive", () => {
   it("модель ответила — её реплика; вызов записан в счётчик суток и сохраняется", async () => {
     const f = fakeAi("Хозяин, чай остыл. *вздыхает*");
     const m = await session({ ai: f.ai });
-    expect(await m.sayLive("reminder", { task: "Оплатить счёт" })).toBe("Хозяин, чай остыл. *вздыхает*");
+    expect(await m.sayLive("reminder", { task: "Разобрать почту" })).toBe("Хозяин, чай остыл. *вздыхает*");
     expect(f.calls).toHaveLength(1);
-    expect(f.calls[0].input.messages[0].content).toContain("Оплатить счёт");
+    expect(f.calls[0].input.messages[0].content).toContain("Разобрать почту");
     await w.repo().exec(m.ops());
     const row = w.d1.q<{ style_data: string }>("SELECT style_data FROM mood_state WHERE user_id = ?", OWNER)[0];
     expect(parseStyleState(row.style_data).lv).toEqual({ d: Math.floor(NOW / 86_400_000), n: 1 });
@@ -306,7 +306,7 @@ describe("в боте: cron, кнопки, настройки", () => {
 
   it("напоминание: под ним реплика модели", async () => {
     const f = fakeAi("Хозяин, чай остыл, а дело ждёт. *вздыхает*");
-    await w.create("через 5 минут оплатить счёт");
+    await w.create("через 5 минут разобрать почту");
     await run(min(5), f.ai);
     expect(said(w.discord.live(CH_REMIND)[0].body)).toContain("чай остыл");
     expect(f.calls).toHaveLength(1);
@@ -314,7 +314,7 @@ describe("в боте: cron, кнопки, настройки", () => {
 
   it("модель недоступна — напоминание уходит с готовой фразой", async () => {
     const boom: AiBinding = { run: async () => { throw new Error("нет"); } };
-    await w.create("через 5 минут оплатить счёт");
+    await w.create("через 5 минут разобрать почту");
     await run(min(5), boom);
     expect(said(w.discord.live(CH_REMIND)[0].body).length).toBeGreaterThan(3);
   });
@@ -324,19 +324,19 @@ describe("в боте: cron, кнопки, настройки", () => {
     expect((await click("mn:tg:lv:c")).data.content).toContain("Живые реплики через модель: выкл");
     expect((await w.settings()).liveOn).toBe(false);
     const f = fakeAi();
-    await w.create("через 5 минут оплатить счёт");
+    await w.create("через 5 минут разобрать почту");
     await run(min(5), f.ai);
     expect(f.calls).toHaveLength(0);
   });
 
   it("«Без стиля» на деле: в окне «Изменить» есть выбор; после выбора реплики нет, модель не зовётся", async () => {
-    const { occId, itemId } = (await w.create("через 5 минут оплатить счёт")) as any;
+    const { occId, itemId } = (await w.create("через 5 минут разобрать почту")) as any;
     const m = await click(`mn:ed:${occId}:a:0`);
     expect(JSON.stringify(m.data.components)).toContain("Реплики Хару");
     const r = await call({
       type: 5,
       data: { custom_id: `m_edit:${occId}:mn`, components: [
-        { type: 18, component: { type: 4, custom_id: "title", value: "Оплатить счёт" } },
+        { type: 18, component: { type: 4, custom_id: "title", value: "Разобрать почту" } },
         { type: 18, component: { type: 3, custom_id: "plain", values: ["plain"] } },
       ] },
     });

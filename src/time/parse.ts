@@ -37,6 +37,8 @@ export interface Parsed {
   /** «заранее за N дней» */
   leadDays: number[];
   critical: boolean;
+  /** метка веса словом хозяина: «мелочь» (minor) или «главное» (major); нет метки — вес решает бот */
+  weight?: "minor" | "major";
   /** интервальный таймер («каждые 20 минут») */
   timer: boolean;
   /** повтор распознан, но завершился до первого срабатывания */
@@ -190,7 +192,8 @@ function extractTime(w: Work, words: { morning: number; evening: number } = { mo
   }
   if (w.take(rx(`${B}в\\s+обед${E}`))) return 13 * 60;
   if (w.take(rx(`${B}утром${E}`))) return words.morning;
-  if (w.take(rx(`${B}(?:днём|днем)${E}`))) return 13 * 60;
+  // «днём» — время суток, но не в «с днём рождения» / «с Днём Победы»: там это праздник, и слово из названия дела пропадать не должно
+  if (w.take(rx(`${B}(?<!(?:^|\\s)с\\s+)(?:днём|днем)(?!\\s+(?:рождени|победы|конституции|независимости|святого))${E}`))) return 13 * 60;
   if (w.take(rx(`${B}вечером${E}`))) return words.evening;
   return null;
 }
@@ -429,6 +432,23 @@ export function cleanTitle(raw: string): string {
   return s.charAt(0).toUpperCase() + s.slice(1);
 }
 
+// ---------- вес дела: слова хозяина ----------
+
+/**
+ * Метка веса словом (пакет «оживление»): «главное» где угодно («главное: поздравить маму», «позвонить, главное») — важное дело;
+ * «мелочь» или «пустяк» — пустяк, но только как метка в начале или в конце («мелочь: выключить чайник», «выключить чайник (мелочь)»),
+ * чтобы «купить мелочь на проезд» не потеряло слово. Слово стирается из названия. Нет метки — null (вес решает бот).
+ */
+function extractWeight(w: Work): "minor" | "major" | null {
+  if (w.take(rx(`${B}главное${E}`))) return "major";
+  const m =
+    /^[\s(]*(?:это\s+)?(?:мелочь|мелочи|мелочёвка|пустяк|пустяки)(?![\p{L}\p{N}])[\s,.:;—)-]*/iu.exec(w.s) ??
+    /[\s,.:;—(-]+(?:это\s+)?(?:мелочь|мелочёвка|пустяк)[\s).!]*$/iu.exec(w.s);
+  if (!m) return null;
+  w.s = w.s.slice(0, m.index) + " ".repeat(m[0].length) + w.s.slice(m.index + m[0].length);
+  return "minor";
+}
+
 // ---------- главный разбор ----------
 
 export function parseInput(text: string, opts: ParseOptions): Parsed {
@@ -449,6 +469,7 @@ export function parseInput(text: string, opts: ParseOptions): Parsed {
   }
   w.take(rx(`${B}(?:и\\s+)?в\\s+день\\s+срока${E}`));
   const critical = Boolean(w.take(rx(`${B}(?:критичн\\p{L}*|пробивающ\\p{L}*)${E}`)));
+  const weight = extractWeight(w);
 
   // повтор
   const draft = extractRecurrence(w);
@@ -528,6 +549,7 @@ export function parseInput(text: string, opts: ParseOptions): Parsed {
     recipe,
     leadDays: [...new Set(leadDays)].filter((n) => n > 0).sort((a, b) => b - a),
     critical,
+    ...(weight ? { weight } : {}),
     timer: recipe !== null && (recipe.freq === "minutes" || recipe.freq === "hours"),
     seriesEmpty,
   };

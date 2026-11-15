@@ -2,6 +2,7 @@
 // Принимает событие и возвращает новое состояние: так его легко проверять тестами (ТЗ, раздел 11).
 // Спад раздражения и симпатии считается при следующем событии, cron для этого не нужен.
 import { MOOD_CONFIG, type MoodConfig } from "./config.ts";
+import type { Weight } from "./weight.ts";
 
 export type Mood = "tired" | "tsundere" | "yandere" | "sulking" | "proud" | "sleepy";
 export const MOODS: Mood[] = ["tired", "tsundere", "yandere", "sulking", "proud", "sleepy"];
@@ -39,8 +40,8 @@ export interface MoodCtx {
 }
 
 export type MoodEvent =
-  | { type: "done"; onTime: boolean }
-  | { type: "miss" }
+  | { type: "done"; onTime: boolean; /** вес дела; нет — обычное */ weight?: Weight }
+  | { type: "miss"; /** вес дела; нет — обычное */ weight?: Weight }
   | { type: "activity"; polite?: boolean; /** прибавка симпатии за аниме-слово хозяина (решает вызывающий: раз в час) */ bonus?: number }
   | { type: "tick" };
 
@@ -165,21 +166,34 @@ export function step(prev: MoodState, ev: MoodEvent, ctx: MoodCtx, cfg: MoodConf
   };
 
   switch (ev.type) {
-    case "miss":
-      s.missStreak += 1;
-      s.doneStreak = 0;
-      s.yandereCleared = false;
-      if (s.mood === "yandere") s.moodSince = ctx.now; // новый пропуск продлевает яндере: «успокоиться» она сможет через сутки после последнего
-      bump(cfg.events.miss);
+    case "miss": {
+      const wt = ev.weight ?? "normal";
+      const eff = wt === "normal" ? { ...cfg.events.miss, streak: 1 } : cfg.weights[wt].miss;
+      if (eff.streak > 0) {
+        s.missStreak += eff.streak;
+        s.doneStreak = 0;
+        s.yandereCleared = false;
+        if (s.mood === "yandere") s.moodSince = ctx.now; // новый пропуск продлевает яндере: «успокоиться» она сможет через сутки после последнего
+      }
+      bump(eff);
       break;
-    case "done":
+    }
+    case "done": {
       touch();
+      const wt = ev.weight ?? "normal";
+      if (wt === "minor") {
+        // мелочь: серии не трогаем ни в плюс, ни в минус; яндере она не успокаивает; чуть отпускает раздражение
+        bump(cfg.weights.minor.done);
+        break;
+      }
       if (ev.onTime) {
-        s.doneStreak += 1;
-        bump(cfg.events.doneOnTime);
-        if (cfg.praiseStreaks.includes(s.doneStreak)) milestone = s.doneStreak;
+        const before = s.doneStreak;
+        s.doneStreak += wt === "major" ? cfg.weights.major.done.streak : 1;
+        bump(wt === "major" ? cfg.weights.major.done : cfg.events.doneOnTime);
+        // отметка могла остаться «между» при шаге в 2 (главное считается за два): ловим пересечение, а не точное совпадение
+        milestone = cfg.praiseStreaks.find((m) => before < m && m <= s.doneStreak) ?? null;
       } else {
-        bump(cfg.events.doneLate);
+        bump(wt === "major" ? cfg.weights.major.doneLate : cfg.events.doneLate);
       }
       s.missStreak = 0;
       if (s.mood === "yandere") {
@@ -187,6 +201,7 @@ export function step(prev: MoodState, ev: MoodEvent, ctx: MoodCtx, cfg: MoodConf
         clearedNow = true;
       }
       break;
+    }
     case "activity":
       touch();
       if (ev.polite) bump(cfg.events.polite);

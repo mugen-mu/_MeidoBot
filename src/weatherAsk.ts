@@ -29,9 +29,10 @@ export function isWeatherQuestion(text: string): boolean {
 /** Честный ответ, пока погода не подключена. Дело из такого запроса не заводится. */
 export const WEATHER_REPLY = "Прогноз погоды я пока не читаю: источник ещё не выбран, он будет в утренней сводке. Зато когда в Днепре начнётся дождь, напишу сама (выключается в /settings → «⋯ Ещё»). Дело из вашего вопроса не заводила — если это было дело, нажмите кнопку.";
 
-export function weatherAskMessage(original: string): MessageBody {
+/** `line` — реплика Хару перед честным ответом (пакет «оживление»); нет её (тихий день, серьёзная тема, характер выключен) — прежний текст. */
+export function weatherAskMessage(original: string, line?: string | null): MessageBody {
   return {
-    content: WEATHER_REPLY,
+    content: line ? `${line}\n${WEATHER_REPLY}` : WEATHER_REPLY,
     components: [{ type: 1, components: [{ type: 2, style: 2, label: "Это было дело", custom_id: `${LIGHT_ASK_BUTTON_PREFIX}${original.trim().slice(0, LIGHT_ASK_MAX_CHARS)}` }] }],
     allowed_mentions: { parse: [] },
   };

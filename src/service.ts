@@ -33,7 +33,7 @@ export function newItemOps(i: NewItemInput): { ops: Op[]; mainIndex: number } {
   const { parsed, now, settings } = i;
   const ops: Op[] = [
     op(
-      `INSERT INTO items (kind, title, body, created_at, source, ladder, critical) VALUES (?, ?, ?, ?, ?, ?, ?)`,
+      `INSERT INTO items (kind, title, body, created_at, source, ladder, critical, weight) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
       parsed.timer ? "timer" : "reminder",
       parsed.title,
       i.body ?? null,
@@ -41,6 +41,7 @@ export function newItemOps(i: NewItemInput): { ops: Op[]; mainIndex: number } {
       i.source,
       i.ladder ? JSON.stringify(i.ladder) : null,
       parsed.critical ? 1 : 0,
+      parsed.weight === "minor" ? 1 : parsed.weight === "major" ? 2 : 0,
     ),
   ];
   if (parsed.recipe) {
@@ -181,6 +182,11 @@ export function rescheduleOps(occ: OccView, due: number, now: number): Op[] {
 
 export function setLadderOps(itemId: number, spec: LadderSpec | null): Op {
   return op("UPDATE items SET ladder = ? WHERE id = ?", spec ? JSON.stringify(spec) : null, itemId);
+}
+
+/** Метка веса дела: 0 — решает бот, 1 — мелочь, 2 — главное. */
+export function setWeightOps(itemId: number, mark: 0 | 1 | 2): Op {
+  return op("UPDATE items SET weight = ? WHERE id = ?", mark, itemId);
 }
 
 export function setPlainOps(itemId: number, plain: boolean): Op {

@@ -1,7 +1,7 @@
 // Выбор фразы: случайная из пула настроения и ситуации, без повторов последних N (ТЗ, раздел 8, режим A).
 // Чистая логика: случайность приходит аргументом, чтобы тесты были предсказуемыми.
 import { MOOD_CONFIG, type MoodConfig } from "./config.ts";
-import type { Mood } from "./moodEngine.ts";
+import type { Voice } from "./persona.ts";
 import { RECENT_DAYS } from "./day.ts";
 import { FALLBACK_SITUATION, PHRASES, type Phrases, type Situation } from "./phrases.ts";
 
@@ -47,7 +47,7 @@ export function fill(text: string, vars: PhraseVars, cfg: MoodConfig = MOOD_CONF
 }
 
 /** Список фраз для пары «настроение — ситуация» с учётом запасной ситуации; пусто — фраз нет. */
-export function poolFor(mood: Mood, situation: Situation, bank: Phrases = PHRASES): string[] {
+export function poolFor(mood: Voice, situation: Situation, bank: Phrases = PHRASES): string[] {
   const moodBank = bank[mood];
   if (!moodBank) return [];
   const direct = moodBank[situation];
@@ -70,7 +70,7 @@ export interface Pick {
  * Если все фразы пула недавно были, берём самую давнюю из использованных (без повтора подряд).
  */
 export function pickPhrase(a: {
-  mood: Mood;
+  mood: Voice;
   situation: Situation;
   vars?: PhraseVars;
   recent: string[];

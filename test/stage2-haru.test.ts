@@ -13,14 +13,17 @@ import {
   QUIET_OFF_REPLY,
   QUIET_ON_REPLY,
   YANDERE_SITUATIONS,
+  DAY_VOICE_WEIGHTS,
+  type DayVoice,
   dayNumber,
-  dayTint,
+  dayVoice,
   effectiveMood,
   hash01,
   noteDone,
   noteMiss,
   observeHot,
   parseQuietDay,
+  pickDayVoice,
   pinch,
 } from "../src/personality/day.ts";
 import { isSeriousTopic } from "../src/personality/moodEngine.ts";
@@ -28,6 +31,7 @@ import { type Person, occasionFor, parsePeopleDates } from "../src/personality/o
 import { PHRASES, type Situation } from "../src/personality/phrases.ts";
 import { fingerprint, pickPhrase, poolFor } from "../src/personality/speech.ts";
 import type { Mood } from "../src/personality/moodEngine.ts";
+import { PERSONAS, type Voice } from "../src/personality/persona.ts";
 import { MINUTE, localDate } from "../src/time/tz.ts";
 import { NOW } from "./helpers.ts";
 import { CH_BOT, CH_REMIND, OWNER, World } from "./world.ts";
@@ -40,10 +44,10 @@ const said = (b: { content?: string }): string => {
   const first = String(b.content ?? "").split("\n")[0];
   return first.replace(/^<@\d+>\s*/, "").replace(/\s*\*\*[^*]+\*\*.*$/, "");
 };
-const has = (m: Mood, s: Situation) => poolFor(m, s).length > 0;
+const has = (m: Voice, s: Situation) => poolFor(m, s).length > 0;
 const days = (n: number, from = "2026-01-01"): string[] => Array.from({ length: n }, (_, i) => new Date(Date.parse(from) + i * DAY).toISOString().slice(0, 10));
-/** день с нужной окраской (ищем среди дат) */
-const dayWith = (tint: "plain" | "grumpy" | "soft"): string => days(120).find((d) => dayTint(d) === tint)!;
+/** день с нужным образом (ищем среди дат) */
+const dayWith = (voice: DayVoice): string => days(200).find((d) => dayVoice(d) === voice)!;
 /** текст реплики совпадает с одной из фраз пула (подстановки {user} заменяем любым словом) */
 const fromPool = (text: string, pool: string[]): boolean =>
   pool.some((p) => new RegExp(`^${p.replace(/[.*+?^$()|[\]\\]/g, "\\$&").replace(/\{user\}/g, "[^ ,.!?]+").replace(/\{task\}/g, ".+").replace(/\{[a-z_]+\}/g, "\\d+")}$`, "u").test(text.trim()));
@@ -62,13 +66,25 @@ describe("случайность от даты и дела", () => {
     expect(hash01("2026-11-07", 5, "x")).not.toBe(hash01("2026-11-08", 5, "x"));
   });
 
-  it("dayNumber считает сутки подряд, dayTint — окраска дня: все три встречаются, обычных около половины", () => {
+  it("dayNumber считает сутки подряд, dayVoice — образ дня: встречаются все шесть голосов, усталая не чаще трети дней", () => {
     expect(dayNumber("2026-11-08") - dayNumber("2026-11-07")).toBe(1);
     expect(dayNumber("1970-01-02")).toBe(1);
-    const tints = days(365).map(dayTint);
-    expect(dayTint("2026-11-07")).toBe(dayTint("2026-11-07"));
-    for (const t of ["plain", "grumpy", "soft"] as const) expect(tints.filter((x) => x === t).length).toBeGreaterThan(50);
-    expect(tints.filter((x) => x === "plain").length).toBeGreaterThan(130);
+    const voices = days(730).map(dayVoice);
+    expect(dayVoice("2026-11-07")).toBe(dayVoice("2026-11-07"));
+    for (const [v, w] of DAY_VOICE_WEIGHTS) {
+      const share = voices.filter((x) => x === v).length / voices.length;
+      expect(share, v).toBeGreaterThan(w - 0.07);
+      expect(share, v).toBeLessThan(w + 0.07);
+    }
+    expect(voices.filter((x) => x === "tired").length / voices.length).toBeLessThan(0.37);
+  });
+
+  it("pickDayVoice: веса складываются в единицу, skip исключает голос, любой r даёт голос из списка", () => {
+    expect(DAY_VOICE_WEIGHTS.reduce((a, [, w]) => a + w, 0)).toBeCloseTo(1, 10);
+    for (const r of [0, 0.1, 0.5, 0.99, 0.999999]) {
+      expect(DAY_VOICE_WEIGHTS.map(([v]) => v)).toContain(pickDayVoice(r));
+      expect(pickDayVoice(r, "tired")).not.toBe("tired");
+    }
   });
 
   it("pinch: p=0 никогда, p=1 всегда, остальное — около p и стабильно", () => {
@@ -85,39 +101,65 @@ describe("настроение по дню и «яндере только в п�
   const eff = (mood: Mood, situation: Situation, dayKey: string, itemId = 0, hasFn = has) => effectiveMood({ mood, situation, dayKey, itemId, has: hasFn });
 
   it("яндере говорит яндере-языком только про пропуск; в остальных ситуациях — цундере", () => {
-    expect([...YANDERE_SITUATIONS].sort()).toEqual(["missed", "missed_first"]);
+    expect([...YANDERE_SITUATIONS].sort()).toEqual(["missed", "missed_first", "missed_major"]);
     for (const s of ["reminder", "reminder_repeat", "done", "snoozed", "draft", "recorded", "summary_morning", "greeting", "deleted", "snooze_5"] as Situation[]) {
       expect(eff("yandere", s, "2026-11-07")).toBe("tsundere");
     }
     expect(eff("yandere", "missed", "2026-11-07")).toBe("yandere");
     expect(eff("yandere", "missed_first", "2026-11-07")).toBe("yandere");
+    expect(eff("yandere", "missed_major", "2026-11-07")).toBe("yandere");
   });
 
+  // дело, на которое не выпала «щепотка» (чтобы голос был именно дня)
+  const id = (day: string, sit: Situation) => Array.from({ length: 80 }, (_, i) => i).find((i) => !pinch(day, i, `tint:${sit}`, 0.15))!;
+
   it("усталая в «ворчливый» день ворчит (цундере) на напоминаниях, в «мягкий» — теплее (гордится) на «Готово»", () => {
-    const grumpy = dayWith("grumpy");
-    const soft = dayWith("soft");
-    // ищем дело, на которое не выпала «щепотка» (чтобы окраска была именно дня)
-    const id = (day: string, sit: Situation) => Array.from({ length: 50 }, (_, i) => i).find((i) => !pinch(day, i, `tint:${sit}`, 0.15))!;
+    const grumpy = dayWith("tsundere");
+    const soft = dayWith("proud");
     expect(eff("tired", "reminder", grumpy, id(grumpy, "reminder"))).toBe("tsundere");
     expect(eff("tired", "done", soft, id(soft, "done"))).toBe("proud");
+    // ворчливый голос на «мягкой» ситуации — без смены
+    expect(eff("tired", "done", grumpy, id(grumpy, "done"))).toBe("tired");
     // обычный день: без смены
-    const plain = dayWith("plain");
+    const plain = dayWith("tired");
     expect(eff("tired", "reminder", plain, id(plain, "reminder"))).toBe("tired");
   });
 
-  it("окраска дня касается только «усталой»; пропуски и настоящие настроения не трогает", () => {
-    const grumpy = dayWith("grumpy");
-    for (const m of ["sulking", "tsundere", "proud", "sleepy"] as Mood[]) {
-      for (let i = 0; i < 30; i++) expect(eff(m, "reminder", grumpy, i)).toBe(m);
+  it("образ дня (озорная, чопорная, бодрая): усталая говорит им везде, где у образа есть фразы", () => {
+    for (const p of PERSONAS) {
+      const day = dayWith(p);
+      for (const sit of ["reminder", "done", "recorded", "summary_morning", "snoozed", "greeting"] as Situation[]) {
+        expect(eff("tired", sit, day, id(day, sit)), `${p}.${sit}`).toBe(p);
+      }
     }
-    for (let i = 0; i < 40; i++) expect(["tired", "yandere"]).toContain(eff("tired", "missed", grumpy, i)); // на пропуске усталая либо как есть, либо «подколка» яндере
   });
 
-  it("«щепотка»: в день одной окраски часть дел получает другую, но для одного дела всегда одно и то же", () => {
-    const plain = dayWith("plain");
+  it("гордая в день образа тоже меняется на образ, но не на усталую и не на ворчливую", () => {
+    const seen = new Set<string>();
+    for (const d of days(60)) for (let i = 0; i < 6; i++) seen.add(eff("proud", "done", d, i));
+    expect([...seen].sort()).toEqual(["bright", "playful", "prim", "proud"]);
+  });
+
+  it("образ дня не перебивает настоящее настроение: ворчливая, обиженная, сонная, яндере остаются собой", () => {
+    for (const p of PERSONAS) {
+      const day = dayWith(p);
+      for (const m of ["sulking", "tsundere", "sleepy"] as Mood[]) {
+        for (let i = 0; i < 30; i++) expect(eff(m, "reminder", day, i)).toBe(m);
+      }
+      for (let i = 0; i < 30; i++) expect(eff("yandere", "reminder", day, i)).toBe("tsundere");
+    }
+  });
+
+  it("пропуски: усталая либо как есть, либо образ дня, либо «подколка» яндере", () => {
+    const grumpy = dayWith("tsundere");
+    for (let i = 0; i < 40; i++) expect(["tired", "yandere", ...PERSONAS]).toContain(eff("tired", "missed", grumpy, i));
+  });
+
+  it("«щепотка»: в день одного голоса часть дел получает другой, но для одного дела всегда одно и то же", () => {
+    const plain = dayWith("tired");
     const res = Array.from({ length: 300 }, (_, i) => eff("tired", "reminder", plain, i));
     expect(res.filter((m) => m !== "tired").length).toBeGreaterThan(15);
-    expect(res.filter((m) => m !== "tired").length).toBeLessThan(80);
+    expect(res.filter((m) => m !== "tired").length).toBeLessThan(110);
     expect(eff("tired", "reminder", plain, 17)).toBe(eff("tired", "reminder", plain, 17));
   });
 
@@ -127,21 +169,22 @@ describe("настроение по дню и «яндере только в п�
     expect(yd).toBeGreaterThan(60);
     expect(yd).toBeLessThan(150);
     for (let i = 0; i < 100; i++) {
-      expect(eff("proud", "missed", day, i)).toBe("proud");
+      expect(["proud", ...PERSONAS]).toContain(eff("proud", "missed", day, i)); // гордая — либо она, либо образ дня; яндере-подколок у неё нет
       expect(eff("sleepy", "missed", day, i)).toBe("sleepy");
     }
   });
 
   it("если у нужного настроения нет фраз для ситуации — остаётся прежнее", () => {
     const none = () => false;
-    expect(eff("tired", "reminder", dayWith("grumpy"), 1, none)).toBe("tired");
+    expect(eff("tired", "reminder", dayWith("tsundere"), 1, none)).toBe("tired");
+    expect(eff("tired", "reminder", dayWith("playful"), 1, none)).toBe("tired");
     expect(eff("tsundere", "missed", "2026-11-07", 1, none)).toBe("tsundere");
   });
 });
 
 describe("слова-флаги «серьёзно» и «важно»", () => {
   it("помечают дело серьёзным; прежние серьёзные темы остаются; «неважно» не флаг", () => {
-    for (const t of ["серьёзно позвонить маме", "Важно: оплатить счёт", "важная встреча", "Серьезно, подписать договор", "записаться к врачу"]) {
+    for (const t of ["серьёзно позвонить маме", "Важно: разобрать почту", "важная встреча", "Серьезно, подписать договор", "записаться к врачу"]) {
       expect(isSeriousTopic(t), t).toBe(true);
     }
     for (const t of ["купить хлеб", "неважно что", "позвонить маме", "посмотреть аниме"]) expect(isSeriousTopic(t), t).toBe(false);
@@ -357,7 +400,7 @@ beforeEach(async () => {
 
 describe("пятое откладывание", () => {
   it("на пятом откладывании (окно «Отложить на…») — реплика из особого пула; на четвёртом — обычная «отложено»", async () => {
-    const { occId } = await w.create("через 5 минут оплатить счёт");
+    const { occId } = await w.create("через 5 минут разобрать почту");
     await run(min(5));
     setOcc(occId, { snooze_count: 3 });
     const at = min(6);
@@ -370,11 +413,11 @@ describe("пятое откладывание", () => {
     const fiveLine = String(five.data.content).split(" **")[0];
     expect(w.occ(occId).snooze_count).toBe(5);
     expect(fiveLine.length).toBeGreaterThan(3);
-    expect(["tired", "tsundere", "proud", "sulking", "sleepy"].some((m) => fromPool(fiveLine, PHRASES[m].snooze_5 ?? []))).toBe(true);
+    expect(["tired", "tsundere", "proud", "sulking", "sleepy", ...PERSONAS].some((m) => fromPool(fiveLine, PHRASES[m].snooze_5 ?? []))).toBe(true);
   });
 
   it("вопрос «что делаем?» на пятом откладывании тоже с репликой; на третьем — без", async () => {
-    const { occId } = await w.create("через 5 минут оплатить счёт");
+    const { occId } = await w.create("через 5 минут разобрать почту");
     await run(min(5));
     setOcc(occId, { snooze_count: 2 });
     const third = await click(`snz:${occId}:15`, min(6));
@@ -384,11 +427,11 @@ describe("пятое откладывание", () => {
     const fifth = await click(`snz:${occId}:15`, min(6));
     expect(String(fifth.data.content)).toContain("5-й раз");
     expect(String(fifth.data.content).startsWith("Откладываешь")).toBe(false); // фраза впереди, вопрос тот же
-    expect(String(fifth.data.content)).toContain("Откладываешь «Оплатить счёт» в 5-й раз. Что делаем?");
+    expect(String(fifth.data.content)).toContain("Откладываешь «Разобрать почту» в 5-й раз. Что делаем?");
   });
 
   it("серьёзное дело или слово-флаг: пятое откладывание без шуток", async () => {
-    const { occId } = await w.create("через 5 минут важно оплатить счёт");
+    const { occId } = await w.create("через 5 минут важно разобрать почту");
     await run(min(5));
     setOcc(occId, { snooze_count: 4 });
     const r = await submit(`m_snz:${occId}`, { quick: "tom", text: "" }, min(6));
@@ -412,10 +455,10 @@ describe("«тихий день»", () => {
 
   it("в тихий день напоминание приходит как обычно, но без реплики и карточки; пропуск всё равно считается", async () => {
     await w.repo().exec([setMeta("quiet_day_until", String(min(0) + QUIET_DAY_MS))]);
-    const { occId } = await w.create("через 5 минут оплатить счёт");
+    const { occId } = await w.create("через 5 минут разобрать почту");
     await run(min(5));
     const body = w.discord.live(CH_REMIND)[0].body;
-    expect(String(body.content)).toContain("**Оплатить счёт**");
+    expect(String(body.content)).toContain("**Разобрать почту**");
     expect(body.embeds).toBeUndefined();
     for (const m of [10, 20, 40, 120]) await run(min(5 + m));
     expect(w.occ(occId).state).toBe("overdue");
@@ -437,10 +480,10 @@ describe("«тихий день»", () => {
 
   it("кнопка «Готово» в тихий день: без реплики, счётчики идут", async () => {
     await w.repo().exec([setMeta("quiet_day_until", String(min(0) + QUIET_DAY_MS))]);
-    const { occId } = await w.create("через 5 минут оплатить счёт");
+    const { occId } = await w.create("через 5 минут разобрать почту");
     await run(min(5));
     const r = await click(`done:${occId}`, min(6));
-    expect(String(r.data.content).startsWith("Готово: Оплатить счёт")).toBe(true);
+    expect(String(r.data.content).startsWith("Готово: Разобрать почту")).toBe(true);
     expect(r.data.embeds ?? []).toHaveLength(0);
     expect(mood().done_streak).toBe(1);
   });
@@ -466,7 +509,7 @@ describe("«тихий день»", () => {
 
   it("через сутки характер возвращается сам", async () => {
     await w.repo().exec([setMeta("quiet_day_until", String(min(0) + QUIET_DAY_MS))]);
-    await w.create("через 5 минут оплатить счёт", min(0) + QUIET_DAY_MS + 60 * MINUTE);
+    await w.create("через 5 минут разобрать почту", min(0) + QUIET_DAY_MS + 60 * MINUTE);
     await run(min(0) + QUIET_DAY_MS + 65 * MINUTE);
     expect(said(w.discord.live(CH_REMIND)[0].body).length).toBeGreaterThan(3); // фраза Хару в тексте снова есть
   });
@@ -503,7 +546,7 @@ describe("«тихий день»", () => {
       w = new World();
       await w.seed({ today: true, intake: true, settings: { mood_on: "1", style_level: "0", summary_morning: "off", summary_evening: "off", weekly: "off" } });
       await setup(w);
-      const { occId } = await w.create("через 5 минут оплатить счёт");
+      const { occId } = await w.create("через 5 минут разобрать почту");
       for (const m of [5, 15, 25, 45, 125, 245]) await run(min(m), rand);
       const o = w.occ(occId);
       return [o.state, o.fire_count, o.next_fire_at, w.discord.live(CH_REMIND).length];
@@ -517,7 +560,7 @@ describe("«тихий день»", () => {
 describe("яндере и серьёзные темы в боте", () => {
   it("яндере на напоминании говорит словами цундере, а на пропуске — своими", async () => {
     await cmd("mood", [{ name: "set", value: "yandere" }]);
-    const { occId } = await w.create("через 5 минут оплатить счёт");
+    const { occId } = await w.create("через 5 минут разобрать почту");
     await run(min(5));
     const first = said(w.discord.live(CH_REMIND)[0].body);
     expect(fromPool(first, PHRASES.yandere.reminder ?? [])).toBe(false);
@@ -529,7 +572,7 @@ describe("яндере и серьёзные темы в боте", () => {
   });
 
   it("слово «важно» или «серьёзно» в названии: без реплики и без реакции", async () => {
-    await w.create("через 5 минут важно оплатить счёт");
+    await w.create("через 5 минут важно разобрать почту");
     await w.create("через 5 минут серьёзно позвонить в банк");
     await w.create("через 5 минут купить хлеб");
     await run(min(5));
@@ -543,7 +586,7 @@ describe("яндере и серьёзные темы в боте", () => {
 
 describe("достижения в боте", () => {
   it("давний хвост: «Готово» по делу, висевшему больше недели, — реплика достижения", async () => {
-    const { occId } = await w.create("через 5 минут оплатить счёт");
+    const { occId } = await w.create("через 5 минут разобрать почту");
     await run(min(5));
     setOcc(occId, { state: "overdue", due_at: min(5) - 9 * DAY, base_at: min(5) - 9 * DAY });
     const r = await click(`done:${occId}`, min(6));
@@ -556,7 +599,7 @@ describe("достижения в боте", () => {
     const lines: string[] = [];
     for (let k = 0; k < 3; k++) {
       const t0 = NOW + k * DAY;
-      const { occId } = await w.create("через 5 минут оплатить счёт", t0);
+      const { occId } = await w.create("через 5 минут разобрать почту", t0);
       await run(t0 + 5 * MINUTE);
       const r = await click(`done:${occId}`, t0 + 6 * MINUTE);
       lines.push(said(r.data));
@@ -569,7 +612,7 @@ describe("достижения в боте", () => {
   });
 
   it("пропуск в cron обнуляет серию дней и начало «недели без Висит»", async () => {
-    const a = await w.create("через 5 минут оплатить счёт");
+    const a = await w.create("через 5 минут разобрать почту");
     await run(min(5));
     await click(`done:${a.occId}`, min(6));
     expect(style().ot?.n).toBe(1);

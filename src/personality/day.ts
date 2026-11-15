@@ -2,12 +2,14 @@
 //  • «Случайность» от даты и номера дела (D1, D2): детерминированная — повторный запуск той же минуты не меняет реплику.
 //    Она касается ТОЛЬКО слов Хару. Время напоминаний, их число и текст дела она не трогает никогда: «напомни мне когда-то»
 //    приходит строго по времени (сквозное правило плана).
-//  • Настроение по дню: окраска суток и «щепотка» на отдельных делах поверх настоящего настроения усталой Хару.
+//  • Образ дня (пакет «оживление», 2026-11-15): усталая или гордая Хару в этот день говорит ворчливо, мягко или одним из трёх образов (озорная, чопорная,
+//    бодрая); у отдельных дел — «щепотка» другого образа. Настроение из-за пропусков и ночи образ не перебивает.
 //  • Яндере-уровень — только в подколках при пропуске (D8); в остальных ситуациях Хару говорит как цундере.
 //  • «Тихий день» словом на сутки (D3): в этот день Хару молчит совсем (D5).
 //  • Память реплик на 14 дней (D6) и счётчики серии суток и достижений (D2, D9).
 import type { StyleState } from "./animeStyle.ts";
 import type { Mood } from "./moodEngine.ts";
+import { type Persona, type Voice, isPersona } from "./persona.ts";
 import type { Situation } from "./phrases.ts";
 
 const DAY_MS = 86_400_000;
@@ -34,19 +36,37 @@ export function dayNumber(dayKey: string): number {
   return Number.isFinite(t) ? Math.floor(t / DAY_MS) : 0;
 }
 
-export type DayTint = "plain" | "grumpy" | "soft";
+/** Голоса, которыми Хару может говорить «в этот день»: усталая, ворчливая (цундере), мягкая (гордая) и три образа (persona.ts). */
+export type DayVoice = "tired" | "tsundere" | "proud" | Persona;
 
-/** Окраска суток: половина дней обычные, остальные — ворчливые или мягкие. Одна на весь день (по дате). */
-export function dayTint(dayKey: string): DayTint {
-  const r = hash01("tint", dayKey);
-  return r < 0.5 ? "plain" : r < 0.75 ? "grumpy" : "soft";
+/**
+ * Веса образов дня (пакет «оживление»): усталая остаётся любимым фоном, но не чаще чем в трети дней; остальное — ворчливая, мягкая и три образа.
+ * Один образ на весь день (по дате), как и раньше окраска дня; у отдельных дел — «щепотка» другого.
+ */
+export const DAY_VOICE_WEIGHTS: ReadonlyArray<readonly [DayVoice, number]> = [
+  ["tired", 0.3], ["tsundere", 0.15], ["proud", 0.15], ["playful", 0.15], ["prim", 0.12], ["bright", 0.13],
+];
+
+/** Взвешенный выбор по числу r в [0, 1); skip — голос, который выбирать нельзя (для «щепотки»: другой, чем у дня). */
+export function pickDayVoice(r: number, skip?: DayVoice): DayVoice {
+  const list = DAY_VOICE_WEIGHTS.filter(([v]) => v !== skip);
+  const total = list.reduce((sum, [, w]) => sum + w, 0);
+  let x = r * total;
+  for (const [v, w] of list) {
+    x -= w;
+    if (x < 0) return v;
+  }
+  return list[list.length - 1][0];
 }
+
+/** Образ дня: один на сутки хозяина (по дате). */
+export const dayVoice = (dayKey: string): DayVoice => pickDayVoice(hash01("voice", dayKey));
 
 /** «Щепотка»: выпала ли случайность p для этой даты, дела и соли; для одного дела в один день ответ всегда один. */
 export const pinch = (dayKey: string, itemId: number, salt: string, p: number): boolean => hash01(dayKey, itemId, salt) < p;
 
 /** Яндере-уровень разрешён только здесь (подколки при пропуске, D8). */
-export const YANDERE_SITUATIONS: ReadonlySet<Situation> = new Set<Situation>(["missed_first", "missed"]);
+export const YANDERE_SITUATIONS: ReadonlySet<Situation> = new Set<Situation>(["missed_first", "missed", "missed_major"]);
 
 /** В ворчливый день усталая Хару ворчит на этом (цундере). */
 const GRUMPY_SITUATIONS: ReadonlySet<Situation> = new Set<Situation>([
@@ -54,38 +74,47 @@ const GRUMPY_SITUATIONS: ReadonlySet<Situation> = new Set<Situation>([
 ]);
 /** В мягкий день усталая Хару теплее на этом (гордится). */
 const SOFT_SITUATIONS: ReadonlySet<Situation> = new Set<Situation>([
-  "done", "done_late", "recorded", "greeting", "summary_morning", "summary_evening", "summary_weekly", "empty_list", "empty_today", "thanks",
+  "done", "done_late", "done_major", "recorded", "greeting", "summary_morning", "summary_evening", "summary_weekly", "empty_list", "empty_today", "thanks",
 ]);
 
-/** Шанс, что у отдельного дела окраска дня «не сработала» (щепотка), и шанс яндере-подколки на пропуске. */
+/** Шанс, что у отдельного дела образ дня «не сработал» (щепотка), и шанс яндере-подколки на пропуске. */
 export const PINCH_CHANCE = 0.15;
 export const YANDERE_TEASE_CHANCE = 0.2;
 
 /**
- * Настроение, с которым говорить сейчас. Настоящее настроение (из чисел) — основа; поверх:
- *  1. яндере вне пропусков → цундере (яндере-уровень только в подколках, D8);
- *  2. усталая («обычный рабочий день») окрашивается днём: ворчливый — цундере, мягкий — гордая; у части дел окраска другая (щепотка);
- *  3. на пропуске усталая, цундере и обиженная в части случаев подкалывают яндере-голосом.
- * Если у нужного настроения нет фраз для ситуации (`has`), остаётся прежнее.
+ * Образ спокойного дня. Накладывается только на «спокойные» настроения: усталую и гордую; ворчливая, обиженная, сонная и яндере остаются как есть:
+ * их выбрали числа и время, образ дня их не перебивает. Усталая может стать ворчливой (на «ворчливых» ситуациях) или мягкой (на «мягких»);
+ * образы (озорная, чопорная, бодрая) говорят везде, где у них есть фразы; гордая меняется только на образы (не на усталую и не на ворчливую).
+ * Нет фраз у образа для этой ситуации — остаётся настроение.
  */
-export function effectiveMood(a: { mood: Mood; situation: Situation; dayKey: string; itemId?: number; has: (m: Mood, s: Situation) => boolean }): Mood {
+function calmVoice(a: { mood: Mood; situation: Situation; dayKey: string; id: number; has: (m: Voice, s: Situation) => boolean }): Voice {
+  const { mood, situation, dayKey, id, has } = a;
+  if (mood !== "tired" && mood !== "proud") return mood;
+  let voice = dayVoice(dayKey);
+  if (pinch(dayKey, id, `tint:${situation}`, PINCH_CHANCE)) voice = pickDayVoice(hash01(dayKey, id, `flip:${situation}`), voice);
+  if (voice === mood) return mood;
+  if (isPersona(voice)) return has(voice, situation) ? voice : mood;
+  if (mood === "tired") {
+    if (voice === "tsundere" && GRUMPY_SITUATIONS.has(situation) && has("tsundere", situation)) return "tsundere";
+    if (voice === "proud" && SOFT_SITUATIONS.has(situation) && has("proud", situation)) return "proud";
+  }
+  return mood;
+}
+
+/**
+ * Голос, которым говорить сейчас. Настоящее настроение (из чисел) — основа; поверх:
+ *  1. яндере вне пропусков → цундере (яндере-уровень только в подколках, D8);
+ *  2. на пропуске усталая, цундере и обиженная в части случаев подкалывают яндере-голосом;
+ *  3. усталая и гордая окрашиваются образом дня (`calmVoice`).
+ * Если у нужного голоса нет фраз для ситуации (`has`), остаётся прежний.
+ */
+export function effectiveMood(a: { mood: Mood; situation: Situation; dayKey: string; itemId?: number; has: (m: Voice, s: Situation) => boolean }): Voice {
   const { mood, situation, dayKey, has } = a;
   const id = a.itemId ?? 0;
   const pick = (...cands: Mood[]): Mood => cands.find((m) => m === mood || has(m, situation)) ?? mood;
   if (mood === "yandere" && !YANDERE_SITUATIONS.has(situation)) return pick("tsundere", "tired");
-  if (YANDERE_SITUATIONS.has(situation)) {
-    if ((mood === "tired" || mood === "tsundere" || mood === "sulking") && pinch(dayKey, id, "yd", YANDERE_TEASE_CHANCE) && has("yandere", situation)) return "yandere";
-    return mood;
-  }
-  if (mood !== "tired") return mood;
-  let tint = dayTint(dayKey);
-  if (pinch(dayKey, id, `tint:${situation}`, PINCH_CHANCE)) {
-    // у этого дела окраска другая: обычный день → ворчливая или мягкая (по хэшу), остальные — противоположная
-    tint = tint === "plain" ? (hash01(dayKey, id, "flip") < 0.5 ? "grumpy" : "soft") : tint === "grumpy" ? "soft" : "grumpy";
-  }
-  if (tint === "grumpy" && GRUMPY_SITUATIONS.has(situation)) return pick("tsundere");
-  if (tint === "soft" && SOFT_SITUATIONS.has(situation)) return pick("proud");
-  return mood;
+  if (YANDERE_SITUATIONS.has(situation) && (mood === "tired" || mood === "tsundere" || mood === "sulking") && pinch(dayKey, id, "yd", YANDERE_TEASE_CHANCE) && has("yandere", situation)) return "yandere";
+  return calmVoice({ mood, situation, dayKey, id, has });
 }
 
 // ---------- «тихий день» ----------

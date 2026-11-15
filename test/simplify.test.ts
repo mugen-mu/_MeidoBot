@@ -75,7 +75,7 @@ describe("напоминание: три кнопки", () => {
   });
 
   it("просрочка в напоминании называется «висит»", async () => {
-    await w.create("через 5 минут оплатить счёт");
+    await w.create("через 5 минут разобрать почту");
     for (const m of [5, 15, 25, 45, 125]) await w.run(min(m));
     const last = w.discord.live(CH_REMIND).at(-1)!.body.content!;
     expect(last).toContain("висит");
@@ -85,7 +85,7 @@ describe("напоминание: три кнопки", () => {
 
 describe("главный экран и «Висит»", () => {
   it("цифры «Сегодня» и «Висит» на кнопках", async () => {
-    await w.create("через 5 минут оплатить счёт");
+    await w.create("через 5 минут разобрать почту");
     await w.run(min(125)); // дело «горит» — висит
     const r = await call({ type: 3, data: { custom_id: "mn:home" }, message: { id: "m1" } }, min(125));
     expect(r.data.content).toContain("висит **1**");
@@ -93,7 +93,7 @@ describe("главный экран и «Висит»", () => {
   });
 
   it("в списке фильтр называется «Висит», состояние дела — «висит»", async () => {
-    await w.create("через 5 минут оплатить счёт");
+    await w.create("через 5 минут разобрать почту");
     await w.run(min(125));
     const r = await click("mn:ls:h:0", undefined, min(125));
     expect(r.data.content).toContain("**Висит**");

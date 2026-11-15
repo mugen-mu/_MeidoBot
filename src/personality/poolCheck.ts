@@ -2,6 +2,8 @@
 // Чистая логика: её вызывают скрипт загрузки (scripts/import-phrases.ts) и тесты целостности.
 // Серьёзность: «error» — фраза отбрасывается, «warn» — остаётся, но попадает в отчёт для вычитки.
 
+import { hasMasculineSelf } from "./gender.ts";
+
 export const POOL_SITUATIONS = [
   "reminder", "reminder_repeat", "missed", "done", "done_late",
   "streak_praise", "greeting", "return_after_pause", "idle_ping", "chat_fallback",
@@ -187,5 +189,52 @@ export function integrityProblems(bank: Record<string, Partial<Record<string, st
       }
     }
   }
+  return out;
+}
+
+// ---------- проверка одной фразы пакета «оживление» (scripts/lint-phrases.ts, test/polish-phrases.test.ts) ----------
+
+export interface PhraseIssue {
+  code: string;
+  severity: Severity;
+  note: string;
+}
+
+/** Где допустима подстановка {task} (и только «в ёлочках» или после двоеточия). */
+const TASK_SITUATIONS: ReadonlySet<string> = new Set([
+  "reminder", "reminder_repeat", "missed", "done", "done_late", "missed_minor", "done_minor", "missed_major", "done_major",
+]);
+/** Вид осадков в реплике рядом с фактом «начался дождь/снег» не называем: вид и так назван в факте, а реплика общая для дождя, снега и мокрого снега. */
+const RAIN_KIND = word("дожд\\p{L}*|снег\\p{L}*|снеж\\p{L}*|ливн\\p{L}*|ливень|морос\\p{L}*|гроз\\p{L}*|град\\p{L}*|метел\\p{L}*|вьюг\\p{L}*|слякот\\p{L}*|луж\\p{L}*|мокр\\p{L}*|промок\\p{L}*|капл\\p{L}*|зонт\\p{L}*|сыро|сырост\\p{L}*");
+
+/** Все замечания к одной фразе: error — фразу брать нельзя, warn — на вычитку. Ситуация нужна для подстановок и правил дождя. */
+export function lintPhrase(text: string, voice: string, sit: string): PhraseIssue[] {
+  const out: PhraseIssue[] = [];
+  const add = (code: string, severity: Severity, note: string) => out.push({ code, severity, note });
+  if (typeof text !== "string" || !text.trim()) return [{ code: "empty", severity: "error", note: "пустая фраза" }];
+  const t = sanitize(text);
+  if (t !== text.trim()) add("not-sanitized", "warn", "лишние пробелы или «Господин {user}»: подстановка после обращения нелепа");
+  if (t.length > 160) add("too-long", "error", `длина ${t.length} > 160`);
+  const plain = t.replace(/\{[^{}]*\}/g, "§");
+  for (const r of RULES) {
+    if (r.moods && !r.moods.includes(voice)) continue;
+    if (r.re.test(plain)) add(r.code, r.severity, r.note);
+  }
+  if (hasMasculineSelf(plain)) add("male-self", "error", "о себе в мужском роде (Хару — девушка)");
+  if (/[{}]/.test(t.replace(/\{[^{}]*\}/g, ""))) add("brace", "error", "лишние фигурные скобки");
+  for (const m of t.matchAll(/\{([^{}]*)\}/g)) {
+    const v = m[1];
+    if (v === "user") continue;
+    if (v === "task") {
+      if (!TASK_SITUATIONS.has(sit)) add("var-place", "error", `{task} не бывает в ситуации ${sit}`);
+      if (!/«\{task\}»|:\s*\{task\}/u.test(t)) add("task-form", "error", "{task} только в «ёлочках» или после двоеточия");
+    } else if (v === "done_streak") {
+      if (sit !== "streak_praise") add("var-place", "error", `{done_streak} только в streak_praise, а не в ${sit}`);
+    } else add("bad-var", "error", `подстановка {${v}} в новых фразах не используется`);
+  }
+  if ((t.match(/\*/g) ?? []).length % 2 === 1) add("asterisk", "error", "незакрытая звёздочка");
+  if (sentenceCount(t) > 2) add("sentences", "warn", "больше двух предложений");
+  if (/(?:^|\s)\.{4,}|[!?]{3,}/u.test(t)) add("punct", "warn", "слишком много знаков подряд");
+  if (["rain_start", "rain_end", "rain_early"].includes(sit) && RAIN_KIND.test(plain)) add("rain-kind", "error", "вид осадков (дождь, снег, зонт, лужи…) не называем: он в соседнем сообщении");
   return out;
 }

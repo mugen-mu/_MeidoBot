@@ -34,8 +34,8 @@ const ACHIEVE: Situation[] = ["done", "done_late", "streak_praise", "good_streak
 const PINCH: Situation[] = ["missed", "missed_first", "reminder_repeat"];
 
 export const WORDS: Word[] = [
-  // «яре яре» — любимое слово хозяина, но звучало слишком часто: оставлено, только реже (пауза 15 сообщений со стилем)
-  { id: "yare_yare", cyrillic: "яре яре", latin: "yare yare", meaning: "ну и ну, усталый вздох", ru: "ну и ну", moods: ["tired", "tsundere"], slot: "lead", cooldown: 15 },
+  // «яре яре» — любимое слово хозяина, но звучало слишком часто (2026-11-10 пауза 15, 2026-11-15 снова жалоба): теперь не чаще раза в 40 сообщений со стилем
+  { id: "yare_yare", cyrillic: "яре яре", latin: "yare yare", meaning: "ну и ну, усталый вздох", ru: "ну и ну", moods: ["tired", "tsundere"], slot: "lead", cooldown: 40 },
   { id: "ara_ara", cyrillic: "ара-ара", latin: "ara ara", meaning: "ой-ой, мягкое удивление", ru: "ой-ой", moods: ["yandere", "tired", "proud"], slot: "lead" },
   { id: "mendokusai", cyrillic: "мендокусай", latin: "mendokusai", meaning: "как же лень, как хлопотно", ru: "как же лень", moods: ["tired"], slot: "lead" },
   { id: "shikata_nai", cyrillic: "сиката-най", latin: "shikata nai", meaning: "ничего не поделаешь", ru: "ничего не поделаешь", moods: ["tired", "tsundere"], slot: "lead" },

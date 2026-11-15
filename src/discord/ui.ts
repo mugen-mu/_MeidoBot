@@ -484,7 +484,7 @@ export function whenModal(customId: string, title: string) {
   ]);
 }
 
-export function editModal(a: { occId: number; title: string; whenText: string | null; ladderKey: string; plain?: boolean }) {
+export function editModal(a: { occId: number; title: string; whenText: string | null; ladderKey: string; plain?: boolean; /** метка веса: 0 — решает Хару, 1 — мелочь, 2 — главное */ weight?: number }) {
   const comps: unknown[] = [textLabel("Название", "title", { value: a.title, max: 200 })];
   if (a.whenText !== null) comps.push(textLabel("Когда", "when", { value: a.whenText, placeholder: "завтра 10:30", required: false, max: 100 }));
   comps.push(
@@ -496,10 +496,14 @@ export function editModal(a: { occId: number; title: string; whenText: string | 
       { value: "custom", label: "Свои числа (впишите ниже)" },
     ]),
     textLabel("Свои числа (минуты от срока)", "nums", { required: false, placeholder: "0 10 20 40", max: 60 }),
-    selectLabel("Реплики Хару", "plain", [
-      { value: "keep", label: a.plain ? "Не менять (сейчас: без стиля)" : "Не менять (сейчас: со стилем)" },
+    // в окне пять полей — максимум Discord, поэтому важность живёт в этом же списке (пакет «оживление»)
+    selectLabel("Реплики Хару и важность дела", "plain", [
+      { value: "keep", label: `Не менять (сейчас: ${a.plain ? "без стиля" : "со стилем"}${a.weight === 1 ? ", мелочь" : a.weight === 2 ? ", главное" : ""})` },
       { value: "plain", label: "Без стиля: только суть" },
       { value: "styled", label: "Со стилем" },
+      { value: "minor", label: "Мелочь: Хару почти не реагирует" },
+      { value: "major", label: "Главное: Хару реагирует сильнее" },
+      { value: "auto", label: "Важность: пусть Хару решит сама" },
     ]),
   );
   return modal(cid("m_edit", a.occId), "Изменить дело", comps);

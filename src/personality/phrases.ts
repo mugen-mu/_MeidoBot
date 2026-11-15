@@ -71,7 +71,16 @@ export type Situation =
   | "year_with"
   // объявления про свет («Света нет с …», «Свет вернулся в …»): фраза Хару первой
   | "power_off"
-  | "power_on";
+  | "power_on"
+  // пакет «оживление» (2026-11-15): вес дела — пустяк или важное; дождь; ответ про погоду
+  | "missed_minor"
+  | "done_minor"
+  | "missed_major"
+  | "done_major"
+  | "rain_start"
+  | "rain_end"
+  | "rain_early"
+  | "weather_ask";
 
 export const SITUATIONS: Situation[] = [
   "reminder", "reminder_repeat", "missed_first", "missed", "done", "done_late", "streak_praise", "relief",
@@ -80,6 +89,7 @@ export const SITUATIONS: Situation[] = [
   "draft", "cancelled", "stopped", "snoozed", "deleted", "reply_unknown", "reply_past", "reply_closed",
   "snooze_5", "good_streak", "achieve_tail", "achieve_week_clean", "achieve_week_ontime",
   "tail_clear", "tail_review", "source_down", "source_week", "seasonal", "year_with", "power_off", "power_on",
+  "missed_minor", "done_minor", "missed_major", "done_major", "rain_start", "rain_end", "rain_early", "weather_ask",
 ];
 
 /** Если у настроения нет фраз для ситуации, берём ближайшую «родственную» из того же настроения. */
@@ -110,6 +120,10 @@ export const FALLBACK_SITUATION: Partial<Record<Situation, Situation>> = {
   year_with: "summary_weekly",
   power_off: "reminder",
   power_on: "done",
+  missed_minor: "missed_first",
+  done_minor: "done",
+  missed_major: "missed",
+  done_major: "done",
 };
 
 export type Phrases = Record<string, Partial<Record<Situation, string[]>>>;
@@ -122,6 +136,14 @@ import { STAGE2_PHRASES } from "./phrases.stage2.ts";
 import { STAGE3_PHRASES } from "./phrases.stage3.ts";
 import { STAGE4_PHRASES } from "./phrases.stage4.ts";
 import { POWER_PHRASES } from "./phrases.stage5.ts";
+import { PERSONA_BRIGHT } from "./phrases.persona.bright.ts";
+import { PERSONA_PLAYFUL } from "./phrases.persona.playful.ts";
+import { PERSONA_PRIM } from "./phrases.persona.prim.ts";
+import { POLISH_PROUD } from "./phrases.polish.proud.ts";
+import { POLISH_TIRED } from "./phrases.polish.tired.ts";
+import { POLISH_TSUNDERE } from "./phrases.polish.tsundere.ts";
+import { RAIN_PHRASES } from "./phrases.rain.ts";
+import { WEIGHT_PHRASES } from "./phrases.weight.ts";
 
 const key = (t: string): string => t.toLowerCase().replace(/[^\p{L}]+/gu, " ").trim();
 
@@ -159,4 +181,42 @@ const FALLBACK_BANK: Phrases = Object.fromEntries(
   ]),
 );
 
-export const PHRASES: Phrases = mergePools(GENERATED, FALLBACK_BANK);
+/**
+ * Добавить фразы к готовому набору: к каждому списку (настроение или образ → ситуация) дописываются новые, без дублей по тексту.
+ * Так короткие пулы (3–4 фразы) дорастают до 10+, а новые ситуации и образы появляются, не трогая старые файлы с данными.
+ */
+export function addPools(base: Phrases, extra: Phrases): Phrases {
+  const out: Phrases = {};
+  for (const voice of new Set([...Object.keys(base), ...Object.keys(extra)])) {
+    out[voice] = { ...base[voice] };
+    for (const [sit, add] of Object.entries(extra[voice] ?? {}) as [Situation, string[]][]) {
+      const list = [...(out[voice][sit] ?? [])];
+      const seen = new Set(list.map(key));
+      for (const t of add) {
+        if (t.trim() && !seen.has(key(t))) {
+          seen.add(key(t));
+          list.push(t);
+        }
+      }
+      if (list.length) out[voice][sit] = list;
+    }
+  }
+  return out;
+}
+
+/** Файлы пакета «оживление» по именам: по ним работают scripts/lint-phrases.ts и тесты (poolSpec.ts). */
+export const ADDITION_GROUPS: Record<string, Phrases> = {
+  "persona.playful": PERSONA_PLAYFUL,
+  "persona.prim": PERSONA_PRIM,
+  "persona.bright": PERSONA_BRIGHT,
+  weight: WEIGHT_PHRASES,
+  rain: RAIN_PHRASES,
+  "polish.tired": POLISH_TIRED,
+  "polish.tsundere": POLISH_TSUNDERE,
+  "polish.proud": POLISH_PROUD,
+};
+
+/** Набор до дополнений (для линтера: сколько фраз было до новых). */
+export const PHRASES_BASE: Phrases = mergePools(GENERATED, FALLBACK_BANK);
+
+export const PHRASES: Phrases = Object.values(ADDITION_GROUPS).reduce((acc, g) => addPools(acc, g), PHRASES_BASE);

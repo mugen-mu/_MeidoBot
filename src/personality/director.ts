@@ -41,9 +41,11 @@ import {
 } from "./moodEngine.ts";
 import { LIVE_DAILY_CAP, type LineRequest, liveLine, pickAngle, pickJaWords, pickLength } from "./liveLines.ts";
 import { INTERESTS, INTEREST_CHANCE, type MonthDay, type Person, occasionFor } from "./occasions.ts";
+import { type Voice, plainRussian, styleMood } from "./persona.ts";
 import type { Situation } from "./phrases.ts";
 import { type PhraseVars, fill, pickPhrase, poolFor, remember } from "./speech.ts";
 import { type UserWordId, wordReply } from "./userWords.ts";
+import { type Weight, weightOf } from "./weight.ts";
 
 const MINUTE = 60_000;
 
@@ -228,14 +230,14 @@ export class MoodSession {
    * Настроение, с которым говорить: явное (`mood`, например гордая похвала) — как есть; иначе настоящее с поправками дня
    * (окраска суток, «щепотка» от даты и номера дела, яндере только на пропусках — `effectiveMood`).
    */
-  private voice(situation: Situation, vars: PhraseVars, mood?: Mood): Mood {
+  private voice(situation: Situation, vars: PhraseVars, mood?: Voice): Voice {
     if (mood) return mood;
     const dayKey = this.ctx.dayKey ?? new Date(this.ctx.now).toISOString().slice(0, 10);
     return effectiveMood({ mood: this.state!.mood, situation, dayKey, itemId: vars.itemId, has: (m, sit) => poolFor(m, sit).length > 0 });
   }
 
   /** Фраза для ситуации в текущем настроении или null (пула нет, пауза «драмы» или «тихий день»). Запоминает её, чтобы не повторять 14 дней. */
-  say(situation: Situation, vars: PhraseVars = {}, mood?: Mood): string | null {
+  say(situation: Situation, vars: PhraseVars = {}, mood?: Voice): string | null {
     if (!this.state) throw new Error("MoodSession: сначала load()");
     this.cinema = false;
     if (this.silent) return null;
@@ -258,7 +260,9 @@ export class MoodSession {
     this.styleState = { ...this.styleState, rl: rememberLine(this.styleState.rl, p.key, this.dayNum) };
     this.dirty = true;
     // «кино-момент» (Х3): редкий длинный монолог вместо обычной фразы, только на уровне 3 и с паузой
-    const cin = cinemaMoment({ mood: m, situation, style: this.style, state: this.styleState, now: this.ctx.now, rand: this.rand, vars, cfg: this.cfg });
+    // аниме-слой: образ говорит как похожее настроение (styleMood), чопорная — только по-русски (plainRussian)
+    const style = plainRussian(m) ? { ...this.style, level: 0 as const } : this.style;
+    const cin = cinemaMoment({ mood: styleMood(m), situation, style, state: this.styleState, now: this.ctx.now, rand: this.rand, vars, cfg: this.cfg });
     if (cin) {
       this.styleState = cin.state;
       this.cinema = true;
@@ -267,9 +271,9 @@ export class MoodSession {
     // аниме-слой (Х2): поверх выбранной фразы; на уровне 0 это обычная подстановка без вставок
     const r = renderStyled({
       template: p.raw,
-      mood: m,
+      mood: styleMood(m),
       situation,
-      style: this.style,
+      style,
       state: this.styleState,
       vars: { miss_count: st.missStreak, done_streak: st.doneStreak, ...vars },
       rand: this.rand,
@@ -284,7 +288,7 @@ export class MoodSession {
    * (say). Модель получает настроение, ситуацию, время суток, интересы хозяина и (если нет секрета) название дела.
    * Дневной потолок вызовов хранится в состоянии стиля (сутки UTC, как у лимита Workers AI); вызов считается и при неудаче.
    */
-  async sayLive(situation: Situation, vars: PhraseVars & { facts?: string; occasion?: string; task?: string } = {}, mood?: Mood): Promise<string | null> {
+  async sayLive(situation: Situation, vars: PhraseVars & { facts?: string; occasion?: string; task?: string } = {}, mood?: Voice): Promise<string | null> {
     if (!this.state) throw new Error("MoodSession: сначала load()");
     if (this.silent) {
       this.cinema = false;
@@ -308,8 +312,8 @@ export class MoodSession {
     const req: LineRequest = {
       mood: m,
       situation,
-      level: this.style.level,
-      address: pickAddress(m, this.style, this.cfg.address, this.rand),
+      level: plainRussian(m) ? 0 : this.style.level,
+      address: pickAddress(styleMood(m), plainRussian(m) ? { ...this.style, level: 0 } : this.style, this.cfg.address, this.rand), // чопорная без «госюдзин-сама»
       task: vars.task && !detectSecret(vars.task).secret && !isSeriousTopic(vars.task) ? vars.task.slice(0, 120) : undefined,
       missStreak: st.missStreak,
       doneStreak: st.doneStreak,
@@ -319,7 +323,7 @@ export class MoodSession {
       interests: this.rand() < INTEREST_CHANCE ? INTERESTS : [],
       occasion: vars.occasion,
       facts: vars.facts,
-      jaWords: this.style.level > 0 ? pickJaWords(m, this.rand) : undefined,
+      jaWords: this.style.level > 0 && !plainRussian(m) ? pickJaWords(styleMood(m), this.rand) : undefined,
       angle: pickAngle(this.rand),
       noLead: this.rand() < 0.7,
       jaMax: this.rand() < 0.5 ? 1 : 2,
@@ -402,29 +406,43 @@ export class MoodSession {
   }
 }
 
+/** Как часто Хару вообще отзывается на «Готово» по пустяку: хозяин жалуется, что его хвалят за всё. */
+export const MINOR_DONE_LINE_CHANCE = 0.3;
+
+/** Что нужно знать о деле для «Готово»: поля OccView, достаточные и для веса дела. */
+export type DoneOcc = Pick<OccView, "kind" | "item_kind" | "state" | "title" | "critical"> & {
+  plain?: number;
+  item_id?: number;
+  due_at?: number | null;
+  rule_recipe?: string | null;
+  rule_leads?: string | null;
+  item_weight?: number;
+};
+
 /**
  * «Готово» по делу: событие для настроения и фраза для сообщения (или null — стиль выключен / фраз нет).
  * Выполнение главного напоминания до просрочки — «вовремя», после — «с опозданием»; остальное (таймеры, «заранее») — просто активность.
- * Приоритет фраз: достижение (давний хвост, 7 дней вовремя) → заметка о хорошей серии суток → особая похвала за серию → «наконец-то» после пропусков →
+ * Вес дела (пакет «оживление»): пустяк серию не растит и не гасит, достижений не даёт, а реплика редкая и без похвалы; важное считается за два и хвалится тепло.
+ * Приоритет фраз: достижение (давний хвост, 7 дней вовремя) → особая похвала за серию → «наконец-то» после пропусков → у важного «сделано главное» →
  * редкая скупая похвала → обычная для настроения. Серии и достижения считаются всегда, реплика — только если стиль уместен (не серьёзная тема, не тихий день).
  */
-export async function recordDone(
-  m: MoodSession,
-  occ: Pick<OccView, "kind" | "item_kind" | "state" | "title" | "critical"> & { plain?: number; item_id?: number; due_at?: number | null },
-): Promise<string | null> {
+export async function recordDone(m: MoodSession, occ: DoneOcc): Promise<string | null> {
   const counts = occ.kind === "main" && occ.item_kind === "reminder";
-  const r = m.apply(counts ? { type: "done", onTime: occ.state !== "overdue" } : { type: "activity" });
+  const weight: Weight = counts ? weightOf(occ) : "normal";
+  const r = m.apply(counts ? { type: "done", onTime: occ.state !== "overdue", weight } : { type: "activity" });
   const overdue = counts && occ.state === "overdue";
   const ageDays = overdue && occ.due_at ? Math.max(0, Math.floor((m.ctx.now - occ.due_at) / 86_400_000)) : 0;
-  const ach = counts ? m.noteDone({ onTime: !overdue, ageDays }) : null;
+  const ach = counts && weight !== "minor" ? m.noteDone({ onTime: !overdue, ageDays }) : null;
   if (!canStyle(occ.title, occ.critical, occ.plain ?? 0)) return null;
   const vars = { task: occ.title, itemId: occ.item_id };
+  if (weight === "minor") return m.rand() < MINOR_DONE_LINE_CHANCE ? m.sayLive("done_minor", vars) : null;
   if (ach) {
     const line = await m.sayLive(ACHIEVEMENT_SITUATION[ach], vars, "proud");
     if (line) return brighten(line, ach);
   }
   if (counts && r.milestone !== null) return m.sayLive("streak_praise", vars, "proud");
   if (counts && r.relief) return m.sayLive("relief", vars);
+  if (counts && weight === "major") return m.sayLive(overdue ? "done_late" : "done_major", vars);
   if (counts && m.rand() < m.cfg.randomPraiseChance) return m.sayLive("done", vars, "proud");
   return m.sayLive(counts && occ.state === "overdue" ? "done_late" : "done", vars);
 }

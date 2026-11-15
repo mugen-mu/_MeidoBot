@@ -7,10 +7,11 @@ import type { AiBinding } from "../llm.ts";
 import { EMPTY_REPLY, EMPTY_SERIES_REPLY, NOT_RECURRING_REPLY, SECRET_REPLY, createFromText } from "../intake.ts";
 import { tired } from "../flavor.ts";
 import { MoodSession, makeCtx, reactionLine, recordDone, recordedLine, resetOps } from "../personality/director.ts";
-import { QUIET_META_KEY, isQuietNow } from "../personality/day.ts";
+import { QUIET_META_KEY, dayVoice, isQuietNow } from "../personality/day.ts";
 import type { Situation } from "../personality/phrases.ts";
 import { LIVE_TIMEOUT_INTERACTION_MS } from "../personality/liveLines.ts";
 import { MOODS, type Mood, isMood } from "../personality/moodEngine.ts";
+import { weightMark } from "../personality/weight.ts";
 import { MOOD_CONFIG } from "../personality/config.ts";
 import { moodReport } from "../personality/report.ts";
 import { maidEmbed, wantSprite } from "../personality/look.ts";
@@ -34,6 +35,7 @@ import {
   rescheduleOps,
   setLadderOps,
   setPlainOps,
+  setWeightOps,
   setTitleOps,
   snoozeOps,
   stopSeriesOps,
@@ -480,7 +482,7 @@ async function moodCommand(c: C): Promise<Reply> {
     c.mood.force(set as Mood);
     return moodCard(c, moodReport({ state: c.mood.state!, enabled: c.s.moodOn, quietUntil: quietText(c) }), `Настроение задано вручную: ${set}. Оно сменится само, когда числа и время скажут иначе.`);
   }
-  return moodCard(c, moodReport({ state: c.mood.state!, enabled: c.s.moodOn, greeting: c.mood.say("greeting"), quietUntil: quietText(c) }));
+  return moodCard(c, moodReport({ state: c.mood.state!, enabled: c.s.moodOn, greeting: c.mood.say("greeting"), quietUntil: quietText(c), dayVoice: dayVoice(c.mood.ctx.dayKey ?? new Date(c.now).toISOString().slice(0, 10)) }));
 }
 
 /** /style: показать стиль речи или изменить (уровень, письмо, манга-звуки, обращения, каомодзи); в ответе — живые примеры. */
@@ -627,7 +629,7 @@ async function onComponent(c: C): Promise<Reply> {
       if (!occ || !isOpen(occ)) return gone();
       const w = occ.due_at !== null && occ.kind === "main" && occ.item_kind !== "timer" && !occ.rule_recipe ? wallOf(occ.due_at, c.s.tz) : null;
       const whenText = w ? `${String(w.mo).padStart(2, "0")}.${String(w.d).padStart(2, "0")} ${fmtHHMM(w.h * 60 + w.mi)}` : null;
-      return { type: 9, data: editModal({ occId: occ.id, title: occ.title, whenText, ladderKey: "", plain: occ.plain === 1 }).data };
+      return { type: 9, data: editModal({ occId: occ.id, title: occ.title, whenText, ladderKey: "", plain: occ.plain === 1, weight: occ.item_weight }).data };
     }
     case "stop": {
       const item = await c.repo.getItem(Number(a));
@@ -845,7 +847,7 @@ async function onMenu(c: C, parts: string[], values: string[]): Promise<Reply> {
       if (!occ || !isOpen(occ)) return gonePage(filterOf(arg[1]), pageOf(arg[2]));
       const w = occ.due_at !== null && occ.kind === "main" && occ.item_kind !== "timer" && !occ.rule_recipe ? wallOf(occ.due_at, c.s.tz) : null;
       const whenText = w ? `${String(w.mo).padStart(2, "0")}.${String(w.d).padStart(2, "0")} ${fmtHHMM(w.h * 60 + w.mi)}` : null;
-      const m = editModal({ occId: occ.id, title: occ.title, whenText, ladderKey: "", plain: occ.plain === 1 });
+      const m = editModal({ occId: occ.id, title: occ.title, whenText, ladderKey: "", plain: occ.plain === 1, weight: occ.item_weight });
       return { type: 9, data: { ...m.data, custom_id: `m_edit:${occ.id}:mn` } };
     }
     case "sp": {
@@ -1230,6 +1232,8 @@ async function editSubmit(c: C, id: string, v: Map<string, string | string[]>): 
   if (ladder && ladder !== "keep") ops.push(setLadderOps(occ.item_id, spec));
   const plainSel = str(v.get("plain"));
   if (plainSel === "plain" || plainSel === "styled") ops.push(setPlainOps(occ.item_id, plainSel === "plain"));
+  const mark = weightMark(plainSel);
+  if (mark !== null) ops.push(setWeightOps(occ.item_id, mark));
   if (ops.length) ops.push(touchOps(occ.item_id, c.now)); // хозяин тронул дело: не «давнее» и не заморозится ещё 30 дней
   if (ops.length) await c.repo.exec(ops);
   return update(confirmFor(c, { ...occ, title, due_at: due, item_ladder: spec ? JSON.stringify(spec) : occ.item_ladder }));

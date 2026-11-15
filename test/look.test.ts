@@ -94,7 +94,7 @@ function rng(seed: number): () => number {
 
 describe("кино-моменты", () => {
   const L3 = { ...STYLE_DEFAULT, level: 3 as const };
-  const base = { mood: "tired" as const, situation: "reminder" as const, style: L3, state: emptyStyleState(), now: NOW, vars: { task: "оплатить счёт" } };
+  const base = { mood: "tired" as const, situation: "reminder" as const, style: L3, state: emptyStyleState(), now: NOW, vars: { task: "разобрать почту" } };
 
   it("только уровень 3: на уровнях 0–2 нет ни при каком шансе", () => {
     for (const level of [0, 1, 2] as const) expect(cinemaMoment({ ...base, style: { ...L3, level }, rand: () => 0 })).toBeNull();
@@ -217,15 +217,15 @@ describe("Х3: напоминание карточкой", () => {
   it("один слой: упоминание, фраза Хару и название в тексте, кнопки прежние; рядом только карточка-спрайт без текста", async () => {
     await call({ type: 2, data: { name: "list", type: 1, options: [] } }); // любой вызов запоминает адрес Worker
     expect(w.d1.q<{ value: string }>("SELECT value FROM meta WHERE key = 'public_origin'")[0].value).toBe(ORIGIN);
-    await w.create("через 5 минут оплатить счёт");
+    await w.create("через 5 минут разобрать почту");
     await run(min(5));
     const body = w.discord.live(CH_REMIND)[0].body;
     expect(body.content).toContain(`<@${OWNER}>`); // уведомление идёт из текста, не из карточки
-    expect(body.content).toContain("**Оплатить счёт**");
+    expect(body.content).toContain("**Разобрать почту**");
     expect(body.content).toContain("Срок:");
     expect(body.allowed_mentions).toEqual({ users: [OWNER] });
     const first = String(body.content).split("\n")[0];
-    expect(first.indexOf("**Оплатить счёт**")).toBeGreaterThan(`<@${OWNER}> `.length + 3); // между упоминанием и названием — фраза
+    expect(first.indexOf("**Разобрать почту**")).toBeGreaterThan(`<@${OWNER}> `.length + 3); // между упоминанием и названием — фраза
     expect(body.content).not.toMatch(/\n-# /);
     const e = card(body);
     expect(e.color).toBe(MOOD_COLOR[mood().current_mood as keyof typeof MOOD_COLOR]);
@@ -237,20 +237,20 @@ describe("Х3: напоминание карточкой", () => {
 
   it("спрайт редкий: при «неудачной» случайности карточки нет вовсе, фраза всё равно в тексте", async () => {
     await call({ type: 2, data: { name: "list", type: 1, options: [] } });
-    await w.create("через 5 минут оплатить счёт");
+    await w.create("через 5 минут разобрать почту");
     await run(min(5), () => 0.5);
     const body = w.discord.live(CH_REMIND)[0].body;
     expect(body.embeds).toBeUndefined();
-    expect(String(body.content).split("\n")[0].length).toBeGreaterThan(`<@${OWNER}> **Оплатить счёт**`.length + 3);
+    expect(String(body.content).split("\n")[0].length).toBeGreaterThan(`<@${OWNER}> **Разобрать почту**`.length + 3);
   });
 
   it("без записанного адреса Worker (cron раньше любой команды) — карточки нет, фраза в тексте", async () => {
     await w.repo().exec([op("DELETE FROM meta WHERE key = 'public_origin'")]);
-    await w.create("через 5 минут оплатить счёт");
+    await w.create("через 5 минут разобрать почту");
     await run(min(5));
     const body = w.discord.live(CH_REMIND)[0].body;
     expect(body.embeds).toBeUndefined();
-    expect(String(body.content).split("\n")[0].length).toBeGreaterThan(`<@${OWNER}> **Оплатить счёт**`.length + 3);
+    expect(String(body.content).split("\n")[0].length).toBeGreaterThan(`<@${OWNER}> **Разобрать почту**`.length + 3);
   });
 
   it("серьёзная тема и критичное дело: без карточки (обычный нейтральный текст)", async () => {
@@ -261,17 +261,17 @@ describe("Х3: напоминание карточкой", () => {
 
   it("настроение выключено: карточек нет, текст как раньше", async () => {
     await click("mn:tg:mo:c"); // выкл
-    await w.create("через 5 минут оплатить счёт");
+    await w.create("через 5 минут разобрать почту");
     await run(min(5));
     expect(w.discord.live(CH_REMIND)[0].body.embeds).toBeUndefined();
   });
 
   it("«Готово»: фраза и «готово» в одной строке текста; прежняя карточка при обновлении убирается", async () => {
-    const a = await w.create("через 5 минут оплатить счёт");
+    const a = await w.create("через 5 минут разобрать почту");
     await run(min(5));
     const r = await click(`done:${a.occId}`, min(6));
-    expect(String(r.data.content)).toContain("**Оплатить счёт** — готово");
-    expect(String(r.data.content).length).toBeGreaterThan("**Оплатить счёт** — готово".length + 3);
+    expect(String(r.data.content)).toContain("**Разобрать почту** — готово");
+    expect(String(r.data.content).length).toBeGreaterThan("**Разобрать почту** — готово".length + 3);
     expect(r.data.embeds).toHaveLength(1); // карточка-спрайт
     expect(r.data.embeds[0].description).toBeUndefined();
     expect(r.data.components).toEqual([]);
@@ -405,12 +405,13 @@ describe("Х3: «ара-ара», «ганбатте» от хозяина", () 
 describe("Х3: кино-момент в напоминании", () => {
   beforeEach(async () => {
     await click("mn:tg:mo:c");
+    await cmd("mood", [{ name: "set", value: "tsundere" }]); // образ дня на цундере не накладывается: кино-момент не зависит от жребия этой даты
     await cmd("style", [{ name: "level", value: 3 }]);
     await cmd("list");
   });
 
   it("при выпавшем шансе: длинная реплика со спрайтом; второй раз в те же сутки — обычная фраза", async () => {
-    await w.create("через 5 минут оплатить счёт");
+    await w.create("через 5 минут разобрать почту");
     await run(min(5));
     const body0 = w.discord.live(CH_REMIND)[0].body;
     const first = card(body0);
@@ -427,7 +428,7 @@ describe("Х3: кино-момент в напоминании", () => {
 
   it("на уровне 2 кино-моментов не бывает", async () => {
     await cmd("style", [{ name: "level", value: 2 }]);
-    await w.create("через 5 минут оплатить счёт");
+    await w.create("через 5 минут разобрать почту");
     await run(min(5));
     expect(JSON.parse(mood().style_data).cin).toBeUndefined();
   });
