@@ -23,3 +23,6 @@ data/weather-compare/
 
 # Анкета вкусов: кэш подбора из Shikimori и копия для просмотра (копия уже под *.local.*)
 design/taste/titles.cache.json
+
+# Анкета вкусов: ответы владельца (личное, только локально)
+data/taste/
