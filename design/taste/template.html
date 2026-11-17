@@ -104,14 +104,15 @@ textarea { display: block; width: 100%; margin-top: 10px; padding: 10px 12px; bo
 .row[data-s="plan"] .rs { background: var(--c-plan); } .row[data-s="none"] .rs { background: var(--c-none); }
 .row[data-s="ok"] .rs { background: var(--c-ok); } .row[data-s="dislike"] .rs { background: var(--c-dislike); }
 .row[data-s="never"] .rs { background: var(--c-never); }
+.row[data-s="now"] .rs { background: var(--accent); color: var(--accent-ink); }
 .row.open { background: var(--surface2); }
 .pick { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; padding: 2px 14px 14px; }
 .pick button { border: 1px solid var(--line); background: var(--surface); border-radius: 10px; padding: 10px 6px; font-size: 14px; min-height: 44px; }
 .pick button[data-st="love"] { color: var(--c-love); } .pick button[data-st="like"] { color: var(--c-like); }
 .pick button[data-st="drop"], .pick button[data-st="dislike"] { color: var(--c-drop); } .pick button[data-st="plan"] { color: var(--c-plan); }
-.pick button[data-st="never"] { color: var(--c-never); }
+.pick button[data-st="never"] { color: var(--c-never); } .pick button[data-st="now"] { color: var(--accent); }
 .pick button[aria-pressed="true"] { border-color: currentColor; font-weight: 600; box-shadow: inset 0 0 0 1px currentColor; }
-@media (min-width: 620px) { .pick { grid-template-columns: repeat(6, 1fr); } .pick.five { grid-template-columns: repeat(5, 1fr); } }
+@media (min-width: 620px) { .pick { grid-template-columns: repeat(6, 1fr); } .pick.five { grid-template-columns: repeat(5, 1fr); } .pick.seven { grid-template-columns: repeat(4, 1fr); } }
 
 .end { margin-top: 36px; padding: 16px; border: 1px dashed var(--line); border-radius: var(--r); color: var(--muted); font-size: 14px; }
 .end b { color: var(--ink); }
@@ -145,9 +146,10 @@ const DATA = /*DATA*/;
 const GROUPS = DATA.groups, Q = DATA.questions, LISTS = DATA.lists;
 const STATES = {
   title: [["love", "Обожаю"], ["like", "Понравилось"], ["meh", "Так себе"], ["drop", "Бросил"], ["plan", "В планах"], ["none", "Не смотрел"]],
-  taste: [["love", "Обожаю"], ["like", "Нравится"], ["ok", "Нейтрально"], ["dislike", "Не люблю"], ["never", "Не смотрю совсем"]]
+  taste: [["love", "Обожаю"], ["like", "Нравится"], ["ok", "Нейтрально"], ["dislike", "Не люблю"], ["never", "Не смотрю совсем"]],
+  read: [["now", "Читаю сейчас"], ["love", "Обожаю"], ["like", "Понравилось"], ["meh", "Так себе"], ["drop", "Бросил"], ["plan", "В планах"], ["none", "Не читал"]]
 };
-const BULK = { title: ["none", "Остальное — не смотрел"], taste: ["ok", "Остальное — нейтрально"] };
+const BULK = { title: ["none", "Остальное — не смотрел"], taste: ["ok", "Остальное — нейтрально"], read: ["none", "Остальное — не читал"] };
 const $ = id => document.getElementById(id);
 const esc = s => String(s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 const byQ = new Map(Q.map(q => [q.id, q])), byL = new Map(LISTS.map(l => [l.id, l]));
@@ -188,7 +190,7 @@ function qHtml(q) {
 function lHtml(l) {
   const st = STATES[l.kind], bulk = BULK[l.kind];
   const rows = l.items.map(it => `<li class="row" id="r-${l.id}-${it.id}" data-l="${l.id}" data-i="${it.id}"><button type="button" class="head" aria-expanded="false"><span class="rt"><b>${esc(it.t)}</b>${it.d ? `<i>${esc(it.d)}</i>` : ""}</span><span class="rs">Отметить</span></button>` +
-    `<div class="pick${st.length === 5 ? " five" : ""}" hidden>${st.map(([k, t]) => `<button type="button" data-st="${k}" aria-pressed="false">${t}</button>`).join("")}</div></li>`).join("");
+    `<div class="pick${st.length === 5 ? " five" : st.length === 7 ? " seven" : ""}" hidden>${st.map(([k, t]) => `<button type="button" data-st="${k}" aria-pressed="false">${t}</button>`).join("")}</div></li>`).join("");
   return `<section class="list" id="l-${l.id}" data-l="${l.id}"><div class="lh"><h3><span>${esc(l.t)}</span><span class="lc" data-lc="${l.id}"></span></h3>${l.sub ? `<p>${esc(l.sub)}</p>` : ""}` +
     `<button type="button" class="link" data-bulk="${l.id}">${bulk[1]}</button></div><ul class="rows">${rows}</ul></section>`;
 }
