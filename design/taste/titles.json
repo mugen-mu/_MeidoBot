@@ -1,0 +1,2160 @@
+{
+ "source": "shikimori.io",
+ "fetched": "2026-11-17",
+ "lists": [
+  {
+   "id": "cls",
+   "t": "Вехи и классика",
+   "items": [
+    {
+     "id": 1,
+     "ru": "Ковбой Бибоп",
+     "orig": "Cowboy Bebop",
+     "year": 1998
+    },
+    {
+     "id": 30,
+     "ru": "Евангелион нового поколения",
+     "orig": "Shinseiki Evangelion",
+     "year": 1995
+    },
+    {
+     "id": 5114,
+     "ru": "Стальной алхимик: Братство",
+     "orig": "Fullmetal Alchemist: Brotherhood",
+     "year": 2009
+    },
+    {
+     "id": 1535,
+     "ru": "Тетрадь смерти",
+     "orig": "Death Note",
+     "year": 2006
+    },
+    {
+     "id": 1575,
+     "ru": "Код Гиас: Восставший Лелуш",
+     "orig": "Code Geass: Hangyaku no Lelouch",
+     "year": 2006
+    },
+    {
+     "id": 9253,
+     "ru": "Врата Штейна",
+     "orig": "Steins;Gate",
+     "year": 2011
+    },
+    {
+     "id": 11061,
+     "ru": "Охотник х Охотник (2011)",
+     "orig": "Hunter x Hunter (2011)",
+     "year": 2011
+    },
+    {
+     "id": 33,
+     "ru": "Берсерк",
+     "orig": "Kenpuu Denki Berserk",
+     "year": 1997
+    },
+    {
+     "id": 19,
+     "ru": "Монстр",
+     "orig": "Monster",
+     "year": 2004
+    },
+    {
+     "id": 6,
+     "ru": "Триган",
+     "orig": "Trigun",
+     "year": 1998
+    },
+    {
+     "id": 2001,
+     "ru": "Гуррен-Лаганн, пронзающий небеса",
+     "orig": "Tengen Toppa Gurren Lagann",
+     "year": 2007
+    },
+    {
+     "id": 339,
+     "ru": "Эксперименты Лэйн",
+     "orig": "Serial Experiments Lain",
+     "year": 1998
+    },
+    {
+     "id": 467,
+     "ru": "Призрак в доспехах: Синдром одиночки",
+     "orig": "Koukaku Kidoutai: Stand Alone Complex",
+     "year": 2002
+    },
+    {
+     "id": 205,
+     "ru": "Самурай Чамплу",
+     "orig": "Samurai Champloo",
+     "year": 2004
+    },
+    {
+     "id": 45,
+     "ru": "Бродяга Кэнсин",
+     "orig": "Rurouni Kenshin: Meiji Kenkaku Romantan",
+     "year": 1996
+    },
+    {
+     "id": 813,
+     "ru": "Драконий жемчуг Зет",
+     "orig": "Dragon Ball Z",
+     "year": 1989
+    },
+    {
+     "id": 170,
+     "ru": "Слэм-данк",
+     "orig": "Slam Dunk",
+     "year": 1993
+    },
+    {
+     "id": 245,
+     "ru": "Крутой учитель Онидзука",
+     "orig": "Great Teacher Onizuka",
+     "year": 1999
+    },
+    {
+     "id": 120,
+     "ru": "Корзинка фруктов",
+     "orig": "Fruits Basket",
+     "year": 2001
+    },
+    {
+     "id": 270,
+     "ru": "Хеллсинг: Война с нечистью",
+     "orig": "Hellsing",
+     "year": 2001
+    },
+    {
+     "id": 329,
+     "ru": "Странники",
+     "orig": "Planetes",
+     "year": 2003
+    },
+    {
+     "id": 457,
+     "ru": "Мастер муси",
+     "orig": "Mushishi",
+     "year": 2005
+    },
+    {
+     "id": 269,
+     "ru": "Блич",
+     "orig": "Bleach",
+     "year": 2004
+    },
+    {
+     "id": 20,
+     "ru": "Наруто",
+     "orig": "Naruto",
+     "year": 2002
+    },
+    {
+     "id": 21,
+     "ru": "Ван-Пис",
+     "orig": "One Piece",
+     "year": 1999
+    },
+    {
+     "id": 249,
+     "ru": "Инуяся",
+     "orig": "InuYasha",
+     "year": 2000
+    },
+    {
+     "id": 530,
+     "ru": "Красавица-воин Сейлор Мун",
+     "orig": "Bishoujo Senshi Sailor Moon",
+     "year": 1992
+    },
+    {
+     "id": 232,
+     "ru": "Сакура — собирательница карт",
+     "orig": "Cardcaptor Sakura",
+     "year": 1998
+    },
+    {
+     "id": 440,
+     "ru": "Юная революционерка Утэна",
+     "orig": "Shoujo Kakumei Utena",
+     "year": 1997
+    },
+    {
+     "id": 820,
+     "ru": "Легенда о героях Галактики",
+     "orig": "Ginga Eiyuu Densetsu",
+     "year": 1988
+    },
+    {
+     "id": 323,
+     "ru": "Агент паранойи",
+     "orig": "Mousou Dairinin",
+     "year": 2004
+    },
+    {
+     "id": 16,
+     "ru": "Мёд и клевер",
+     "orig": "Hachimitsu to Clover",
+     "year": 2005
+    },
+    {
+     "id": 1210,
+     "ru": "Добро пожаловать в NHK",
+     "orig": "NHK ni Youkoso!",
+     "year": 2006
+    },
+    {
+     "id": 849,
+     "ru": "Меланхолия Харухи Судзумии",
+     "orig": "Suzumiya Haruhi no Yuuutsu",
+     "year": 2006
+    },
+    {
+     "id": 1887,
+     "ru": "Счастливая звезда",
+     "orig": "Lucky☆Star",
+     "year": 2007
+    },
+    {
+     "id": 2167,
+     "ru": "Кланнад",
+     "orig": "Clannad",
+     "year": 2007
+    },
+    {
+     "id": 4224,
+     "ru": "Торадора!",
+     "orig": "Toradora!",
+     "year": 2008
+    },
+    {
+     "id": 934,
+     "ru": "Когда плачут цикады",
+     "orig": "Higurashi no Naku Koro ni",
+     "year": 2006
+    },
+    {
+     "id": 2966,
+     "ru": "Волчица и пряности",
+     "orig": "Ookami to Koushinryou",
+     "year": 2008
+    },
+    {
+     "id": 5680,
+     "ru": "Кэйон!",
+     "orig": "K-On!",
+     "year": 2009
+    }
+   ]
+  },
+  {
+   "id": "new",
+   "t": "Последние годы (2021 и новее)",
+   "items": [
+    {
+     "id": 52991,
+     "ru": "Провожающая в последний путь Фрирен",
+     "orig": "Sousou no Frieren",
+     "year": 2023
+    },
+    {
+     "id": 44511,
+     "ru": "Человек-бензопила",
+     "orig": "Chainsaw Man",
+     "year": 2022
+    },
+    {
+     "id": 47917,
+     "ru": "Одинокий рокер!",
+     "orig": "Bocchi the Rock!",
+     "year": 2022
+    },
+    {
+     "id": 50709,
+     "ru": "Ликорис Рикоил",
+     "orig": "Lycoris Recoil",
+     "year": 2022
+    },
+    {
+     "id": 42310,
+     "ru": "Киберпанк: Бегущие по краю",
+     "orig": "Cyberpunk: Edgerunners",
+     "year": 2022
+    },
+    {
+     "id": 52034,
+     "ru": "Ребёнок идола",
+     "orig": "[Oshi no Ko]",
+     "year": 2023
+    },
+    {
+     "id": 57334,
+     "ru": "Дандадан",
+     "orig": "Dandadan",
+     "year": 2024
+    },
+    {
+     "id": 52299,
+     "ru": "Поднятие уровня в одиночку",
+     "orig": "Ore dake Level Up na Ken",
+     "year": 2024
+    },
+    {
+     "id": 52588,
+     "ru": "Кайдзю номер восемь",
+     "orig": "Kaijuu 8-gou",
+     "year": 2024
+    },
+    {
+     "id": 52701,
+     "ru": "Подземелье вкусностей",
+     "orig": "Dungeon Meshi",
+     "year": 2024
+    },
+    {
+     "id": 54492,
+     "ru": "Монолог фармацевта",
+     "orig": "Kusuriya no Hitorigoto",
+     "year": 2023
+    },
+    {
+     "id": 46569,
+     "ru": "Адский рай",
+     "orig": "Jigokuraku",
+     "year": 2023
+    },
+    {
+     "id": 48316,
+     "ru": "Восхождение в тени!",
+     "orig": "Kage no Jitsuryokusha ni Naritakute!",
+     "year": 2022
+    },
+    {
+     "id": 41467,
+     "ru": "Блич: Тысячелетняя кровавая война",
+     "orig": "Bleach: Sennen Kessen-hen",
+     "year": 2022
+    },
+    {
+     "id": 48736,
+     "ru": "Эта фарфоровая кукла влюбилась",
+     "orig": "Sono Bisque Doll wa Koi wo Suru",
+     "year": 2022
+    },
+    {
+     "id": 54112,
+     "ru": "Предсмертный список зомби",
+     "orig": "Zom 100: Zombie ni Naru made ni Shitai 100 no Koto",
+     "year": 2023
+    },
+    {
+     "id": 52347,
+     "ru": "Рубеж Шангри-Ла: Любитель игрошлака бросает вызов топ-игре",
+     "orig": "Shangri-La Frontier: Kusoge Hunter, Kamige ni Idoman to su",
+     "year": 2023
+    },
+    {
+     "id": 52211,
+     "ru": "Магия и мускулы",
+     "orig": "Mashle",
+     "year": 2023
+    },
+    {
+     "id": 52741,
+     "ru": "Нежить и Неудача",
+     "orig": "Undead Unluck",
+     "year": 2023
+    },
+    {
+     "id": 53393,
+     "ru": "Иллюзия рая",
+     "orig": "Tengoku Daimakyou",
+     "year": 2023
+    },
+    {
+     "id": 40834,
+     "ru": "Рейтинг короля",
+     "orig": "Ousama Ranking",
+     "year": 2021
+    },
+    {
+     "id": 54900,
+     "ru": "Ветролом",
+     "orig": "Wind Breaker",
+     "year": 2024
+    },
+    {
+     "id": 57181,
+     "ru": "Голубая шкатулка",
+     "orig": "Ao no Hako",
+     "year": 2024
+    },
+    {
+     "id": 58939,
+     "ru": "Дни Сакамото",
+     "orig": "Sakamoto Days",
+     "year": 2025
+    },
+    {
+     "id": 53865,
+     "ru": "Операция: Семейка Ёдзакура",
+     "orig": "Yozakura-san Chi no Daisakusen",
+     "year": 2024
+    },
+    {
+     "id": 55318,
+     "ru": "Медалистка",
+     "orig": "Medalist",
+     "year": 2025
+    },
+    {
+     "id": 59062,
+     "ru": "Гатиакута",
+     "orig": "Gachiakuta",
+     "year": 2025
+    },
+    {
+     "id": 60083,
+     "ru": "Обычный роман в Цзюлуне",
+     "orig": "Kowloon Generic Romance",
+     "year": 2025
+    },
+    {
+     "id": 52578,
+     "ru": "Опасность в моём сердце",
+     "orig": "Boku no Kokoro no Yabai Yatsu",
+     "year": 2023
+    },
+    {
+     "id": 55102,
+     "ru": "Плач девичьей группы",
+     "orig": "Girls Band Cry",
+     "year": 2024
+    },
+    {
+     "id": 50265,
+     "ru": "Семья шпиона",
+     "orig": "Spy x Family",
+     "year": 2022
+    },
+    {
+     "id": 49596,
+     "ru": "Синяя тюрьма: Блю Лок",
+     "orig": "Blue Lock",
+     "year": 2022
+    },
+    {
+     "id": 50416,
+     "ru": "Долой безделье!",
+     "orig": "Skip to Loafer",
+     "year": 2023
+    },
+    {
+     "id": 50346,
+     "ru": "Песнь ночных сов",
+     "orig": "Yofukashi no Uta",
+     "year": 2022
+    },
+    {
+     "id": 51252,
+     "ru": "Шпионский класс",
+     "orig": "Spy Kyoushitsu",
+     "year": 2023
+    },
+    {
+     "id": 52305,
+     "ru": "Томо — девушка!",
+     "orig": "Tomo-chan wa Onnanoko!",
+     "year": 2023
+    },
+    {
+     "id": 52215,
+     "ru": "О движении Земли",
+     "orig": "Chi. Chikyuu no Undou ni Tsuite",
+     "year": 2024
+    }
+   ]
+  },
+  {
+   "id": "act",
+   "t": "Экшен и сёнэн",
+   "items": [
+    {
+     "id": 16498,
+     "ru": "Атака титанов",
+     "orig": "Shingeki no Kyojin",
+     "year": 2013
+    },
+    {
+     "id": 38000,
+     "ru": "Клинок, рассекающий демонов",
+     "orig": "Kimetsu no Yaiba",
+     "year": 2019
+    },
+    {
+     "id": 40748,
+     "ru": "Магическая битва",
+     "orig": "Jujutsu Kaisen",
+     "year": 2020
+    },
+    {
+     "id": 31964,
+     "ru": "Моя геройская академия",
+     "orig": "Boku no Hero Academia",
+     "year": 2016
+    },
+    {
+     "id": 30276,
+     "ru": "Ванпанчмен",
+     "orig": "One Punch Man",
+     "year": 2015
+    },
+    {
+     "id": 6702,
+     "ru": "Хвост Феи",
+     "orig": "Fairy Tail",
+     "year": 2009
+    },
+    {
+     "id": 34572,
+     "ru": "Чёрный клевер",
+     "orig": "Black Clover",
+     "year": 2017
+    },
+    {
+     "id": 38691,
+     "ru": "Доктор Стоун",
+     "orig": "Dr. Stone",
+     "year": 2019
+    },
+    {
+     "id": 32182,
+     "ru": "Моб Психо 100",
+     "orig": "Mob Psycho 100",
+     "year": 2016
+    },
+    {
+     "id": 3588,
+     "ru": "Пожиратель душ",
+     "orig": "Soul Eater",
+     "year": 2008
+    },
+    {
+     "id": 9919,
+     "ru": "Синий экзорцист",
+     "orig": "Ao no Exorcist",
+     "year": 2011
+    },
+    {
+     "id": 38671,
+     "ru": "Пламенная бригада пожарных",
+     "orig": "Enen no Shouboutai",
+     "year": 2019
+    },
+    {
+     "id": 23755,
+     "ru": "Семь смертных грехов",
+     "orig": "Nanatsu no Taizai",
+     "year": 2014
+    },
+    {
+     "id": 42249,
+     "ru": "Токийские мстители",
+     "orig": "Tokyo Revengers",
+     "year": 2021
+    },
+    {
+     "id": 18679,
+     "ru": "Убей или умри",
+     "orig": "Kill la Kill",
+     "year": 2013
+    },
+    {
+     "id": 22199,
+     "ru": "Убийца Акамэ!",
+     "orig": "Akame ga Kill!",
+     "year": 2014
+    },
+    {
+     "id": 24833,
+     "ru": "Класс убийц",
+     "orig": "Ansatsu Kyoushitsu",
+     "year": 2015
+    },
+    {
+     "id": 14719,
+     "ru": "Невероятное приключение ДжоДжо",
+     "orig": "JoJo no Kimyou na Bouken (TV)",
+     "year": 2012
+    },
+    {
+     "id": 37521,
+     "ru": "Сага о Винланде",
+     "orig": "Vinland Saga",
+     "year": 2019
+    },
+    {
+     "id": 1818,
+     "ru": "Клеймор",
+     "orig": "Claymore",
+     "year": 2007
+    },
+    {
+     "id": 10087,
+     "ru": "Судьба/Начало",
+     "orig": "Fate/Zero",
+     "year": 2011
+    },
+    {
+     "id": 22297,
+     "ru": "Судьба/Ночь схватки: Бесконечный мир клинков",
+     "orig": "Fate/stay night: Unlimited Blade Works",
+     "year": 2014
+    },
+    {
+     "id": 889,
+     "ru": "Пираты «Чёрной лагуны»",
+     "orig": "Black Lagoon",
+     "year": 2006
+    },
+    {
+     "id": 2251,
+     "ru": "Шумиха!",
+     "orig": "Baccano!",
+     "year": 2007
+    },
+    {
+     "id": 6746,
+     "ru": "Дюрарара!!",
+     "orig": "Durarara!!",
+     "year": 2010
+    },
+    {
+     "id": 918,
+     "ru": "Гинтама",
+     "orig": "Gintama",
+     "year": 2006
+    },
+    {
+     "id": 31478,
+     "ru": "Великий из бродячих псов",
+     "orig": "Bungou Stray Dogs",
+     "year": 2016
+    },
+    {
+     "id": 20507,
+     "ru": "Бездомный бог",
+     "orig": "Noragami",
+     "year": 2014
+    },
+    {
+     "id": 38668,
+     "ru": "Дорохедоро",
+     "orig": "Dorohedoro",
+     "year": 2020
+    },
+    {
+     "id": 11757,
+     "ru": "Мастера Меча Онлайн",
+     "orig": "Sword Art Online",
+     "year": 2012
+    },
+    {
+     "id": 29803,
+     "ru": "Повелитель",
+     "orig": "Overlord",
+     "year": 2015
+    },
+    {
+     "id": 1735,
+     "ru": "Наруто: Ураганные хроники",
+     "orig": "Naruto: Shippuuden",
+     "year": 2007
+    },
+    {
+     "id": 30694,
+     "ru": "Драконий жемчуг: Супер",
+     "orig": "Dragon Ball Super",
+     "year": 2015
+    },
+    {
+     "id": 42205,
+     "ru": "Шаман Кинг (2021)",
+     "orig": "Shaman King (2021)",
+     "year": 2021
+    },
+    {
+     "id": 121,
+     "ru": "Стальной алхимик",
+     "orig": "Fullmetal Alchemist",
+     "year": 2003
+    },
+    {
+     "id": 263,
+     "ru": "Первый шаг",
+     "orig": "Hajime no Ippo",
+     "year": 2000
+    },
+    {
+     "id": 392,
+     "ru": "Отчёт о буйстве духов",
+     "orig": "Yuu☆Yuu☆Hakusho",
+     "year": 1992
+    },
+    {
+     "id": 24439,
+     "ru": "Фронт кровавой блокады",
+     "orig": "Kekkai Sensen",
+     "year": 2015
+    },
+    {
+     "id": 15809,
+     "ru": "Повелитель тьмы на подработке!",
+     "orig": "Hataraku Maou-sama!",
+     "year": 2013
+    }
+   ]
+  },
+  {
+   "id": "fan",
+   "t": "Фэнтези и исэкай",
+   "items": [
+    {
+     "id": 31240,
+     "ru": "Re:Zero. Жизнь с нуля в альтернативном мире",
+     "orig": "Re:Zero kara Hajimeru Isekai Seikatsu",
+     "year": 2016
+    },
+    {
+     "id": 30831,
+     "ru": "Этот замечательный мир!",
+     "orig": "Kono Subarashii Sekai ni Shukufuku wo!",
+     "year": 2016
+    },
+    {
+     "id": 37430,
+     "ru": "О моём перерождении в слизь",
+     "orig": "Tensei shitara Slime Datta Ken",
+     "year": 2018
+    },
+    {
+     "id": 39535,
+     "ru": "Реинкарнация безработного: История о приключениях в другом мире",
+     "orig": "Mushoku Tensei: Isekai Ittara Honki Dasu",
+     "year": 2021
+    },
+    {
+     "id": 35790,
+     "ru": "Восхождение героя щита",
+     "orig": "Tate no Yuusha no Nariagari",
+     "year": 2019
+    },
+    {
+     "id": 19815,
+     "ru": "Нет игры — нет жизни",
+     "orig": "No Game No Life",
+     "year": 2014
+    },
+    {
+     "id": 17265,
+     "ru": "Покорение горизонта",
+     "orig": "Log Horizon",
+     "year": 2013
+    },
+    {
+     "id": 34599,
+     "ru": "Созданный в Бездне",
+     "orig": "Made in Abyss",
+     "year": 2017
+    },
+    {
+     "id": 14513,
+     "ru": "Маги: Лабиринт магии",
+     "orig": "Magi: The Labyrinth of Magic",
+     "year": 2012
+    },
+    {
+     "id": 33352,
+     "ru": "Вайолет Эвергарден",
+     "orig": "Violet Evergarden",
+     "year": 2018
+    },
+    {
+     "id": 35062,
+     "ru": "Невеста чародея",
+     "orig": "Mahoutsukai no Yome",
+     "year": 2017
+    },
+    {
+     "id": 37349,
+     "ru": "Убийца гоблинов",
+     "orig": "Goblin Slayer",
+     "year": 2018
+    },
+    {
+     "id": 28121,
+     "ru": "Может, я встречу тебя в подземелье?",
+     "orig": "Dungeon ni Deai wo Motomeru no wa Machigatteiru Darou ka",
+     "year": 2015
+    },
+    {
+     "id": 39468,
+     "ru": "Власть книжного червя",
+     "orig": "Honzuki no Gekokujou: Shisho ni Naru Tame ni wa Shudan wo Erandeiraremasen",
+     "year": 2019
+    },
+    {
+     "id": 33489,
+     "ru": "Академия ведьмочек",
+     "orig": "Little Witch Academia (TV)",
+     "year": 2017
+    },
+    {
+     "id": 4081,
+     "ru": "Тетрадь дружбы Нацумэ",
+     "orig": "Natsume Yuujinchou",
+     "year": 2008
+    },
+    {
+     "id": 2246,
+     "ru": "Мононокэ",
+     "orig": "Mononoke",
+     "year": 2007
+    },
+    {
+     "id": 486,
+     "ru": "Путешествие Кино: Прекрасный мир",
+     "orig": "Kino no Tabi: The Beautiful World",
+     "year": 2003
+    },
+    {
+     "id": 37779,
+     "ru": "Обещанный Неверленд",
+     "orig": "Yakusoku no Neverland",
+     "year": 2019
+    },
+    {
+     "id": 25013,
+     "ru": "Йона на заре",
+     "orig": "Akatsuki no Yona",
+     "year": 2014
+    },
+    {
+     "id": 123,
+     "ru": "Таинственная игра",
+     "orig": "Fushigi Yuugi",
+     "year": 1995
+    },
+    {
+     "id": 14833,
+     "ru": "Королева демонов и Герой",
+     "orig": "Maoyuu Maou Yuusha",
+     "year": 2013
+    },
+    {
+     "id": 35507,
+     "ru": "Добро пожаловать в класс превосходства",
+     "orig": "Youkoso Jitsuryoku Shijou Shugi no Kyoushitsu e",
+     "year": 2017
+    },
+    {
+     "id": 34662,
+     "ru": "Судьба/Апокриф",
+     "orig": "Fate/Apocrypha",
+     "year": 2017
+    },
+    {
+     "id": 31821,
+     "ru": "Сказание об Арслане: Танец бога ветра",
+     "orig": "Arslan Senki (TV): Fuujin Ranbu",
+     "year": 2016
+    },
+    {
+     "id": 1827,
+     "ru": "Хранитель священного духа",
+     "orig": "Seirei no Moribito",
+     "year": 2007
+    },
+    {
+     "id": 5420,
+     "ru": "Заклинательница зверей Эрин",
+     "orig": "Kemono no Souja Erin",
+     "year": 2009
+    },
+    {
+     "id": 37984,
+     "ru": "Да, я паук, и что же?",
+     "orig": "Kumo desu ga, Nani ka?",
+     "year": 2021
+    },
+    {
+     "id": 38759,
+     "ru": "Заботливая 800-летняя жена!",
+     "orig": "Sewayaki Kitsune no Senko-san",
+     "year": 2019
+    },
+    {
+     "id": 31376,
+     "ru": "Полёт ведьмы",
+     "orig": "Flying Witch",
+     "year": 2016
+    },
+    {
+     "id": 36094,
+     "ru": "Хакумэй и Микоти",
+     "orig": "Hakumei to Mikochi",
+     "year": 2018
+    }
+   ]
+  },
+  {
+   "id": "sci",
+   "t": "Фантастика, детектив, психология",
+   "items": [
+    {
+     "id": 13601,
+     "ru": "Психопаспорт",
+     "orig": "Psycho-Pass",
+     "year": 2012
+    },
+    {
+     "id": 31251,
+     "ru": "Мобильный воин Гандам: Железнокровные сироты",
+     "orig": "Kidou Senshi Gundam: Tekketsu no Orphans",
+     "year": 2015
+    },
+    {
+     "id": 2581,
+     "ru": "Мобильный воин Гандам 00",
+     "orig": "Kidou Senshi Gundam 00",
+     "year": 2007
+    },
+    {
+     "id": 3572,
+     "ru": "Макросс Фронтир",
+     "orig": "Macross F",
+     "year": 2008
+    },
+    {
+     "id": 237,
+     "ru": "Эврика 7: Псалмы планет",
+     "orig": "Koukyoushihen Eureka Seven",
+     "year": 2005
+    },
+    {
+     "id": 35849,
+     "ru": "Милый во Франксе",
+     "orig": "Darling in the FranXX",
+     "year": 2018
+    },
+    {
+     "id": 41457,
+     "ru": "Восемьдесят шесть",
+     "orig": "86",
+     "year": 2021
+    },
+    {
+     "id": 46095,
+     "ru": "Виви: Песнь флюоритового глаза",
+     "orig": "Vivy: Fluorite Eye's Song",
+     "year": 2021
+    },
+    {
+     "id": 790,
+     "ru": "Эрго Прокси",
+     "orig": "Ergo Proxy",
+     "year": 2006
+    },
+    {
+     "id": 26,
+     "ru": "Технолайз",
+     "orig": "Texhnolyze",
+     "year": 2003
+    },
+    {
+     "id": 31163,
+     "ru": "Измерение «W»",
+     "orig": "Dimension W",
+     "year": 2016
+    },
+    {
+     "id": 19775,
+     "ru": "Рыцари Сидонии",
+     "orig": "Sidonia no Kishi",
+     "year": 2014
+    },
+    {
+     "id": 22535,
+     "ru": "Паразит: Учение о жизни",
+     "orig": "Kiseijuu: Sei no Kakuritsu",
+     "year": 2014
+    },
+    {
+     "id": 22319,
+     "ru": "Токийский гуль",
+     "orig": "Tokyo Ghoul",
+     "year": 2014
+    },
+    {
+     "id": 11111,
+     "ru": "Иная",
+     "orig": "Another",
+     "year": 2012
+    },
+    {
+     "id": 28223,
+     "ru": "Смертельный парад",
+     "orig": "Death Parade",
+     "year": 2015
+    },
+    {
+     "id": 31043,
+     "ru": "Город, в котором меня нет",
+     "orig": "Boku dake ga Inai Machi",
+     "year": 2016
+    },
+    {
+     "id": 31580,
+     "ru": "Нелюдь",
+     "orig": "Ajin",
+     "year": 2016
+    },
+    {
+     "id": 23283,
+     "ru": "Эхо террора",
+     "orig": "Zankyou no Terror",
+     "year": 2014
+    },
+    {
+     "id": 34561,
+     "ru": "Возрождающие",
+     "orig": "Re:Creators",
+     "year": 2017
+    },
+    {
+     "id": 34933,
+     "ru": "Безумный азарт",
+     "orig": "Kakegurui",
+     "year": 2017
+    },
+    {
+     "id": 3002,
+     "ru": "Кайдзи",
+     "orig": "Gyakkyou Burai Kaiji: Ultimate Survivor",
+     "year": 2007
+    },
+    {
+     "id": 7785,
+     "ru": "Сказ о четырёх с половиной татами",
+     "orig": "Yojouhan Shinwa Taikei",
+     "year": 2010
+    },
+    {
+     "id": 10721,
+     "ru": "Пингвиний барабан",
+     "orig": "Mawaru Penguindrum",
+     "year": 2011
+    },
+    {
+     "id": 9756,
+     "ru": "Девочка-волшебница Мадока★Волшебство",
+     "orig": "Mahou Shoujo Madoka★Magica",
+     "year": 2011
+    },
+    {
+     "id": 10620,
+     "ru": "Дневник будущего",
+     "orig": "Mirai Nikki (TV)",
+     "year": 2011
+    },
+    {
+     "id": 46102,
+     "ru": "Случайное такси",
+     "orig": "Odd Taxi",
+     "year": 2021
+    },
+    {
+     "id": 47194,
+     "ru": "Летнее время",
+     "orig": "Summertime Render",
+     "year": 2022
+    },
+    {
+     "id": 5081,
+     "ru": "Истории монстров",
+     "orig": "Bakemonogatari",
+     "year": 2009
+    },
+    {
+     "id": 22135,
+     "ru": "Пинг-понг",
+     "orig": "Ping Pong the Animation",
+     "year": 2014
+    },
+    {
+     "id": 13125,
+     "ru": "Из нового света",
+     "orig": "Shinsekai yori",
+     "year": 2012
+    },
+    {
+     "id": 12189,
+     "ru": "Хёка",
+     "orig": "Hyouka",
+     "year": 2012
+    },
+    {
+     "id": 1571,
+     "ru": "Охота на привидений",
+     "orig": "Ghost Hunt",
+     "year": 2006
+    },
+    {
+     "id": 20057,
+     "ru": "Космический Денди",
+     "orig": "Space☆Dandy",
+     "year": 2014
+    },
+    {
+     "id": 400,
+     "ru": "Звёздные рыцари со звезды изгоев",
+     "orig": "Seihou Bukyou Outlaw Star",
+     "year": 1998
+    },
+    {
+     "id": 80,
+     "ru": "Мобильный воин Гандам",
+     "orig": "Kidou Senshi Gundam",
+     "year": 1979
+    },
+    {
+     "id": 22729,
+     "ru": "Альдноа.Зеро",
+     "orig": "Aldnoah.Zero",
+     "year": 2014
+    },
+    {
+     "id": 71,
+     "ru": "Стальная тревога!",
+     "orig": "Full Metal Panic!",
+     "year": 2002
+    },
+    {
+     "id": 1690,
+     "ru": "Наше",
+     "orig": "Bokura no",
+     "year": 2007
+    },
+    {
+     "id": 12431,
+     "ru": "Космические братья",
+     "orig": "Uchuu Kyoudai",
+     "year": 2012
+    },
+    {
+     "id": 235,
+     "ru": "Детектив Конан",
+     "orig": "Meitantei Conan",
+     "year": 1996
+    },
+    {
+     "id": 4898,
+     "ru": "Тёмный дворецкий",
+     "orig": "Kuroshitsuji",
+     "year": 2008
+    },
+    {
+     "id": 228,
+     "ru": "Адская девочка",
+     "orig": "Jigoku Shoujo",
+     "year": 2005
+    },
+    {
+     "id": 7724,
+     "ru": "Усопшие",
+     "orig": "Shiki",
+     "year": 2010
+    },
+    {
+     "id": 226,
+     "ru": "Эльфийская песнь",
+     "orig": "Elfen Lied",
+     "year": 2004
+    },
+    {
+     "id": 35120,
+     "ru": "Человек-дьявол: Плакса",
+     "orig": "Devilman: Crybaby",
+     "year": 2018
+    },
+    {
+     "id": 384,
+     "ru": "Ганц",
+     "orig": "Gantz",
+     "year": 2004
+    },
+    {
+     "id": 35737,
+     "ru": "Плутон",
+     "orig": "Pluto",
+     "year": 2023
+    },
+    {
+     "id": 369,
+     "ru": "Бугипоп никогда не смеётся",
+     "orig": "Boogiepop wa Warawanai",
+     "year": 2000
+    }
+   ]
+  },
+  {
+   "id": "sol",
+   "t": "Повседневность и комедия",
+   "items": [
+    {
+     "id": 10165,
+     "ru": "Мелочи жизни",
+     "orig": "Nichijou",
+     "year": 2011
+    },
+    {
+     "id": 66,
+     "ru": "Адзуманга Дайо",
+     "orig": "Azumanga Daiou The Animation",
+     "year": 2002
+    },
+    {
+     "id": 37999,
+     "ru": "Госпожа Кагуя: в любви как на войне",
+     "orig": "Kaguya-sama wa Kokurasetai: Tensai-tachi no Renai Zunousen",
+     "year": 2019
+    },
+    {
+     "id": 37105,
+     "ru": "Необъятный океан",
+     "orig": "Grand Blue",
+     "year": 2018
+    },
+    {
+     "id": 33255,
+     "ru": "Ох уж этот экстрасенс Сайки Кусуо!",
+     "orig": "Saiki Kusuo no Ψ-nan",
+     "year": 2016
+    },
+    {
+     "id": 11843,
+     "ru": "Повседневная жизнь старшеклассников",
+     "orig": "Danshi Koukousei no Nichijou",
+     "year": 2012
+    },
+    {
+     "id": 22789,
+     "ru": "Баракамон",
+     "orig": "Barakamon",
+     "year": 2014
+    },
+    {
+     "id": 17549,
+     "ru": "Деревенская глубинка",
+     "orig": "Non Non Biyori",
+     "year": 2013
+    },
+    {
+     "id": 34798,
+     "ru": "Лагерь на свежем воздухе",
+     "orig": "Yuru Camp△",
+     "year": 2018
+    },
+    {
+     "id": 36296,
+     "ru": "Праздник кукол",
+     "orig": "Hinamatsuri",
+     "year": 2018
+    },
+    {
+     "id": 33206,
+     "ru": "Дракон-горничная госпожи Кобаяси",
+     "orig": "Kobayashi-san Chi no Maid Dragon",
+     "year": 2017
+    },
+    {
+     "id": 37141,
+     "ru": "Клетки за работой",
+     "orig": "Hataraku Saibou",
+     "year": 2018
+    },
+    {
+     "id": 18139,
+     "ru": "Мой сосед Сэки",
+     "orig": "Tonari no Seki-kun",
+     "year": 2014
+    },
+    {
+     "id": 32093,
+     "ru": "Всегда вялый Танака-кун",
+     "orig": "Tanaka-kun wa Itsumo Kedaruge",
+     "year": 2016
+    },
+    {
+     "id": 35968,
+     "ru": "Так сложно любить отаку",
+     "orig": "Wotaku ni Koi wa Muzukashii",
+     "year": 2018
+    },
+    {
+     "id": 35860,
+     "ru": "Озорная Такаги",
+     "orig": "Karakai Jouzu no Takagi-san",
+     "year": 2018
+    },
+    {
+     "id": 42361,
+     "ru": "Не издевайся, Нагаторо",
+     "orig": "Ijiranaide, Nagatoro-san",
+     "year": 2021
+    },
+    {
+     "id": 48926,
+     "ru": "У Коми проблемы с общением",
+     "orig": "Komi-san wa, Comyushou desu.",
+     "year": 2021
+    },
+    {
+     "id": 14741,
+     "ru": "Чудачества любви не помеха!",
+     "orig": "Chuunibyou demo Koi ga Shitai!",
+     "year": 2012
+    },
+    {
+     "id": 14813,
+     "ru": "Как и ожидалось, моя школьная романтическая жизнь не удалась",
+     "orig": "Yahari Ore no Seishun Love Comedy wa Machigatteiru.",
+     "year": 2013
+    },
+    {
+     "id": 25835,
+     "ru": "Белый ящик",
+     "orig": "Shirobako",
+     "year": 2014
+    },
+    {
+     "id": 37450,
+     "ru": "Этот глупый свин не понимает мечту девочки-зайки",
+     "orig": "Seishun Buta Yarou wa Bunny Girl Senpai no Yume wo Minai",
+     "year": 2018
+    },
+    {
+     "id": 23289,
+     "ru": "Ежемесячное сёдзё Нодзаки",
+     "orig": "Gekkan Shoujo Nozaki-kun",
+     "year": 2014
+    },
+    {
+     "id": 33731,
+     "ru": "Отступница Габриэль",
+     "orig": "Gabriel DropOut",
+     "year": 2017
+    },
+    {
+     "id": 16732,
+     "ru": "Золотая мозаика",
+     "orig": "Kiniro Mosaic",
+     "year": 2013
+    },
+    {
+     "id": 21273,
+     "ru": "Заказывали кролика?",
+     "orig": "Gochuumon wa Usagi desu ka?",
+     "year": 2014
+    },
+    {
+     "id": 477,
+     "ru": "Ария",
+     "orig": "Aria the Animation",
+     "year": 2005
+    },
+    {
+     "id": 35839,
+     "ru": "Дальше, чем космос",
+     "orig": "Sora yori mo Tooi Basho",
+     "year": 2018
+    },
+    {
+     "id": 35838,
+     "ru": "Девушки в последнем путешествии",
+     "orig": "Shoujo Shuumatsu Ryokou",
+     "year": 2017
+    },
+    {
+     "id": 853,
+     "ru": "Клуб свиданий старшей школы Оран",
+     "orig": "Ouran Koukou Host Club",
+     "year": 2006
+    },
+    {
+     "id": 13759,
+     "ru": "Кошечка из Сакурасо",
+     "orig": "Sakura-sou no Pet na Kanojo",
+     "year": 2012
+    },
+    {
+     "id": 40052,
+     "ru": "Великий притворщик",
+     "orig": "Great Pretender",
+     "year": 2020
+    },
+    {
+     "id": 38080,
+     "ru": "Задержи этот звук!",
+     "orig": "Kono Oto Tomare!",
+     "year": 2019
+    },
+    {
+     "id": 31174,
+     "ru": "Осомацу-сан",
+     "orig": "Osomatsu-san",
+     "year": 2015
+    },
+    {
+     "id": 35330,
+     "ru": "Попсовый эпос",
+     "orig": "Poputepipikku",
+     "year": 2018
+    },
+    {
+     "id": 37171,
+     "ru": "Давайте сыграем",
+     "orig": "Asobi Asobase",
+     "year": 2018
+    },
+    {
+     "id": 345,
+     "ru": "Эмма — викторианская романтика",
+     "orig": "Eikoku Koi Monogatari Emma",
+     "year": 2005
+    },
+    {
+     "id": 277,
+     "ru": "Махороматик: Ещё больше прекрасного!",
+     "orig": "Mahoromatic: Motto Utsukushii Mono",
+     "year": 2002
+    },
+    {
+     "id": 7054,
+     "ru": "Президент студсовета — горничная!",
+     "orig": "Kaichou wa Maid-sama!",
+     "year": 2010
+    },
+    {
+     "id": 9289,
+     "ru": "Азбука цветов",
+     "orig": "Hanasaku Iroha",
+     "year": 2011
+    },
+    {
+     "id": 34822,
+     "ru": "Прекрасна, как Луна",
+     "orig": "Tsuki ga Kirei",
+     "year": 2017
+    },
+    {
+     "id": 41389,
+     "ru": "Унеси меня на Луну",
+     "orig": "Tonikaku Kawaii",
+     "year": 2020
+    }
+   ]
+  },
+  {
+   "id": "rom",
+   "t": "Романтика и драма",
+   "items": [
+    {
+     "id": 4181,
+     "ru": "Кланнад: Продолжение истории",
+     "orig": "Clannad: After Story",
+     "year": 2008
+    },
+    {
+     "id": 23273,
+     "ru": "Твоя апрельская ложь",
+     "orig": "Shigatsu wa Kimi no Uso",
+     "year": 2014
+    },
+    {
+     "id": 9989,
+     "ru": "Невиданный цветок",
+     "orig": "Ano Hi Mita Hana no Namae wo Bokutachi wa Mada Shiranai.",
+     "year": 2011
+    },
+    {
+     "id": 32729,
+     "ru": "Орендж",
+     "orig": "Orange",
+     "year": 2016
+    },
+    {
+     "id": 6045,
+     "ru": "Достучаться до тебя",
+     "orig": "Kimi ni Todoke",
+     "year": 2009
+    },
+    {
+     "id": 21995,
+     "ru": "Неудержимая юность",
+     "orig": "Ao Haru Ride",
+     "year": 2014
+    },
+    {
+     "id": 38680,
+     "ru": "Корзинка фруктов (2019)",
+     "orig": "Fruits Basket 1st Season",
+     "year": 2019
+    },
+    {
+     "id": 27775,
+     "ru": "Пластиковые воспоминания",
+     "orig": "Plastic Memories",
+     "year": 2015
+    },
+    {
+     "id": 877,
+     "ru": "Нана",
+     "orig": "Nana",
+     "year": 2006
+    },
+    {
+     "id": 10800,
+     "ru": "Яркая Тихая",
+     "orig": "Chihayafuru",
+     "year": 2011
+    },
+    {
+     "id": 31646,
+     "ru": "Мартовский лев",
+     "orig": "3-gatsu no Lion",
+     "year": 2016
+    },
+    {
+     "id": 6547,
+     "ru": "Ангельские ритмы!",
+     "orig": "Angel Beats!",
+     "year": 2010
+    },
+    {
+     "id": 28999,
+     "ru": "Шарлотта",
+     "orig": "Charlotte",
+     "year": 2015
+    },
+    {
+     "id": 34902,
+     "ru": "Признания",
+     "orig": "Tsurezure Children",
+     "year": 2017
+    },
+    {
+     "id": 28297,
+     "ru": "Моя история!",
+     "orig": "Ore Monogatari!!",
+     "year": 2015
+    },
+    {
+     "id": 37982,
+     "ru": "Домашняя подружка",
+     "orig": "Domestic na Kanojo",
+     "year": 2019
+    },
+    {
+     "id": 40839,
+     "ru": "Девушка на час",
+     "orig": "Kanojo, Okarishimasu",
+     "year": 2020
+    },
+    {
+     "id": 38101,
+     "ru": "Пять невест",
+     "orig": "5-toubun no Hanayome",
+     "year": 2019
+    },
+    {
+     "id": 18897,
+     "ru": "Притворная любовь",
+     "orig": "Nisekoi",
+     "year": 2014
+    },
+    {
+     "id": 2476,
+     "ru": "Школьные дни",
+     "orig": "School Days",
+     "year": 2007
+    },
+    {
+     "id": 18245,
+     "ru": "Белый альбом 2",
+     "orig": "White Album 2",
+     "year": 2013
+    },
+    {
+     "id": 17895,
+     "ru": "Золотая пора",
+     "orig": "Golden Time",
+     "year": 2013
+    },
+    {
+     "id": 32995,
+     "ru": "Юри на льду",
+     "orig": "Yuri!!! on Ice",
+     "year": 2016
+    },
+    {
+     "id": 2034,
+     "ru": "Трогательный комплекс",
+     "orig": "Lovely★Complex",
+     "year": 2007
+    },
+    {
+     "id": 3731,
+     "ru": "Озорной поцелуй",
+     "orig": "Itazura na Kiss",
+     "year": 2008
+    },
+    {
+     "id": 4722,
+     "ru": "Не сдавайся!",
+     "orig": "Skip Beat!",
+     "year": 2008
+    },
+    {
+     "id": 1698,
+     "ru": "Нодамэ Кантабиле",
+     "orig": "Nodame Cantabile",
+     "year": 2007
+    },
+    {
+     "id": 1453,
+     "ru": "Доходный дом Иккоку",
+     "orig": "Maison Ikkoku",
+     "year": 1986
+    },
+    {
+     "id": 14713,
+     "ru": "Очень приятно, Бог",
+     "orig": "Kamisama Hajimemashita",
+     "year": 2012
+    },
+    {
+     "id": 30123,
+     "ru": "Красноволосая принцесса Белоснежка",
+     "orig": "Akagami no Shirayuki-hime",
+     "year": 2015
+    },
+    {
+     "id": 11887,
+     "ru": "Связь сердец",
+     "orig": "Kokoro Connect",
+     "year": 2012
+    },
+    {
+     "id": 14289,
+     "ru": "Скажи: «Я люблю тебя»",
+     "orig": "Suki tte Ii na yo.",
+     "year": 2012
+    },
+    {
+     "id": 14227,
+     "ru": "Чудовище за соседней партой",
+     "orig": "Tonari no Kaibutsu-kun",
+     "year": 2012
+    },
+    {
+     "id": 32899,
+     "ru": "Я требую яоя!",
+     "orig": "Watashi ga Motete Dousunda",
+     "year": 2016
+    },
+    {
+     "id": 41025,
+     "ru": "Для тебя, Бессмертный",
+     "orig": "Fumetsu no Anata e",
+     "year": 2021
+    },
+    {
+     "id": 42897,
+     "ru": "Хоримия",
+     "orig": "Horimiya",
+     "year": 2021
+    },
+    {
+     "id": 34934,
+     "ru": "Любовь и ложь",
+     "orig": "Koi to Uso",
+     "year": 2017
+    },
+    {
+     "id": 11499,
+     "ru": "Санка Рэа",
+     "orig": "Sankarea",
+     "year": 2012
+    }
+   ]
+  },
+  {
+   "id": "spo",
+   "t": "Спорт, музыка, ремесло",
+   "items": [
+    {
+     "id": 20583,
+     "ru": "Волейбол!!",
+     "orig": "Haikyuu!!",
+     "year": 2014
+    },
+    {
+     "id": 11771,
+     "ru": "Баскетбол Куроко",
+     "orig": "Kuroko no Basket",
+     "year": 2012
+    },
+    {
+     "id": 18507,
+     "ru": "Вольный стиль!",
+     "orig": "Free!",
+     "year": 2013
+    },
+    {
+     "id": 18179,
+     "ru": "Трусливый велосипедист",
+     "orig": "Yowamushi Pedal",
+     "year": 2013
+    },
+    {
+     "id": 18689,
+     "ru": "Путь аса",
+     "orig": "Diamond no Ace",
+     "year": 2013
+    },
+    {
+     "id": 185,
+     "ru": "Инициал Ди: Стадия первая",
+     "orig": "Initial D First Stage",
+     "year": 1998
+    },
+    {
+     "id": 22,
+     "ru": "Принц тенниса",
+     "orig": "Tennis no Oujisama",
+     "year": 2001
+    },
+    {
+     "id": 37965,
+     "ru": "Почувствуй ветер",
+     "orig": "Kaze ga Tsuyoku Fuiteiru",
+     "year": 2018
+    },
+    {
+     "id": 21185,
+     "ru": "Первые шаги",
+     "orig": "Baby Steps",
+     "year": 2014
+    },
+    {
+     "id": 135,
+     "ru": "Хикару и го",
+     "orig": "Hikaru no Go",
+     "year": 2001
+    },
+    {
+     "id": 7661,
+     "ru": "Вынос гигантов",
+     "orig": "Giant Killing",
+     "year": 2010
+    },
+    {
+     "id": 37259,
+     "ru": "Бадминтон Аяно Ханэсаки",
+     "orig": "Hanebado!",
+     "year": 2018
+    },
+    {
+     "id": 57,
+     "ru": "Бек",
+     "orig": "Beck",
+     "year": 2004
+    },
+    {
+     "id": 27989,
+     "ru": "Звучи, эуфониум!",
+     "orig": "Hibike! Euphonium",
+     "year": 2015
+    },
+    {
+     "id": 28171,
+     "ru": "Повар-боец Сома",
+     "orig": "Shokugeki no Souma",
+     "year": 2015
+    },
+    {
+     "id": 15051,
+     "ru": "Живая любовь! Проект «Школьный идол»",
+     "orig": "Love Live! School Idol Project",
+     "year": 2013
+    },
+    {
+     "id": 37976,
+     "ru": "Зомбилэнд-Сага",
+     "orig": "Zombieland Saga",
+     "year": 2018
+    },
+    {
+     "id": 27441,
+     "ru": "Рок-шоу!",
+     "orig": "Show By Rock!!",
+     "year": 2015
+    },
+    {
+     "id": 36653,
+     "ru": "Клуб стрельбы из лука",
+     "orig": "Tsurune: Kazemai Koukou Kyuudou-bu",
+     "year": 2018
+    },
+    {
+     "id": 42923,
+     "ru": "Скейт: Бесконечность",
+     "orig": "SK∞",
+     "year": 2021
+    },
+    {
+     "id": 37403,
+     "ru": "Команда мечты",
+     "orig": "Ahiru no Sora",
+     "year": 2019
+    },
+    {
+     "id": 36563,
+     "ru": "Мегалобокс",
+     "orig": "Megalo Box",
+     "year": 2018
+    },
+    {
+     "id": 15,
+     "ru": "Айшилд 21",
+     "orig": "Eyeshield 21",
+     "year": 2005
+    },
+    {
+     "id": 2116,
+     "ru": "Капитан Цубаса",
+     "orig": "Captain Tsubasa",
+     "year": 1983
+    },
+    {
+     "id": 7674,
+     "ru": "Бакуман",
+     "orig": "Bakuman.",
+     "year": 2010
+    },
+    {
+     "id": 16918,
+     "ru": "Серебряная ложка",
+     "orig": "Gin no Saji",
+     "year": 2013
+    },
+    {
+     "id": 2159,
+     "ru": "Замахнись сильнее",
+     "orig": "Ookiku Furikabutte",
+     "year": 2007
+    }
+   ]
+  },
+  {
+   "id": "mov",
+   "t": "Фильмы",
+   "items": [
+    {
+     "id": 199,
+     "ru": "Унесённые призраками",
+     "orig": "Sen to Chihiro no Kamikakushi",
+     "year": 2001
+    },
+    {
+     "id": 164,
+     "ru": "Принцесса Мононоке",
+     "orig": "Mononoke Hime",
+     "year": 1997
+    },
+    {
+     "id": 523,
+     "ru": "Мой сосед Тоторо",
+     "orig": "Tonari no Totoro",
+     "year": 1988
+    },
+    {
+     "id": 431,
+     "ru": "Ходячий замок",
+     "orig": "Howl no Ugoku Shiro",
+     "year": 2004
+    },
+    {
+     "id": 512,
+     "ru": "Ведьмина служба доставки",
+     "orig": "Majo no Takkyuubin",
+     "year": 1989
+    },
+    {
+     "id": 513,
+     "ru": "Небесный замок Лапута",
+     "orig": "Tenkuu no Shiro Laputa",
+     "year": 1986
+    },
+    {
+     "id": 572,
+     "ru": "Навсикая из Долины ветров",
+     "orig": "Kaze no Tani no Nausicaa",
+     "year": 1984
+    },
+    {
+     "id": 578,
+     "ru": "Могила светлячков",
+     "orig": "Hotaru no Haka",
+     "year": 1988
+    },
+    {
+     "id": 416,
+     "ru": "Порко Россо",
+     "orig": "Kurenai no Buta",
+     "year": 1992
+    },
+    {
+     "id": 2890,
+     "ru": "Рыбка Поньо на утёсе",
+     "orig": "Gake no Ue no Ponyo",
+     "year": 2008
+    },
+    {
+     "id": 16662,
+     "ru": "Ветер крепчает",
+     "orig": "Kaze Tachinu",
+     "year": 2013
+    },
+    {
+     "id": 32281,
+     "ru": "Твоё имя",
+     "orig": "Kimi no Na wa.",
+     "year": 2016
+    },
+    {
+     "id": 38826,
+     "ru": "Дитя погоды",
+     "orig": "Tenki no Ko",
+     "year": 2019
+    },
+    {
+     "id": 50594,
+     "ru": "Судзумэ, закрывающая двери",
+     "orig": "Suzume no Tojimari",
+     "year": 2022
+    },
+    {
+     "id": 16782,
+     "ru": "Сад изящных слов",
+     "orig": "Kotonoha no Niwa",
+     "year": 2013
+    },
+    {
+     "id": 1689,
+     "ru": "Пять сантиметров в секунду",
+     "orig": "Byousoku 5 Centimeter",
+     "year": 2007
+    },
+    {
+     "id": 28851,
+     "ru": "Форма голоса",
+     "orig": "Koe no Katachi",
+     "year": 2016
+    },
+    {
+     "id": 36098,
+     "ru": "Я хочу съесть твою поджелудочную",
+     "orig": "Kimi no Suizou wo Tabetai",
+     "year": 2018
+    },
+    {
+     "id": 12355,
+     "ru": "Волчьи дети Амэ и Юки",
+     "orig": "Ookami Kodomo no Ame to Yuki",
+     "year": 2012
+    },
+    {
+     "id": 5681,
+     "ru": "Летние войны",
+     "orig": "Summer Wars",
+     "year": 2009
+    },
+    {
+     "id": 2236,
+     "ru": "Девочка, покорившая время",
+     "orig": "Toki wo Kakeru Shoujo",
+     "year": 2006
+    },
+    {
+     "id": 437,
+     "ru": "Идеальная грусть",
+     "orig": "Perfect Blue",
+     "year": 1998
+    },
+    {
+     "id": 47,
+     "ru": "Акира",
+     "orig": "Akira",
+     "year": 1988
+    },
+    {
+     "id": 43,
+     "ru": "Призрак в доспехах",
+     "orig": "Koukaku Kidoutai",
+     "year": 1995
+    },
+    {
+     "id": 1943,
+     "ru": "Паприка",
+     "orig": "Paprika",
+     "year": 2006
+    },
+    {
+     "id": 1033,
+     "ru": "Актриса тысячелетия",
+     "orig": "Sennen Joyuu",
+     "year": 2002
+    },
+    {
+     "id": 759,
+     "ru": "Однажды в Токио",
+     "orig": "Tokyo Godfathers",
+     "year": 2003
+    },
+    {
+     "id": 3786,
+     "ru": "Евангелион 3.0+1.01: Как-то раз",
+     "orig": "Shin Evangelion Movie:||",
+     "year": 2021
+    },
+    {
+     "id": 32,
+     "ru": "Евангелион нового поколения: Конец Евангелиона",
+     "orig": "Shinseiki Evangelion Movie: Air/Magokoro wo, Kimi ni",
+     "year": 1997
+    },
+    {
+     "id": 48561,
+     "ru": "Магическая битва 0. Фильм",
+     "orig": "Jujutsu Kaisen 0 Movie",
+     "year": 2021
+    },
+    {
+     "id": 40456,
+     "ru": "Клинок, рассекающий демонов: Бесконечный поезд. Фильм",
+     "orig": "Kimetsu no Yaiba Movie: Mugen Ressha-hen",
+     "year": 2020
+    },
+    {
+     "id": 37987,
+     "ru": "Вайолет Эвергарден. Фильм",
+     "orig": "Violet Evergarden Movie",
+     "year": 2020
+    },
+    {
+     "id": 36862,
+     "ru": "Созданный в Бездне: Рассвет глубокой души",
+     "orig": "Made in Abyss Movie 3: Fukaki Tamashii no Reimei",
+     "year": 2020
+    },
+    {
+     "id": 6675,
+     "ru": "Красная черта",
+     "orig": "Redline",
+     "year": 2009
+    },
+    {
+     "id": 875,
+     "ru": "Игры разума",
+     "orig": "Mind Game",
+     "year": 2004
+    },
+    {
+     "id": 44807,
+     "ru": "Дракон и принцесса с веснушками",
+     "orig": "Ryuu to Sobakasu no Hime",
+     "year": 2021
+    },
+    {
+     "id": 16664,
+     "ru": "Сказание о принцессе Кагуя",
+     "orig": "Kaguya-hime no Monogatari",
+     "year": 2013
+    },
+    {
+     "id": 585,
+     "ru": "Шёпот сердца",
+     "orig": "Mimi wo Sumaseba",
+     "year": 1995
+    },
+    {
+     "id": 7711,
+     "ru": "Ариэтти из страны лилипутов",
+     "orig": "Karigurashi no Arrietty",
+     "year": 2010
+    },
+    {
+     "id": 21557,
+     "ru": "Воспоминания о Марни",
+     "orig": "Omoide no Marnie",
+     "year": 2014
+    },
+    {
+     "id": 36699,
+     "ru": "Как поживаете?",
+     "orig": "Kimitachi wa Dou Ikiru ka",
+     "year": 2023
+    },
+    {
+     "id": 58125,
+     "ru": "Оглянись",
+     "orig": "Look Back",
+     "year": 2024
+    },
+    {
+     "id": 10408,
+     "ru": "В лес, где мерцают светлячки",
+     "orig": "Hotarubi no Mori e",
+     "year": 2011
+    },
+    {
+     "id": 34541,
+     "ru": "Мэри и ведьмин цветок",
+     "orig": "Mary to Majo no Hana",
+     "year": 2017
+    },
+    {
+     "id": 34498,
+     "ru": "Как смотреть фейерверк",
+     "orig": "Uchiage Hanabi, Shita kara Miru ka? Yoko kara Miru ka?",
+     "year": 2017
+    },
+    {
+     "id": 468,
+     "ru": "Призрак в доспехах 2: Невинность",
+     "orig": "Innocence",
+     "year": 2004
+    },
+    {
+     "id": 5,
+     "ru": "Ковбой Бибоп: Достучаться до небес",
+     "orig": "Cowboy Bebop: Tengoku no Tobira",
+     "year": 2001
+    }
+   ]
+  }
+ ]
+}

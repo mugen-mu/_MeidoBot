@@ -20,3 +20,6 @@ data/recon/
 
 # Сравнение прогнозов погоды (данные сбора, только локально)
 data/weather-compare/
+
+# Анкета вкусов: кэш подбора из Shikimori и копия для просмотра (копия уже под *.local.*)
+design/taste/titles.cache.json

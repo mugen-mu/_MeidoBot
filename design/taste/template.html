@@ -1,0 +1,357 @@
+<title>Анкета вкусов</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Onest:wght@400;500;600&family=Unbounded:wght@500;600&display=swap">
+<style>
+/* Макет: узкая колонка анкеты (как тетрадь с карточками) под липкой шапкой с прогрессом и вкладками разделов.
+   Цвет: холодная бумага и чернильный индиго; красный/розовый, зелёный, синий — только значения отметок «обожаю / понравилось / в планах». */
+:root {
+  --bg: #f3f2f8; --surface: #ffffff; --surface2: #ebeaf4; --ink: #1d1f3a; --muted: #62668a; --line: #d6d5e7;
+  --accent: #4a4fc4; --accent-ink: #ffffff;
+  --c-love: #c4416b; --c-like: #2c855f; --c-meh: #636a8c; --c-drop: #a8620f; --c-plan: #3d68c9; --c-none: #6b7190;
+  --c-ok: #636a8c; --c-dislike: #a8620f; --c-never: #b3303f; --on-c: #ffffff;
+  --font-body: "Onest", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --font-display: "Unbounded", "Onest", system-ui, sans-serif;
+  --gutter: 16px; --col: 760px; --r: 14px;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #14152a; --surface: #1d1f3c; --surface2: #272a52; --ink: #ebeaf8; --muted: #a0a3c6; --line: #353870;
+    --accent: #9a9eff; --accent-ink: #14152a;
+    --c-love: #ff8fb0; --c-like: #6fd1a2; --c-meh: #a9aec8; --c-drop: #f0b062; --c-plan: #8fb0ff; --c-none: #a9aec8;
+    --c-ok: #a9aec8; --c-dislike: #f0b062; --c-never: #ff8d9a; --on-c: #14152a; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #14152a; --surface: #1d1f3c; --surface2: #272a52; --ink: #ebeaf8; --muted: #a0a3c6; --line: #353870;
+  --accent: #9a9eff; --accent-ink: #14152a;
+  --c-love: #ff8fb0; --c-like: #6fd1a2; --c-meh: #a9aec8; --c-drop: #f0b062; --c-plan: #8fb0ff; --c-none: #a9aec8;
+  --c-ok: #a9aec8; --c-dislike: #f0b062; --c-never: #ff8d9a; --on-c: #14152a; color-scheme: dark;
+}
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+body {
+  background: var(--bg); color: var(--ink); font: 400 16px/1.5 var(--font-body);
+  padding-block: 0 72px; padding-left: max(var(--gutter), env(safe-area-inset-left, 0px)); padding-right: max(var(--gutter), env(safe-area-inset-right, 0px));
+}
+body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-area-inset-top, 0px); background: var(--bg); z-index: 20; }
+button { font: inherit; color: inherit; cursor: pointer; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.wrap { max-width: var(--col); margin: 0 auto; }
+
+/* шапка */
+.top { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 10; background: var(--bg); padding-block: 10px 8px; margin-inline: calc(var(--gutter) * -1); padding-inline: var(--gutter); border-bottom: 1px solid var(--line); }
+.top .inner { max-width: var(--col); margin: 0 auto; }
+.toprow { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+.brand { font: 600 15px/1.2 var(--font-display); letter-spacing: .01em; }
+.stat { font-size: 13px; color: var(--muted); font-variant-numeric: tabular-nums; }
+.bar { height: 4px; border-radius: 4px; background: var(--surface2); margin-block: 8px 8px; overflow: hidden; }
+.bar i { display: block; height: 100%; width: 0; background: var(--accent); transition: width .25s; }
+.chips { display: flex; gap: 6px; overflow-x: auto; scrollbar-width: none; padding-bottom: 2px; }
+.chips::-webkit-scrollbar { display: none; }
+.nav { flex: none; border: 1px solid var(--line); background: var(--surface); border-radius: 999px; padding: 5px 12px; font-size: 13px; white-space: nowrap; font-variant-numeric: tabular-nums; }
+.nav[aria-pressed="true"] { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+.tools { margin-block: 6px; }
+.link { background: none; border: 0; padding: 6px 0; color: var(--accent); text-decoration: underline; text-underline-offset: 3px; font-size: 14px; }
+.link[aria-pressed="true"] { font-weight: 600; }
+#sync::before { content: "· "; }
+#sync:empty::before { content: ""; }
+
+/* введение */
+.intro { margin-block: 22px 8px; }
+.intro h1 { font: 600 26px/1.15 var(--font-display); margin: 0 0 10px; text-wrap: balance; }
+.intro p { margin: 0 0 8px; color: var(--muted); max-width: 62ch; }
+.intro p b { color: var(--ink); font-weight: 600; }
+.notice { background: var(--surface2); border-radius: 10px; padding: 10px 12px; font-size: 14px; margin-block: 10px; }
+
+/* разделы */
+.group { margin-top: 34px; scroll-margin-top: 110px; }
+.group h2 { font: 600 19px/1.25 var(--font-display); margin: 0 0 4px; text-wrap: balance; }
+.group .gsub { margin: 0 0 14px; color: var(--muted); font-size: 14px; max-width: 62ch; }
+
+/* вопрос */
+.q { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r); padding: 14px 14px 12px; margin-bottom: 10px; }
+.q.done { border-color: color-mix(in srgb, var(--accent) 45%, var(--line)); }
+.qhead { display: flex; gap: 10px; align-items: flex-start; }
+.qid { flex: none; font-size: 12px; color: var(--muted); padding-top: 3px; min-width: 2.2em; font-variant-numeric: tabular-nums; }
+.q h3 { margin: 0; font: 500 16px/1.4 var(--font-body); flex: 1; min-width: 0; text-wrap: pretty; }
+.qs { flex: none; font-size: 12px; color: var(--muted); padding-top: 3px; }
+.ctx { margin: 4px 0 0 calc(2.2em + 10px); font-size: 14px; color: var(--muted); }
+.opts { display: flex; flex-wrap: wrap; gap: 8px; margin: 12px 0 0; }
+.opt { border: 1px solid var(--line); background: var(--surface); border-radius: 10px; padding: 8px 12px; font-size: 15px; line-height: 1.3; text-align: left; min-height: 40px; }
+.opt[aria-pressed="true"] { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+.qtools { display: flex; gap: 16px; margin-top: 8px; }
+textarea { display: block; width: 100%; margin-top: 10px; padding: 10px 12px; border-radius: 10px; border: 1px solid var(--line); background: var(--bg); color: var(--ink); font: 400 16px/1.45 var(--font-body); resize: vertical; min-height: 84px; }
+.q.skip { opacity: .62; }
+
+/* списки */
+.list { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r); margin-bottom: 14px; overflow: clip; }
+.lh { padding: 12px 14px 10px; border-bottom: 1px solid var(--line); }
+.lh h3 { margin: 0; font: 600 16px/1.3 var(--font-body); display: flex; justify-content: space-between; gap: 10px; align-items: baseline; }
+.lc { font-weight: 400; font-size: 13px; color: var(--muted); font-variant-numeric: tabular-nums; flex: none; }
+.lh p { margin: 4px 0 0; font-size: 14px; color: var(--muted); }
+.lh .link { margin-top: 6px; }
+.rows { list-style: none; margin: 0; padding: 0; }
+.row { border-bottom: 1px solid var(--line); }
+.row:last-child { border-bottom: 0; }
+.head { display: flex; width: 100%; align-items: center; justify-content: space-between; gap: 12px; background: none; border: 0; padding: 10px 14px; text-align: left; min-height: 52px; }
+.rt { min-width: 0; display: flex; flex-direction: column; }
+.rt b { font-weight: 500; font-size: 15px; line-height: 1.3; overflow-wrap: anywhere; }
+.rt i { font-style: normal; font-size: 12px; color: var(--muted); overflow-wrap: anywhere; }
+.rs { flex: none; font-size: 13px; border: 1px dashed var(--line); border-radius: 999px; padding: 4px 11px; color: var(--muted); }
+.row[data-s] .rs { border-style: solid; border-color: transparent; color: var(--on-c); font-weight: 500; }
+.row[data-s="love"] .rs { background: var(--c-love); } .row[data-s="like"] .rs { background: var(--c-like); }
+.row[data-s="meh"] .rs { background: var(--c-meh); } .row[data-s="drop"] .rs { background: var(--c-drop); }
+.row[data-s="plan"] .rs { background: var(--c-plan); } .row[data-s="none"] .rs { background: var(--c-none); }
+.row[data-s="ok"] .rs { background: var(--c-ok); } .row[data-s="dislike"] .rs { background: var(--c-dislike); }
+.row[data-s="never"] .rs { background: var(--c-never); }
+.row.open { background: var(--surface2); }
+.pick { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; padding: 2px 14px 14px; }
+.pick button { border: 1px solid var(--line); background: var(--surface); border-radius: 10px; padding: 10px 6px; font-size: 14px; min-height: 44px; }
+.pick button[data-st="love"] { color: var(--c-love); } .pick button[data-st="like"] { color: var(--c-like); }
+.pick button[data-st="drop"], .pick button[data-st="dislike"] { color: var(--c-drop); } .pick button[data-st="plan"] { color: var(--c-plan); }
+.pick button[data-st="never"] { color: var(--c-never); }
+.pick button[aria-pressed="true"] { border-color: currentColor; font-weight: 600; box-shadow: inset 0 0 0 1px currentColor; }
+@media (min-width: 620px) { .pick { grid-template-columns: repeat(6, 1fr); } .pick.five { grid-template-columns: repeat(5, 1fr); } }
+
+.end { margin-top: 36px; padding: 16px; border: 1px dashed var(--line); border-radius: var(--r); color: var(--muted); font-size: 14px; }
+.end b { color: var(--ink); }
+#toast { position: fixed; left: 50%; bottom: calc(18px + env(safe-area-inset-bottom, 0px)); transform: translateX(-50%); background: var(--ink); color: var(--bg); padding: 9px 16px; border-radius: 10px; font-size: 14px; z-index: 30; max-width: calc(100vw - 32px); }
+@media (prefers-reduced-motion: reduce) { .bar i { transition: none; } }
+</style>
+
+<div class="top"><div class="inner">
+  <div class="toprow"><span class="brand">Анкета вкусов</span><span class="stat"><span id="nums"></span> <span id="sync" aria-live="polite"></span></span></div>
+  <div class="bar"><i id="barfill"></i></div>
+  <div class="chips" id="chips"></div>
+</div></div>
+
+<main class="wrap">
+  <section class="intro">
+    <h1 id="h1"></h1>
+    <p id="lead"></p>
+    <p>Ответы <b>сохраняются сами</b>, как только вы нажали. Можно закрыть страницу и вернуться: всё на месте. Любой вопрос можно пропустить.</p>
+    <div class="tools"><button class="link" id="onlyOpen" type="button" aria-pressed="false">Показывать только без ответа</button></div>
+    <div class="notice" id="nodb" hidden>Сейчас ответы сохраняются только в этом браузере, не на сервере. Откройте страницу по ссылке из чата с Claude, и они будут сохраняться так, чтобы он их прочитал.</div>
+  </section>
+  <div id="groups"></div>
+  <div class="end" id="end"></div>
+</main>
+<div id="toast" hidden></div>
+
+<script>
+const DATA = /*DATA*/;
+</script>
+<script>
+const GROUPS = DATA.groups, Q = DATA.questions, LISTS = DATA.lists;
+const STATES = {
+  title: [["love", "Обожаю"], ["like", "Понравилось"], ["meh", "Так себе"], ["drop", "Бросил"], ["plan", "В планах"], ["none", "Не смотрел"]],
+  taste: [["love", "Обожаю"], ["like", "Нравится"], ["ok", "Нейтрально"], ["dislike", "Не люблю"], ["never", "Не смотрю совсем"]]
+};
+const BULK = { title: ["none", "Остальное — не смотрел"], taste: ["ok", "Остальное — нейтрально"] };
+const $ = id => document.getElementById(id);
+const esc = s => String(s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+const byQ = new Map(Q.map(q => [q.id, q])), byL = new Map(LISTS.map(l => [l.id, l]));
+const S = { ans: {}, marks: {}, db: null, timers: {}, writing: {}, dirty: {}, filterG: "all", onlyOpen: false, open: null };
+const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+/* ---- состояние ---- */
+const A = id => S.ans[id] || (S.ans[id] = { labels: [], text: "", note: "", skip: false, showNote: false });
+const M = id => S.marks[id] || (S.marks[id] = {});
+function qStatus(q) {
+  const a = S.ans[q.id]; if (!a) return "";
+  if (a.skip) return "skip";
+  if (q.type === "text" ? a.text.trim() : a.labels.length) return "done";
+  return a.note.trim() ? "done" : "";
+}
+const listDone = l => Object.keys(S.marks[l.id] || {}).length;
+const totals = () => {
+  const qn = Q.length, qd = Q.filter(q => qStatus(q)).length;
+  const ln = LISTS.reduce((s, l) => s + l.items.length, 0), ld = LISTS.reduce((s, l) => s + listDone(l), 0);
+  return { qn, qd, ln, ld };
+};
+const gTotals = g => {
+  const qs = Q.filter(q => q.g === g.id), ls = LISTS.filter(l => l.g === g.id);
+  return { n: qs.length + ls.reduce((s, l) => s + l.items.length, 0), d: qs.filter(q => qStatus(q)).length + ls.reduce((s, l) => s + listDone(l), 0) };
+};
+
+/* ---- разметка ---- */
+function qHtml(q) {
+  const tag = q.type === "many" ? "можно несколько" : q.type === "one" ? "один вариант" : "";
+  const opts = q.type === "text" ? "" :
+    `<div class="opts" role="group" aria-label="${esc(q.t)}">` + q.opts.map((o, k) => `<button type="button" class="opt" data-k="${k}" aria-pressed="false">${esc(o)}</button>`).join("") + `</div>`;
+  const tools = q.type === "text" ? `<div class="qtools"><button type="button" class="link" data-act="skip">Пропустить</button></div>` :
+    `<div class="qtools"><button type="button" class="link" data-act="note">Добавить слова</button><button type="button" class="link" data-act="skip">Пропустить</button></div>`;
+  const ta = `<textarea id="ta-${q.id}" rows="3" hidden placeholder="${esc(q.type === "text" ? (q.g === "E" || q.id === "G11" || q.id === "G12" ? "Можно по одной строке на название" : "Пишите как удобно") : "Что хотите добавить")}" aria-label="${esc(q.t)}"></textarea>`;
+  return `<article class="q" id="q-${q.id}" data-id="${q.id}"><div class="qhead"><span class="qid">${q.id}</span><h3>${esc(q.t)}</h3><span class="qs"></span></div>` +
+    (q.ctx || tag ? `<p class="ctx">${esc(q.ctx || "")}${q.ctx && tag ? " " : ""}${tag ? `<span>(${tag})</span>` : ""}</p>` : "") + opts + tools + ta + `</article>`;
+}
+function lHtml(l) {
+  const st = STATES[l.kind], bulk = BULK[l.kind];
+  const rows = l.items.map(it => `<li class="row" id="r-${l.id}-${it.id}" data-l="${l.id}" data-i="${it.id}"><button type="button" class="head" aria-expanded="false"><span class="rt"><b>${esc(it.t)}</b>${it.d ? `<i>${esc(it.d)}</i>` : ""}</span><span class="rs">Отметить</span></button>` +
+    `<div class="pick${st.length === 5 ? " five" : ""}" hidden>${st.map(([k, t]) => `<button type="button" data-st="${k}" aria-pressed="false">${t}</button>`).join("")}</div></li>`).join("");
+  return `<section class="list" id="l-${l.id}" data-l="${l.id}"><div class="lh"><h3><span>${esc(l.t)}</span><span class="lc" data-lc="${l.id}"></span></h3>${l.sub ? `<p>${esc(l.sub)}</p>` : ""}` +
+    `<button type="button" class="link" data-bulk="${l.id}">${bulk[1]}</button></div><ul class="rows">${rows}</ul></section>`;
+}
+function build() {
+  $("h1").textContent = DATA.wave.title;
+  $("lead").innerHTML = DATA.wave.lead;
+  $("end").innerHTML = DATA.wave.end;
+  $("groups").innerHTML = GROUPS.map(g => {
+    const first = LISTS.filter(l => l.g === g.id && l.pos === "first"), last = LISTS.filter(l => l.g === g.id && l.pos !== "first");
+    return `<section class="group" id="g-${g.id}"><h2>${esc(g.t)}</h2><p class="gsub">${esc(g.sub || "")}</p>` + first.map(lHtml).join("") +
+      Q.filter(q => q.g === g.id).map(qHtml).join("") + last.map(lHtml).join("") + `</section>`;
+  }).join("");
+}
+
+/* ---- отрисовка состояния ---- */
+function syncQ(q) {
+  const el = $("q-" + q.id), a = S.ans[q.id] || { labels: [], text: "", note: "", skip: false }, st = qStatus(q);
+  el.className = "q" + (st ? " " + st : "");
+  el.querySelectorAll(".opt").forEach(b => b.setAttribute("aria-pressed", String(a.labels.includes(q.opts[+b.dataset.k]))));
+  const ta = el.querySelector("textarea"), show = q.type === "text" || a.showNote || !!a.note;
+  ta.hidden = !show;
+  const want = q.type === "text" ? a.text : a.note;
+  if (document.activeElement !== ta && ta.value !== want) ta.value = want;
+  el.querySelector(".qs").textContent = st === "skip" ? "пропущено" : st === "done" ? "✓" : "";
+  const sk = el.querySelector('[data-act="skip"]'); sk.textContent = a.skip ? "Вернуть вопрос" : "Пропустить";
+}
+function syncRow(lid, iid) {
+  const el = $(`r-${lid}-${iid}`), l = byL.get(lid), s = (S.marks[lid] || {})[iid];
+  if (s) el.dataset.s = s; else delete el.dataset.s;
+  const lab = s ? STATES[l.kind].find(x => x[0] === s)[1] : "Отметить";
+  el.querySelector(".rs").textContent = lab;
+  el.querySelectorAll(".pick button").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.st === s)));
+  const open = S.open === el.id;
+  el.classList.toggle("open", open); el.querySelector(".pick").hidden = !open; el.querySelector(".head").setAttribute("aria-expanded", String(open));
+  el.hidden = S.onlyOpen && !!s && !open;
+}
+function renderStats() {
+  const t = totals(), all = t.qn + t.ln, done = t.qd + t.ld;
+  $("nums").textContent = `вопросов ${t.qd}/${t.qn} · отметок ${t.ld}/${t.ln}`;
+  $("barfill").style.width = (all ? 100 * done / all : 0).toFixed(1) + "%";
+  LISTS.forEach(l => { const e = document.querySelector(`[data-lc="${l.id}"]`); if (e) e.textContent = `${listDone(l)} из ${l.items.length}`; });
+  const chip = (id, t2, d, n) => `<button type="button" class="nav" data-nav="${id}" aria-pressed="${S.filterG === id}">${esc(t2)} ${d}/${n}</button>`;
+  $("chips").innerHTML = chip("all", "Всё", done, all) + GROUPS.map(g => { const x = gTotals(g); return chip(g.id, g.short || g.t, x.d, x.n); }).join("");
+}
+function applyFilter() {
+  GROUPS.forEach(g => { $("g-" + g.id).hidden = S.filterG !== "all" && S.filterG !== g.id; });
+  Q.forEach(q => { $("q-" + q.id).hidden = S.onlyOpen && !!qStatus(q); });
+  LISTS.forEach(l => l.items.forEach(it => syncRow(l.id, it.id)));
+}
+function refresh() { Q.forEach(syncQ); LISTS.forEach(l => l.items.forEach(it => syncRow(l.id, it.id))); renderStats(); applyFilter(); }
+function touchQ(id) { syncQ(byQ.get(id)); renderStats(); if (S.onlyOpen) $("q-" + id).hidden = false; persist("a:" + id, id === S.typing ? 700 : 0, () => writeQ(id)); }
+function touchL(lid) { renderStats(); persist("l:" + lid, 250, () => writeL(lid)); }
+
+/* ---- сохранение: коллекция answers (по документу на вопрос) и lists (по документу на список) ---- */
+function toast(t) { const e = $("toast"); e.textContent = t; e.hidden = false; clearTimeout(toast.t); toast.t = setTimeout(() => { e.hidden = true; }, 4000); }
+function persist(key, delay, fn) { clearTimeout(S.timers[key]); S.timers[key] = setTimeout(() => { delete S.timers[key]; flush(key, fn); }, delay); }
+async function flush(key, fn) {
+  if (!S.db) { saveLocal(); return; }
+  if (S.writing[key]) { S.dirty[key] = fn; return; }
+  S.writing[key] = true; $("sync").textContent = "сохраняю…";
+  try { let f = fn; do { S.dirty[key] = null; await f(); f = S.dirty[key]; } while (f); $("sync").textContent = "сохранено"; }
+  catch (e) { $("sync").textContent = "не сохранилось"; toast("Не сохранилось: " + (e && (e.message || e.code) || "ошибка") + ". Нажмите ещё раз."); }
+  finally { delete S.writing[key]; }
+}
+async function writeQ(id) {
+  const q = byQ.get(id), a = S.ans[id], ref = S.db.collection("answers").doc(id);
+  if (!a || (!a.skip && !a.labels.length && !a.text.trim() && !a.note.trim())) { await ref.delete(); return; }
+  await ref.set({ qid: id, group: q.g, title: q.t, type: q.type, labels: a.labels, text: a.text, note: a.note, skip: !!a.skip, at: new Date().toISOString() });
+}
+async function writeL(lid) {
+  const l = byL.get(lid), m = S.marks[lid] || {}, ref = S.db.collection("lists").doc(lid), n = Object.keys(m).length;
+  if (!n) { await ref.delete(); return; }
+  const names = {}; Object.keys(m).forEach(i => { const it = l.items.find(x => String(x.id) === i); if (it) names[i] = it.t; });
+  await ref.set({ list: lid, title: l.t, kind: l.kind, marked: n, of: l.items.length, states: m, names, at: new Date().toISOString() });
+}
+const LS = "taste-w" + DATA.wave.n;
+function saveLocal() { try { localStorage.setItem(LS, JSON.stringify({ ans: S.ans, marks: S.marks })); } catch (e) { /* браузер не даёт хранить */ } }
+function loadLocal() { try { const v = JSON.parse(localStorage.getItem(LS) || "null"); if (v) { S.ans = v.ans || {}; S.marks = v.marks || {}; } } catch (e) { /* пусто */ } }
+
+/* ---- события ---- */
+document.addEventListener("click", e => {
+  const t = e.target;
+  const nav = t.closest("[data-nav]");
+  if (nav) { S.filterG = nav.dataset.nav; renderStats(); applyFilter(); if (S.filterG !== "all") scrollTo({ top: 0 }); return; }
+  const opt = t.closest(".opt");
+  if (opt) {
+    const q = byQ.get(opt.closest(".q").dataset.id), a = A(q.id), lab = q.opts[+opt.dataset.k], has = a.labels.includes(lab);
+    a.skip = false;
+    if (q.type === "many") a.labels = has ? a.labels.filter(x => x !== lab) : q.opts.filter(o => o === lab || a.labels.includes(o));
+    else a.labels = has ? [] : [lab];
+    touchQ(q.id); return;
+  }
+  const act = t.closest("[data-act]");
+  if (act) {
+    const q = byQ.get(act.closest(".q").dataset.id), a = A(q.id);
+    if (act.dataset.act === "note") { a.showNote = !a.showNote; syncQ(q); if (a.showNote) $("ta-" + q.id).focus(); return; }
+    a.skip = !a.skip; if (a.skip) { a.labels = []; a.text = ""; a.note = ""; a.showNote = false; }
+    touchQ(q.id); return;
+  }
+  const head = t.closest(".head");
+  if (head) { const row = head.closest(".row"), prev = S.open; S.open = prev === row.id ? null : row.id; if (prev) syncRow(...rowKey(prev)); syncRow(row.dataset.l, row.dataset.i); return; }
+  const st = t.closest(".pick button");
+  if (st) {
+    const row = st.closest(".row"), lid = row.dataset.l, iid = row.dataset.i, m = M(lid);
+    if (m[iid] === st.dataset.st) delete m[iid]; else m[iid] = st.dataset.st;
+    advance(row, lid); touchL(lid); return;
+  }
+  const bulk = t.closest("[data-bulk]");
+  if (bulk) {
+    const l = byL.get(bulk.dataset.bulk), m = M(l.id); let n = 0;
+    l.items.forEach(it => { if (!m[it.id]) { m[it.id] = BULK[l.kind][0]; n++; } });
+    S.open = null; l.items.forEach(it => syncRow(l.id, it.id)); touchL(l.id); toast(n ? `Отмечено: ${n}` : "Всё уже отмечено"); return;
+  }
+});
+function rowKey(id) { const el = $(id); return [el.dataset.l, el.dataset.i]; }
+function advance(row, lid) {
+  // после выбора переходим к следующей строке без отметки: так можно быстро пройти список одним нажатием на строку
+  const m = M(lid), l = byL.get(lid), i = l.items.findIndex(x => String(x.id) === row.dataset.i);
+  S.open = null;
+  const nxt = l.items.slice(i + 1).find(x => !m[x.id]);
+  if (nxt) S.open = `r-${lid}-${nxt.id}`;
+  syncRow(...rowKey(row.id)); if (S.open) { syncRow(lid, nxt.id); $(S.open).scrollIntoView({ block: "center", behavior: reduce ? "auto" : "smooth" }); }
+}
+document.addEventListener("input", e => {
+  const ta = e.target; if (!ta.matches || !ta.matches(".q textarea")) return;
+  const q = byQ.get(ta.closest(".q").dataset.id), a = A(q.id);
+  a.skip = false; if (q.type === "text") a.text = ta.value; else a.note = ta.value;
+  S.typing = q.id; touchQ(q.id);
+});
+document.addEventListener("focusout", e => { if (e.target.matches && e.target.matches(".q textarea")) S.typing = null; });
+$("onlyOpen").addEventListener("click", e => { S.onlyOpen = !S.onlyOpen; e.currentTarget.setAttribute("aria-pressed", String(S.onlyOpen)); S.open = null; applyFilter(); renderStats(); });
+
+/* ---- запуск ---- */
+build(); refresh();
+(async () => {
+  let db = null;
+  try { db = await (window.claude && window.claude.use ? window.claude.use("db") : null); } catch (e) { db = null; }
+  if (!db) { $("nodb").hidden = false; loadLocal(); refresh(); return; }
+  S.db = db;
+  const slow = setTimeout(() => { $("sync").textContent = "сервер пока не отвечает, ответы могут быть неактуальны"; }, 10000);
+  const ok = () => { clearTimeout(slow); if ($("sync").textContent.startsWith("сервер")) $("sync").textContent = ""; };
+  db.collection("answers").limit(1000).onSnapshot(snap => {
+    if (!snap.metadata.fromCache) ok();
+    const seen = new Set();
+    snap.docs.forEach(d => {
+      const v = d.data(); if (!v || !byQ.has(v.qid)) return; seen.add(v.qid);
+      if (S.writing["a:" + v.qid] || S.timers["a:" + v.qid]) return;
+      const prev = S.ans[v.qid] || {};
+      S.ans[v.qid] = { labels: v.labels || [], text: v.text || "", note: v.note || "", skip: !!v.skip, showNote: !!prev.showNote };
+    });
+    Object.keys(S.ans).forEach(id => { if (!seen.has(id) && !S.writing["a:" + id] && !S.timers["a:" + id]) delete S.ans[id]; });
+    Q.forEach(syncQ); renderStats(); applyFilter();
+  }, err => { $("sync").textContent = "хранилище недоступно"; toast("Хранилище недоступно: " + (err && (err.message || err.code))); });
+  db.collection("lists").limit(200).onSnapshot(snap => {
+    if (!snap.metadata.fromCache) ok();
+    const seen = new Set();
+    snap.docs.forEach(d => {
+      const v = d.data(); if (!v || !byL.has(v.list)) return; seen.add(v.list);
+      if (S.writing["l:" + v.list] || S.timers["l:" + v.list]) return;
+      S.marks[v.list] = Object.assign({}, v.states || {});
+    });
+    Object.keys(S.marks).forEach(id => { if (!seen.has(id) && !S.writing["l:" + id] && !S.timers["l:" + id]) delete S.marks[id]; });
+    LISTS.forEach(l => l.items.forEach(it => syncRow(l.id, it.id))); renderStats(); applyFilter();
+  }, err => { $("sync").textContent = "хранилище недоступно"; });
+})();
+</script>
