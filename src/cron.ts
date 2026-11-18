@@ -29,7 +29,8 @@ import { outageLinesFor } from "./outages.ts";
 import { UKR_CHECK_EVERY, UKR_LAST_KEY, UKR_NEXT_KEY, UKR_OUTBOX_KEY, UKR_STATE_KEY, fetchUkrenergo, parseUkrLast, parseUkrState, planUkrenergo, type UkrNotice } from "./ukrenergo.ts";
 import { parseAnimePhrase } from "./anime/core.ts";
 import { runAnime } from "./anime/cron.ts";
-import { handlePhrase } from "./anime/handlers.ts";
+import { handleAnimeAsk, handlePhrase, handleSay } from "./anime/handlers.ts";
+import { parseAnimeAsk, parseAnimeSay } from "./anime/say.ts";
 import { listAnime } from "./anime/store.ts";
 import { eveningLines } from "./anime/ui.ts";
 import { handleReply } from "./reply.ts";
@@ -533,6 +534,19 @@ ${n.text}` } : n;
             }
             continue;
           }
+          // вопрос про своё аниме: «что я смотрю», «что отложено», «что вышло нового», «когда новая серия Фрирен» (волна 3 анкеты, 2026-11-18); без модели
+          const animeQ = parseAnimeAsk(m.content);
+          if (animeQ && !detectSecret(m.content).secret && room2(6)) {
+            report.intake++;
+            try {
+              const reply = await handleAnimeAsk({ repo, now, tz: s.tz, character: s.character, fetchFn: d.fetchFn ?? fetch, rand: d.rand }, animeQ);
+              await api.postMessage(ch, reply);
+            } catch (e) {
+              if (e instanceof BudgetExceeded) break;
+              report.notes.push("аниме: не удалось ответить на вопрос");
+            }
+            continue;
+          }
           // настроение: любое сообщение хозяина — активность; «спасибо» горничной — вежливость, дело из этого не создаём
           if (mood && room2(3)) {
             await mood.load();
@@ -570,6 +584,24 @@ ${n.text}` } : n;
                 if (e instanceof BudgetExceeded) break;
               }
               await react(ch, m.id, true);
+              continue;
+            }
+          }
+          // аниме живой фразой: «глянул последнюю серию Фрирен», «посмотрел s3e2 …», «забил на ДжоДжо», «Фрирен надоело».
+          // Без обращения «бот»/«аниме»/«Хару» — только про название из его списка; чужое остаётся обычным делом.
+          const say = parseAnimeSay(m.content);
+          if (say && !detectSecret(m.content).secret && room2(6)) {
+            try {
+              const reply = await handleSay({ repo, now, tz: s.tz, character: s.character, fetchFn: d.fetchFn ?? fetch, rand: d.rand }, say);
+              if (reply) {
+                repo.counter.spend(2);
+                report.intake++;
+                await api.postMessage(ch, reply);
+                continue;
+              }
+            } catch (e) {
+              if (e instanceof BudgetExceeded) break;
+              report.notes.push("аниме: не удалось ответить на фразу");
               continue;
             }
           }

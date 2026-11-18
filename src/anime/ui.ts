@@ -16,8 +16,10 @@ import {
   clip,
   dayShort,
   effective,
+  findOwnSeason,
   haru,
     likeMark,
+  norm,
   noticeSet,
   progressText,
   voiceLine,
@@ -272,4 +274,56 @@ export function seasonStartMessage(a: Anime, at: number, now: number, tz: string
   return body(withHaru(`**🎬 Начинается: ${clip(a.title_ru, 80)}**\nСегодня первая серия${when}. Вы планировали это посмотреть.`, haru("start", ch, rand)), [
     row(btn("Смотрю", `an:ss:${a.id}:w`, 3), btn("Позже", `an:ss:${a.id}:l`), btn("Не буду", `an:ss:${a.id}:n`)),
   ]);
+}
+
+// ---------- вопросы про своё аниме текстом (без кнопок «Смотрю/…»: списки — animeListMessage) ----------
+
+/** «Что вышло нового»: серии «Смотрю», которые вышли, а вы на более ранней; если таких нет — ближайшая. */
+export function animeNewsText(rows: Anime[], now: number, tz: string): string {
+  const watching = rows.filter((a) => a.status === "watching");
+  if (!watching.length) return "В «Смотрю» пока пусто, так что и новых серий нет.";
+  const behind = watching
+    .map((a) => ({ a, e: effective(a, now) }))
+    .filter((x) => x.e.airedEp > x.a.watched)
+    .sort((x, y) => (y.e.airedAt ?? 0) - (x.e.airedAt ?? 0) || x.a.id - y.a.id);
+  if (behind.length) {
+    const lines = behind.slice(0, 8).map(({ a, e }) => {
+      const n = e.airedEp - a.watched;
+      const me = a.watched ? `вы на ${a.watched}-й` : "вы ещё не начинали";
+      return `• **${clip(a.title_ru, 60)}** — вышла ${e.airedEp}-я${e.airedAt !== null ? ` (${whenShort(e.airedAt, now, tz)})` : ""}, ${me}${n > 1 && a.watched ? ` · пропущено ${n}` : ""}`;
+    });
+    return `**🎬 Вышло, а вы ещё не смотрели** (${behind.length})\n${lines.join("\n")}`;
+  }
+  const up = watching
+    .map((a) => ({ a, u: effective(a, now).upcoming }))
+    .filter((x) => x.u !== null)
+    .sort((x, y) => (x.u?.at ?? 0) - (y.u?.at ?? 0))[0];
+  return `Нового, чего вы не видели, нет: всё досмотрено.${up?.u ? `\nБлижайшая: **${clip(up.a.title_ru, 60)}** — ${up.u.ep}-я, ${whenShort(up.u.at, now, tz)}.` : ""}`;
+}
+
+function nextLine(a: Anime, now: number, tz: string): string {
+  const e = effective(a, now);
+  const what = e.upcoming ? `${e.upcoming.ep}-я серия: ${whenShort(e.upcoming.at, now, tz)}` : a.src_status === "FINISHED" ? "всё уже вышло" : "дата следующей серии пока не объявлена";
+  const v = voiceLine(a);
+  return `**${clip(a.title_ru, 60)}** — ${what}.${v ? `\n${v[0].toUpperCase()}${v.slice(1)}.` : ""}`;
+}
+
+/** «Когда новая серия [Название]»: у одного тайтла из списка — его серия (и озвучка, если знаем); без названия — ближайшие из «Смотрю». */
+export function animeNextText(rows: Anime[], query: string | null, now: number, tz: string): string {
+  if (query) {
+    const q = norm(query);
+    const a = findOwnSeason(rows, query, null);
+    if (a) return nextLine(a, now, tz);
+    const hits = rows.filter((x) => norm(x.title_ru).includes(q) || norm(x.title_orig ?? "").includes(q));
+    if (hits.length > 1) return `Подходит несколько: ${hits.slice(0, 4).map((h) => `«${clip(h.title_ru, 40)}»`).join(", ")}. Напишите название точнее.`;
+    return `«${clip(query, 40)}» в вашем списке нет. Добавить: «бот смотрю ${clip(query, 40)}».`;
+  }
+  const watching = rows.filter((a) => a.status === "watching");
+  if (!watching.length) return "В «Смотрю» пока пусто.";
+  const up = watching
+    .map((a) => ({ a, u: effective(a, now).upcoming }))
+    .filter((x) => x.u !== null)
+    .sort((x, y) => (x.u?.at ?? 0) - (y.u?.at ?? 0));
+  if (!up.length) return "Ни у одного тайтла из «Смотрю» следующая серия пока не объявлена.";
+  return `**🎬 Ближайшие серии**\n${up.slice(0, 6).map((x) => `• **${clip(x.a.title_ru, 60)}** — ${x.u?.ep}-я: ${whenShort(x.u?.at ?? 0, now, tz)}`).join("\n")}`;
 }

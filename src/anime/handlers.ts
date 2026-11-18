@@ -16,11 +16,13 @@ import {
   STATUS_LABEL,
   effective,
   findOwn,
+  findOwnSeason,
   haru,
   norm,
   noticeSet,
   progressText,
 } from "./core.ts";
+import type { AnimeAsk, SayPhrase } from "./say.ts";
 import { type Candidate, type FetchFn, getShikiFull, searchShiki } from "./sources.ts";
 import { deleteOp, getAnime, listAnime, patchOp, upsertOp } from "./store.ts";
 import {
@@ -31,6 +33,8 @@ import {
   animeDeleteConfirm,
   animeListMessage,
   animeModal,
+  animeNewsText,
+  animeNextText,
   askPickMessage,
   candidatesMessage,
   dropReasonMessage,
@@ -98,6 +102,38 @@ export async function handlePhrase(c: AnimeCtx, p: AnimePhrase): Promise<Message
   const pick = cands.length === 1 ? cands[0] : exact.length === 1 ? exact[0] : null;
   if (pick) return addCandidate(c, pick, pick.mal, p.status, p.episode);
   return candidatesMessage(cands, p.status, p.episode, c.character, c.rand);
+}
+
+/**
+ * Живая фраза хозяина («глянул последнюю серию Фрирен», «забил на ДжоДжо», «Фрирен надоело»).
+ * Своё название — сразу; чужое — поиск и запись только после обращения «бот»/«аниме»/«Хару»; иначе null (это обычное дело).
+ */
+export async function handleSay(c: AnimeCtx, say: SayPhrase): Promise<MessageBody | null> {
+  const own = findOwnSeason(await listAnime(c.repo), say.query, say.season ?? null);
+  if (!own) return say.prefixed ? handlePhrase(c, { status: say.status, query: say.query, episode: say.episode }) : null;
+  let status = say.status;
+  let episode = say.episode;
+  if (say.latest) {
+    const aired = effective(own, c.now).airedEp;
+    episode = aired > 0 ? aired : null;
+  } else if (say.next) episode = own.watched + 1;
+  else if (say.soft) {
+    // «посмотрел / глянул Х» без слов о серии: у сериала в «Смотрю» это следующая серия, иначе — весь тайтл
+    if (own.status === "watching") {
+      status = "watching";
+      episode = own.watched + 1;
+    }
+  }
+  if (episode !== null && own.episodes !== null && episode > own.episodes) episode = own.episodes;
+  if (status === "watching" && episode !== null && own.episodes !== null && episode >= own.episodes && own.src_status === "FINISHED") status = "done";
+  return applyOwn(c, own, status, episode);
+}
+
+/** Вопрос про своё аниме текстом: «что я смотрю», «что отложено», «что вышло нового», «когда новая серия Фрирен». */
+export async function handleAnimeAsk(c: AnimeCtx, q: AnimeAsk): Promise<MessageBody> {
+  const rows = await listAnime(c.repo);
+  if (q.kind === "watching" || q.kind === "planned") return animeListMessage(rows, q.kind, 0, c.now, c.tz, c.character, c.rand);
+  return text(q.kind === "news" ? animeNewsText(rows, c.now, c.tz) : animeNextText(rows, q.query, c.now, c.tz));
 }
 
 /** Окно «＋ Добавить»: название, куда, серия. */

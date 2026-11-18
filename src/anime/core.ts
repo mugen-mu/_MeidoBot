@@ -159,6 +159,46 @@ export function findOwn(rows: Anime[], query: string): Anime | null {
   return part.length === 1 ? part[0] : null;
 }
 
+const ORD_WORDS: Record<number, string[]> = {
+  1: ["первый", "first", "i"],
+  2: ["второй", "second", "ii", "2nd"],
+  3: ["третий", "third", "iii", "3rd"],
+  4: ["четвертый", "fourth", "iv", "4th"],
+  5: ["пятый", "fifth", "v", "5th"],
+};
+
+const titleTokens = (a: Anime): string[] => norm(`${a.title_ru} ${a.title_orig ?? ""}`).split(" ");
+/** В названии есть номер этого сезона: «… 2», «2nd season», «второй сезон». */
+const hasSeason = (a: Anime, n: number): boolean => {
+  const t = titleTokens(a);
+  return t.includes(String(n)) || (ORD_WORDS[n] ?? []).some((w) => t.includes(w));
+};
+const hasAnySeason = (a: Anime): boolean => titleTokens(a).some((w) => /^(?:[2-9]|\d{2})$/.test(w) || [2, 3, 4, 5].some((n) => (ORD_WORDS[n] ?? []).includes(w)));
+
+/**
+ * Как findOwn, но у тайтла несколько сезонов (каждый сезон — отдельная запись): сезон из фразы («s3e2», «2 сезон») выбирает нужный,
+ * даже если название первого сезона совпало точно; без сезона берём единственный из тех, что «Смотрю» сейчас, затем точное совпадение.
+ * Единственная запись другого сезона не подходит. Иначе null (неясно: заведём как дело или спросим).
+ */
+export function findOwnSeason(rows: Anime[], query: string, season: number | null): Anime | null {
+  const q = norm(query);
+  if (!q) return null;
+  const hits = rows.filter((a) => norm(a.title_ru).includes(q) || norm(a.title_orig ?? "").includes(q));
+  if (!hits.length) return null;
+  if (hits.length === 1) return season !== null && hasAnySeason(hits[0]) && !hasSeason(hits[0], season) ? null : hits[0];
+  if (season !== null) {
+    const bySeason = hits.filter((a) => hasSeason(a, season));
+    if (bySeason.length === 1) return bySeason[0];
+    if (season === 1) {
+      const plain = hits.filter((a) => !hasAnySeason(a));
+      if (plain.length === 1) return plain[0];
+    }
+    return null;
+  }
+  const watching = hits.filter((a) => a.status === "watching");
+  return watching.length === 1 ? watching[0] : findOwn(rows, query);
+}
+
 // ---------- озвучка AniLibria ----------
 
 const HOUR_MS = 60 * MINUTE;
