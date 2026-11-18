@@ -93,7 +93,11 @@ textarea { display: block; width: 100%; margin-top: 10px; padding: 10px 12px; bo
 .rows { list-style: none; margin: 0; padding: 0; }
 .row { border-bottom: 1px solid var(--line); }
 .row:last-child { border-bottom: 0; }
-.head { display: flex; width: 100%; align-items: center; justify-content: space-between; gap: 12px; background: none; border: 0; padding: 10px 14px; text-align: left; min-height: 52px; }
+.line { display: flex; align-items: center; }
+.head { display: flex; flex: 1; min-width: 0; align-items: center; justify-content: space-between; gap: 12px; background: none; border: 0; padding: 10px 14px; text-align: left; min-height: 52px; }
+.quick { flex: none; margin-right: 12px; border: 1px solid var(--line); background: var(--surface); border-radius: 999px; padding: 6px 12px; font-size: 13px; color: var(--muted); min-height: 36px; }
+.row[data-s] .quick, .row.open .quick { display: none; }
+.row.hasq:not([data-s]):not(.open) .rs { display: none; } /* у строки с быстрой кнопкой пустая метка «Отметить» не нужна: название получает всю ширину */
 .rt { min-width: 0; display: flex; flex-direction: column; }
 .rt b { font-weight: 500; font-size: 15px; line-height: 1.3; overflow-wrap: anywhere; }
 .rt i { font-style: normal; font-size: 12px; color: var(--muted); overflow-wrap: anywhere; }
@@ -105,14 +109,17 @@ textarea { display: block; width: 100%; margin-top: 10px; padding: 10px 12px; bo
 .row[data-s="ok"] .rs { background: var(--c-ok); } .row[data-s="dislike"] .rs { background: var(--c-dislike); }
 .row[data-s="never"] .rs { background: var(--c-never); }
 .row[data-s="now"] .rs { background: var(--accent); color: var(--accent-ink); }
+.row[data-s="seen"] .rs { background: var(--c-meh); } .row[data-s="must"] .rs { background: var(--c-like); }
+.row[data-s="nice"] .rs { background: var(--c-plan); } .row[data-s="no"] .rs { background: var(--c-none); }
 .row.open { background: var(--surface2); }
 .pick { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; padding: 2px 14px 14px; }
 .pick button { border: 1px solid var(--line); background: var(--surface); border-radius: 10px; padding: 10px 6px; font-size: 14px; min-height: 44px; }
 .pick button[data-st="love"] { color: var(--c-love); } .pick button[data-st="like"] { color: var(--c-like); }
 .pick button[data-st="drop"], .pick button[data-st="dislike"] { color: var(--c-drop); } .pick button[data-st="plan"] { color: var(--c-plan); }
 .pick button[data-st="never"] { color: var(--c-never); } .pick button[data-st="now"] { color: var(--accent); }
+.pick button[data-st="must"] { color: var(--c-like); } .pick button[data-st="nice"] { color: var(--c-plan); }
 .pick button[aria-pressed="true"] { border-color: currentColor; font-weight: 600; box-shadow: inset 0 0 0 1px currentColor; }
-@media (min-width: 620px) { .pick { grid-template-columns: repeat(6, 1fr); } .pick.five { grid-template-columns: repeat(5, 1fr); } .pick.seven { grid-template-columns: repeat(4, 1fr); } }
+@media (min-width: 620px) { .pick { grid-template-columns: repeat(6, 1fr); } .pick.five { grid-template-columns: repeat(5, 1fr); } .pick.seven, .pick.eight { grid-template-columns: repeat(4, 1fr); } .pick.three { grid-template-columns: repeat(3, 1fr); } }
 
 .end { margin-top: 36px; padding: 16px; border: 1px dashed var(--line); border-radius: var(--r); color: var(--muted); font-size: 14px; }
 .end b { color: var(--ink); }
@@ -147,9 +154,12 @@ const GROUPS = DATA.groups, Q = DATA.questions, LISTS = DATA.lists;
 const STATES = {
   title: [["love", "Обожаю"], ["like", "Понравилось"], ["meh", "Так себе"], ["drop", "Бросил"], ["plan", "В планах"], ["none", "Не смотрел"]],
   taste: [["love", "Обожаю"], ["like", "Нравится"], ["ok", "Нейтрально"], ["dislike", "Не люблю"], ["never", "Не смотрю совсем"]],
-  read: [["now", "Читаю сейчас"], ["love", "Обожаю"], ["like", "Понравилось"], ["meh", "Так себе"], ["drop", "Бросил"], ["plan", "В планах"], ["none", "Не читал"]]
+  read: [["now", "Читаю сейчас"], ["love", "Обожаю"], ["like", "Понравилось"], ["meh", "Так себе"], ["drop", "Бросил"], ["plan", "В планах"], ["none", "Не читал"]],
+  anime2: [["now", "Смотрю сейчас"], ["love", "В восторге"], ["like", "Понравилось"], ["seen", "Смотрел"], ["dislike", "Не понравилось"], ["drop", "Бросил"], ["plan", "Отложил на потом"], ["none", "Не смотрел"]],
+  need: [["must", "Нужно обязательно"], ["nice", "Пригодится"], ["no", "Не нужно"]]
 };
-const BULK = { title: ["none", "Остальное — не смотрел"], taste: ["ok", "Остальное — нейтрально"], read: ["none", "Остальное — не читал"] };
+const BULK = { title: ["none", "Остальное — не смотрел"], taste: ["ok", "Остальное — нейтрально"], read: ["none", "Остальное — не читал"], anime2: ["none", "Остальное — не смотрел"], need: ["nice", "Остальное — пригодится"] };
+const QUICK = { title: "none", read: "none", anime2: "none" }; // быстрая кнопка на строке: одно нажатие вместо двух
 const $ = id => document.getElementById(id);
 const esc = s => String(s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 const byQ = new Map(Q.map(q => [q.id, q])), byL = new Map(LISTS.map(l => [l.id, l]));
@@ -189,8 +199,11 @@ function qHtml(q) {
 }
 function lHtml(l) {
   const st = STATES[l.kind], bulk = BULK[l.kind];
-  const rows = l.items.map(it => `<li class="row" id="r-${l.id}-${it.id}" data-l="${l.id}" data-i="${it.id}"><button type="button" class="head" aria-expanded="false"><span class="rt"><b>${esc(it.t)}</b>${it.d ? `<i>${esc(it.d)}</i>` : ""}</span><span class="rs">Отметить</span></button>` +
-    `<div class="pick${st.length === 5 ? " five" : st.length === 7 ? " seven" : ""}" hidden>${st.map(([k, t]) => `<button type="button" data-st="${k}" aria-pressed="false">${t}</button>`).join("")}</div></li>`).join("");
+  const qk = QUICK[l.kind], qlab = qk ? st.find(x => x[0] === qk)[1] : "";
+  const cols = st.length === 5 ? " five" : st.length === 7 ? " seven" : st.length === 8 ? " eight" : st.length === 3 ? " three" : "";
+  const rows = l.items.map(it => `<li class="row${qk ? " hasq" : ""}" id="r-${l.id}-${it.id}" data-l="${l.id}" data-i="${it.id}"><div class="line"><button type="button" class="head" aria-expanded="false"><span class="rt"><b>${esc(it.t)}</b>${it.d ? `<i>${esc(it.d)}</i>` : ""}</span><span class="rs">Отметить</span></button>` +
+    (qk ? `<button type="button" class="quick" data-st="${qk}">${qlab}</button>` : "") + `</div>` +
+    `<div class="pick${cols}" hidden>${st.map(([k, t]) => `<button type="button" data-st="${k}" aria-pressed="false">${t}</button>`).join("")}</div></li>`).join("");
   return `<section class="list" id="l-${l.id}" data-l="${l.id}"><div class="lh"><h3><span>${esc(l.t)}</span><span class="lc" data-lc="${l.id}"></span></h3>${l.sub ? `<p>${esc(l.sub)}</p>` : ""}` +
     `<button type="button" class="link" data-bulk="${l.id}">${bulk[1]}</button></div><ul class="rows">${rows}</ul></section>`;
 }
@@ -289,6 +302,14 @@ document.addEventListener("click", e => {
     if (act.dataset.act === "note") { a.showNote = !a.showNote; syncQ(q); if (a.showNote) $("ta-" + q.id).focus(); return; }
     a.skip = !a.skip; if (a.skip) { a.labels = []; a.text = ""; a.note = ""; a.showNote = false; }
     touchQ(q.id); return;
+  }
+  const quick = t.closest(".quick");
+  if (quick) {
+    // быстрая отметка без раскрытия строки: список можно пройти одним нажатием на строку
+    const row = quick.closest(".row"), lid = row.dataset.l, iid = row.dataset.i, prev = S.open;
+    M(lid)[iid] = quick.dataset.st; S.open = null;
+    if (prev) syncRow(...rowKey(prev));
+    syncRow(lid, iid); touchL(lid); return;
   }
   const head = t.closest(".head");
   if (head) { const row = head.closest(".row"), prev = S.open; S.open = prev === row.id ? null : row.id; if (prev) syncRow(...rowKey(prev)); syncRow(row.dataset.l, row.dataset.i); return; }

@@ -28,7 +28,7 @@ TEMPLATE = HERE / "template.html"
 QUESTIONS = BASE / "questions.js"
 TITLES = BASE / "titles.json"
 OUT = BASE / "page.html"
-LIST_PREFIX, LIST_KIND, LIST_GROUP = ("a-", "title", "H") if WAVE_N == 1 else ("", "read", "L")
+LIST_PREFIX, LIST_KIND, LIST_GROUP = {1: ("a-", "title", "H"), 2: ("", "read", "L"), 3: ("", "anime2", "A")}[WAVE_N]
 
 
 def fail(msg: str) -> None:
@@ -87,7 +87,7 @@ def main() -> int:
         ii = [it["id"] for it in l["items"]]
         if len(ii) != len(set(ii)):
             problems.append(f"список {l['id']}: повторяются id строк")
-        if l["kind"] in ("title", "read"):
+        if l["kind"] in ("title", "read", "anime2"):
             for it in l["items"]:
                 if it["id"] in seen_titles:
                     problems.append(f"тайтл {it['id']} в двух списках")
