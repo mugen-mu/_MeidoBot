@@ -22,6 +22,9 @@ import {
   type Achievement,
   dayNumber,
   effectiveMood,
+  heavyReady,
+  isHeavyDay,
+  markHeavy,
   noteDone,
   noteMiss,
   observeHot,
@@ -40,7 +43,7 @@ import {
   step,
 } from "./moodEngine.ts";
 import { LIVE_DAILY_CAP, type LineRequest, liveLine, pickAngle, pickJaWords, pickLength } from "./liveLines.ts";
-import { INTERESTS, INTEREST_CHANCE, type MonthDay, type Person, occasionFor } from "./occasions.ts";
+import { INTEREST_CHANCE, INTEREST_FREE, type MonthDay, type Person, occasionFor, pickInterests } from "./occasions.ts";
 import { type Voice, plainRussian, styleMood } from "./persona.ts";
 import type { Situation } from "./phrases.ts";
 import { type PhraseVars, fill, pickPhrase, poolFor, remember } from "./speech.ts";
@@ -320,7 +323,7 @@ export class MoodSession {
       hour: w.h,
       weekday: w.wd,
       length: pickLength(this.rand),
-      interests: this.rand() < INTEREST_CHANCE ? INTERESTS : [],
+      interests: !INTEREST_FREE.has(situation) && this.rand() < INTEREST_CHANCE ? pickInterests(this.rand) : [],
       occasion: vars.occasion,
       facts: vars.facts,
       jaWords: this.style.level > 0 && !plainRussian(m) ? pickJaWords(styleMood(m), this.rand) : undefined,
@@ -367,6 +370,21 @@ export class MoodSession {
       this.dirty = true;
     }
     return r.achievement;
+  }
+
+  /**
+   * Подбодрить цитатой в тяжёлый день (висит много, список длинный или пропуски подряд): раз в три суток, не в «тихий день».
+   * null — условий нет, ещё рано или реплики нет; сутки запоминаются только если реплика прозвучала.
+   */
+  async heavyDayLine(a: { open: number; hot?: number }): Promise<string | null> {
+    if (!this.state || this.silent) return null;
+    if (!isHeavyDay({ open: a.open, hot: a.hot, missStreak: this.state.missStreak }) || !heavyReady(this.styleState, this.dayNum)) return null;
+    const line = await this.sayLive("heavy_day", { facts: `открытых дел: ${a.open}${a.hot ? `, висит: ${a.hot}` : ""}` });
+    if (line) {
+      this.styleState = markHeavy(this.styleState, this.dayNum);
+      this.dirty = true;
+    }
+    return line;
   }
 
   /** Можно ли засчитать симпатию за аниме-слово хозяина: раз в cooldownHours (ТЗ, 5Д). */
@@ -489,6 +507,11 @@ export async function summaryLine(
   }
   if (occ) return m.sayLive(occ.situation, { occasion: occ.label });
   if (a.kind === "morning" && a.open === 0) return m.sayLive("empty_today", { facts: "на сегодня дел нет" });
+  // тяжёлый день (много висит, длинный список, пропуски подряд): вместо обычной реплики цитата-подбадривание, не чаще раза в три суток
+  if (a.kind !== "weekly") {
+    const cheer = await m.heavyDayLine({ open: a.open, hot: a.hot });
+    if (cheer) return cheer;
+  }
   if (m.rand() >= SUMMARY_LINE_CHANCE[a.kind]) return null;
   if (a.kind === "morning") return m.sayLive("summary_morning", { facts: `открытых дел: ${a.open}` });
   if (a.kind === "evening") return m.sayLive("summary_evening", { facts: a.open === 0 ? "незакрытых дел нет" : `незакрытых дел: ${a.open}` });

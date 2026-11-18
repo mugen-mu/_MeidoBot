@@ -1,5 +1,6 @@
 // Аниме: чистые функции без базы и сети — состояние серий, разбор фразы, показ времени, реплики Хару.
 import type { Character } from "../flavor.ts";
+import { NIGHT_LINE_CHANCE, type ReactionKind, isLateNight, pickReaction } from "../personality/animeLines.ts";
 import { fmtHHMM, startOfDay, wallOf } from "../time/tz.ts";
 import { MINUTE } from "../time/tz.ts";
 
@@ -359,9 +360,14 @@ const LINES: Record<LineKind, string[]> = {
   start: ["Это «потом» наступило, господин. Я не напоминаю, я констатирую.", "Сегодня то, что вы записали на потом. Чай заварить?"],
 };
 
-/** Короткая реплика Хару: только при характере «горничная», без перебора (одна на сообщение). */
-export function haru(kind: LineKind, character: Character, rand: () => number = Math.random): string | null {
+/**
+ * Короткая реплика Хару: только при характере «горничная», без перебора (одна на сообщение).
+ * На отметки (`ep`, `liked`, `dropped`, а также `loved` и `meh`) отвечает под разными углами: соглашается, спорит, подкалывает, намекает, цитирует, играет сценку
+ * (`src/personality/animeLines.ts`, анкета вкусов); прежние фразы из `LINES` остаются одним из углов. Остальные виды — как раньше.
+ * `hour` — местный час: на отметку серии ночью (с полуночи до пяти) Хару чаще шутит «пора спать». Без него (старые вызовы) ночи нет.
+ */
+export function haru(kind: LineKind | ReactionKind, character: Character, rand: () => number = Math.random, hour?: number): string | null {
   if (character !== "maid") return null;
-  const pool = LINES[kind];
-  return pool[Math.floor(rand() * pool.length) % pool.length];
+  if (kind === "ep" && hour !== undefined && isLateNight(hour) && rand() < NIGHT_LINE_CHANCE) return pickReaction("night", [], rand);
+  return pickReaction(kind, LINES[kind as LineKind] ?? [], rand);
 }

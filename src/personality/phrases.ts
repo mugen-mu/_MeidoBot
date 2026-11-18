@@ -80,7 +80,9 @@ export type Situation =
   | "rain_start"
   | "rain_end"
   | "rain_early"
-  | "weather_ask";
+  | "weather_ask"
+  // анкета вкусов (2026-11-18): тяжёлый день — подбодрить цитатой в духе героя
+  | "heavy_day";
 
 export const SITUATIONS: Situation[] = [
   "reminder", "reminder_repeat", "missed_first", "missed", "done", "done_late", "streak_praise", "relief",
@@ -90,6 +92,7 @@ export const SITUATIONS: Situation[] = [
   "snooze_5", "good_streak", "achieve_tail", "achieve_week_clean", "achieve_week_ontime",
   "tail_clear", "tail_review", "source_down", "source_week", "seasonal", "year_with", "power_off", "power_on",
   "missed_minor", "done_minor", "missed_major", "done_major", "rain_start", "rain_end", "rain_early", "weather_ask",
+  "heavy_day",
 ];
 
 /** Если у настроения нет фраз для ситуации, берём ближайшую «родственную» из того же настроения. */
@@ -124,6 +127,7 @@ export const FALLBACK_SITUATION: Partial<Record<Situation, Situation>> = {
   done_minor: "done",
   missed_major: "missed",
   done_major: "done",
+  heavy_day: "summary_morning",
 };
 
 export type Phrases = Record<string, Partial<Record<Situation, string[]>>>;
@@ -143,6 +147,7 @@ import { POLISH_PROUD } from "./phrases.polish.proud.ts";
 import { POLISH_TIRED } from "./phrases.polish.tired.ts";
 import { POLISH_TSUNDERE } from "./phrases.polish.tsundere.ts";
 import { RAIN_PHRASES } from "./phrases.rain.ts";
+import { TASTE_PHRASES } from "./phrases.taste.ts";
 import { WEIGHT_PHRASES } from "./phrases.weight.ts";
 
 const key = (t: string): string => t.toLowerCase().replace(/[^\p{L}]+/gu, " ").trim();
@@ -214,6 +219,7 @@ export const ADDITION_GROUPS: Record<string, Phrases> = {
   "polish.tired": POLISH_TIRED,
   "polish.tsundere": POLISH_TSUNDERE,
   "polish.proud": POLISH_PROUD,
+  taste: TASTE_PHRASES,
 };
 
 /** Набор до дополнений (для линтера: сколько фраз было до новых). */

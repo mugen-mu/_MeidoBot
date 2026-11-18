@@ -22,6 +22,10 @@ export const WEIGHT_NEED: Need = { missed_minor: 5, done_minor: 5, missed_major:
 /** Дождь: реплика рядом с сообщением («начался», «закончился», «скоро») и перед честным ответом про погоду. Яндере в этих ситуациях не говорит (как цундере). */
 export const RAIN_NEED: Need = { rain_start: 5, rain_end: 5, rain_early: 5, weather_ask: 4 };
 
+/** Анкета вкусов: тяжёлый день (подбодрить цитатой героя) — у каждого голоса кроме яндере; «как в кино» в done и summary_morning — у шести голосов, говорящих связно. */
+export const TASTE_HEAVY_NEED: Need = { heavy_day: 6 };
+export const TASTE_MOVIE_NEED: Need = { heavy_day: 6, done: 8, summary_morning: 5 };
+
 export type GroupSpec = Record<string, Need>;
 
 /** Группа → какие голоса и сколько фраз по ситуациям в ней ожидается. Имя группы = ключ в ADDITION_GROUPS (phrases.ts). */
@@ -41,6 +45,10 @@ export const GROUP_SPEC: Record<string, GroupSpec> = {
   "polish.tired": { tired: POLISH_NEED, sleepy: POLISH_NEED, yandere: { missed_first: 5 } },
   "polish.tsundere": { tsundere: POLISH_NEED, sulking: POLISH_NEED },
   "polish.proud": { proud: POLISH_NEED },
+  taste: {
+    tired: TASTE_MOVIE_NEED, tsundere: TASTE_MOVIE_NEED, proud: TASTE_MOVIE_NEED, playful: TASTE_MOVIE_NEED, prim: TASTE_MOVIE_NEED, bright: TASTE_MOVIE_NEED,
+    sleepy: TASTE_HEAVY_NEED, sulking: TASTE_HEAVY_NEED,
+  },
 };
 
 /** Ситуации, где фраза не должна называть вид осадков: рядом стоит факт «начался дождь/снег», вид в нём. */

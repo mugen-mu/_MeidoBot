@@ -95,8 +95,8 @@ export interface StyleState {
   ot?: { d: number; n: number };
   /** этап 2: с каких суток нет «Висит» (последнее просроченное дело или наблюдение «висит»); от него считается «неделя без «Висит»» */
   cl?: number;
-  /** этап 2: когда показывалась особая реплика (номера суток): any — любая, gs — заметка о серии, wk — «7 дней вовремя», wc — начало отсчёта, за который дали «неделю без «Висит»» */
-  ac?: { any?: number; gs?: number; wk?: number; wc?: number };
+  /** этап 2: когда показывалась особая реплика (номера суток): any — любая, gs — заметка о серии, wk — «7 дней вовремя», wc — начало отсчёта, за который дали «неделю без «Висит»», hd — подбадривание в тяжёлый день */
+  ac?: { any?: number; gs?: number; wk?: number; wc?: number; hd?: number };
 }
 export const emptyStyleState = (): StyleState => ({ n: 0, words: {} });
 
@@ -125,7 +125,7 @@ export function parseStyleState(json: string | null | undefined): StyleState {
     const cl = posNum(v?.cl);
     if (cl !== undefined) out.cl = cl;
     const ac: NonNullable<StyleState["ac"]> = {};
-    for (const k of ["any", "gs", "wk", "wc"] as const) {
+    for (const k of ["any", "gs", "wk", "wc", "hd"] as const) {
       const n = posNum(v?.ac?.[k]);
       if (n !== undefined) ac[k] = n;
     }
