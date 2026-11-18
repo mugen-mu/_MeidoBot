@@ -4,8 +4,9 @@ import type { Op } from "../db/types.ts";
 import type { Anime, AnimeStatus } from "./core.ts";
 import type { Candidate, Schedule } from "./sources.ts";
 
+// Предел 1000: после загрузки отметок из анкеты в таблице сотни строк; с пределом 400 самые новые тайтлы пропали бы из списка.
 export async function listAnime(repo: Repo): Promise<Anime[]> {
-  return repo.all<Anime>("SELECT * FROM anime ORDER BY id LIMIT 400");
+  return repo.all<Anime>("SELECT * FROM anime ORDER BY id LIMIT 1000");
 }
 
 export async function getAnime(repo: Repo, id: number): Promise<Anime | null> {

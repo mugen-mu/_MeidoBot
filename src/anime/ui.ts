@@ -18,7 +18,8 @@ import {
   effective,
   findOwnSeason,
   haru,
-    likeMark,
+  likeMark,
+  likeWords,
   norm,
   noticeSet,
   progressText,
@@ -75,14 +76,16 @@ export function animeCardMessage(a: Anime, code: string, p: number, now: number,
   const e = effective(a, now);
   const lines = [`**${clip(a.title_ru, 120)}**${a.title_orig && a.title_orig !== a.title_ru ? ` (${clip(a.title_orig, 80)})` : ""}`];
   const total = a.episodes ? ` из ${a.episodes}` : "";
-  lines.push(`Статус: ${STATUS_LABEL[a.status]} · серия ${a.watched}${total}`);
+  // у загруженных из анкеты просмотренных и брошенных серий нет (watched = 0): «серия 0» не пишем
+  const seria = a.watched || a.status === "watching" || a.status === "planned" ? ` · серия ${a.watched}${total}` : a.episodes ? ` · ${a.episodes} сер.` : "";
+  lines.push(`Статус: ${STATUS_LABEL[a.status]}${seria}`);
   if (a.status === "watching" || a.status === "planned") {
     if (e.upcoming) lines.push(`Следующая: ${e.upcoming.ep}-я, ${whenShort(e.upcoming.at, now, tz)}`);
     else if (a.src_status === "FINISHED") lines.push("Все серии уже вышли.");
     else lines.push("Дата следующей серии не объявлена.");
     if (e.airedEp > a.watched && a.status === "watching") lines.push(`Вышла ${e.airedEp}-я, вы ещё не отметили.`);
   }
-  if (a.liked) lines.push(a.liked === 2 ? "Отметка: 🔥 в восторге" : a.liked === 1 ? "Отметка: ❤ понравилось" : "Отметка: так себе");
+  if (a.liked) lines.push(`Отметка: ${likeWords(a.liked)}`);
   const voice = a.status === "watching" || a.status === "planned" ? voiceLine(a) : null;
   if (voice) lines.push(voice[0].toUpperCase() + voice.slice(1));
   if (a.status === "dropped" && a.drop_reason) lines.push(`Причина: ${DROP_LABEL[a.drop_reason] ?? a.drop_reason}`);
@@ -326,4 +329,40 @@ export function animeNextText(rows: Anime[], query: string | null, now: number, 
     .sort((x, y) => (x.u?.at ?? 0) - (y.u?.at ?? 0));
   if (!up.length) return "Ни у одного тайтла из «Смотрю» следующая серия пока не объявлена.";
   return `**🎬 Ближайшие серии**\n${up.slice(0, 6).map((x) => `• **${clip(x.a.title_ru, 60)}** — ${x.u?.ep}-я: ${whenShort(x.u?.at ?? 0, now, tz)}`).join("\n")}`;
+}
+
+// ---------- «смотрел ли я», «что я поставил» (2026-11-18) ----------
+
+/** Тайтла нет в списке: честно, без «не смотрели» (бот знает только то, что записано у него). */
+export function animeNotInList(query: string): string {
+  const q = clip(query, 40);
+  return `«${q}» в вашем списке нет. Это не значит, что вы не смотрели: я знаю только то, что записано у меня. Добавить: «бот посмотрел ${q}» или «бот смотрю ${q}».`;
+}
+
+/** Состояние тайтла одной строкой для ответа на вопрос: «Смотрю: серия 4 из 28», «Просмотрено (12 сер.)». */
+export function didStatus(a: Anime): string {
+  const total = a.episodes ? ` из ${a.episodes}` : "";
+  switch (a.status) {
+    case "watching":
+      return a.watched ? `Смотрю: серия ${a.watched}${total}` : "Смотрю, серии пока не отмечены";
+    case "planned":
+      return a.watched ? `В планах, серия ${a.watched}${total}` : "В планах, ещё не смотрели";
+    case "done":
+      return `Просмотрено${a.episodes ? ` (${a.episodes} сер.)` : ""}`;
+    case "dropped":
+      return `Бросили${a.watched ? ` на ${a.watched}-й серии` : ""}${a.drop_reason ? ` (${(DROP_LABEL[a.drop_reason] ?? a.drop_reason).toLowerCase()})` : ""}`;
+  }
+}
+
+/**
+ * Ответ на «смотрел ли я Фрирен» / «что я поставил Фрирен»: статус, серия и отметка словами.
+ * null — такого тайтла в списке нет (вызывающий решает, отвечать ли «в списке нет» или считать фразу обычным делом).
+ */
+export function animeDidText(rows: Anime[], query: string, season: number | null): string | null {
+  const a = findOwnSeason(rows, query, season);
+  if (a) return `**${clip(a.title_ru, 80)}** — ${didStatus(a)}.\nОценка: ${likeWords(a.liked) || "не ставили"}.`;
+  const q = norm(query);
+  const hits = q ? rows.filter((x) => norm(x.title_ru).includes(q) || norm(x.title_orig ?? "").includes(q)) : [];
+  if (hits.length > 1) return `Подходит несколько: ${hits.slice(0, 4).map((h) => `«${clip(h.title_ru, 40)}»`).join(", ")}. Напишите название точнее.`;
+  return null;
 }

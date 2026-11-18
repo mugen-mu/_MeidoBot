@@ -29,7 +29,8 @@ import { outageLinesFor } from "./outages.ts";
 import { UKR_CHECK_EVERY, UKR_LAST_KEY, UKR_NEXT_KEY, UKR_OUTBOX_KEY, UKR_STATE_KEY, fetchUkrenergo, parseUkrLast, parseUkrState, planUkrenergo, type UkrNotice } from "./ukrenergo.ts";
 import { parseAnimePhrase } from "./anime/core.ts";
 import { runAnime } from "./anime/cron.ts";
-import { handleAnimeAsk, handlePhrase, handleSay } from "./anime/handlers.ts";
+import { handleAnimeAsk, handleMark, handlePhrase, handleSay } from "./anime/handlers.ts";
+import { parseAnimeDid, parseAnimeMark } from "./anime/mark.ts";
 import { parseAnimeAsk, parseAnimeSay } from "./anime/say.ts";
 import { listAnime } from "./anime/store.ts";
 import { eveningLines } from "./anime/ui.ts";
@@ -535,17 +536,22 @@ ${n.text}` } : n;
             continue;
           }
           // вопрос про своё аниме: «что я смотрю», «что отложено», «что вышло нового», «когда новая серия Фрирен» (волна 3 анкеты, 2026-11-18); без модели
-          const animeQ = parseAnimeAsk(m.content);
+          // + «смотрел ли я Фрирен», «что я поставил Фрирен» (2026-11-18): про название не из списка без явного «смотрел ли» остаётся делом
+          const animeQ = parseAnimeAsk(m.content) ?? parseAnimeDid(m.content);
           if (animeQ && !detectSecret(m.content).secret && room2(6)) {
-            report.intake++;
             try {
               const reply = await handleAnimeAsk({ repo, now, tz: s.tz, character: s.character, fetchFn: d.fetchFn ?? fetch, rand: d.rand }, animeQ);
-              await api.postMessage(ch, reply);
+              if (reply) {
+                report.intake++;
+                await api.postMessage(ch, reply);
+                continue;
+              }
             } catch (e) {
+              report.intake++;
               if (e instanceof BudgetExceeded) break;
               report.notes.push("аниме: не удалось ответить на вопрос");
+              continue;
             }
-            continue;
           }
           // настроение: любое сообщение хозяина — активность; «спасибо» горничной — вежливость, дело из этого не создаём
           if (mood && room2(3)) {
@@ -589,10 +595,13 @@ ${n.text}` } : n;
           }
           // аниме живой фразой: «глянул последнюю серию Фрирен», «посмотрел s3e2 …», «забил на ДжоДжо», «Фрирен надоело».
           // Без обращения «бот»/«аниме»/«Хару» — только про название из его списка; чужое остаётся обычным делом.
+          // + отметка («Фрирен в восторге», «поставил Блич понравилось», «Блич не зашло»): сначала она, потом остальные фразы
           const say = parseAnimeSay(m.content);
-          if (say && !detectSecret(m.content).secret && room2(6)) {
+          const mark = parseAnimeMark(m.content);
+          if ((say || mark) && !detectSecret(m.content).secret && room2(6)) {
             try {
-              const reply = await handleSay({ repo, now, tz: s.tz, character: s.character, fetchFn: d.fetchFn ?? fetch, rand: d.rand }, say);
+              const ctx = { repo, now, tz: s.tz, character: s.character, fetchFn: d.fetchFn ?? fetch, rand: d.rand };
+              const reply = (mark ? await handleMark(ctx, mark) : null) ?? (say ? await handleSay(ctx, say) : null);
               if (reply) {
                 repo.counter.spend(2);
                 report.intake++;

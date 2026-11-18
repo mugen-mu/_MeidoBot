@@ -14,14 +14,17 @@ import {
   NOTICE_LIMIT,
   STATUS_CODE,
   STATUS_LABEL,
+  clip,
   effective,
   findOwn,
   findOwnSeason,
   haru,
+  likeWords,
   norm,
   noticeSet,
   progressText,
 } from "./core.ts";
+import type { AnimeDid, MarkPhrase } from "./mark.ts";
 import type { AnimeAsk, SayPhrase } from "./say.ts";
 import { type Candidate, type FetchFn, getShikiFull, searchShiki } from "./sources.ts";
 import { deleteOp, getAnime, listAnime, patchOp, upsertOp } from "./store.ts";
@@ -31,10 +34,12 @@ import {
   type AskItem,
   animeCardMessage,
   animeDeleteConfirm,
+  animeDidText,
   animeListMessage,
   animeModal,
   animeNewsText,
   animeNextText,
+  animeNotInList,
   askPickMessage,
   candidatesMessage,
   dropReasonMessage,
@@ -129,11 +134,48 @@ export async function handleSay(c: AnimeCtx, say: SayPhrase): Promise<MessageBod
   return applyOwn(c, own, status, episode);
 }
 
-/** Вопрос про своё аниме текстом: «что я смотрю», «что отложено», «что вышло нового», «когда новая серия Фрирен». */
-export async function handleAnimeAsk(c: AnimeCtx, q: AnimeAsk): Promise<MessageBody> {
+/**
+ * Вопрос про своё аниме текстом: «что я смотрю», «что отложено», «что вышло нового», «когда новая серия Фрирен»,
+ * «смотрел ли я Фрирен» / «что я поставил Фрирен». null — это был «слабый» вопрос про название, которого нет в списке: пусть остаётся делом.
+ */
+export async function handleAnimeAsk(c: AnimeCtx, q: AnimeAsk | AnimeDid): Promise<MessageBody | null> {
   const rows = await listAnime(c.repo);
+  if (q.kind === "did") {
+    const said = animeDidText(rows, q.query, q.season ?? null);
+    return said !== null ? text(said) : q.sure ? text(animeNotInList(q.query)) : null;
+  }
   if (q.kind === "watching" || q.kind === "planned") return animeListMessage(rows, q.kind, 0, c.now, c.tz, c.character, c.rand);
   return text(q.kind === "news" ? animeNewsText(rows, c.now, c.tz) : animeNextText(rows, q.query, c.now, c.tz));
+}
+
+/**
+ * Отметка живой фразой («Фрирен в восторге», «поставил Блич понравилось», «Блич не зашло»): ставит liked (2 / 1 / -1 / -2).
+ * Своё название — сразу; чужое — только после обращения «бот»/«аниме»/«Хару» и тогда честное «в списке нет»; иначе null (обычное дело).
+ * Незнакомое название на Shikimori не ищем: оценка — про то, что уже в списке.
+ */
+export async function handleMark(c: AnimeCtx, mk: MarkPhrase): Promise<MessageBody | null> {
+  const rows = await listAnime(c.repo);
+  const own = findOwnSeason(rows, mk.query, mk.season ?? null);
+  if (!own) {
+    if (!mk.prefixed) return null;
+    return text(animeDidText(rows, mk.query, mk.season ?? null) ?? animeNotInList(mk.query));
+  }
+  const patch: Partial<Pick<Anime, "liked" | "status" | "watched">> = { liked: mk.liked };
+  const finishes = mk.finished === true && own.status !== "done";
+  if (finishes) {
+    patch.status = "done";
+    if (own.episodes) patch.watched = own.episodes;
+  }
+  const name = `**${clip(own.title_ru, 80)}**`;
+  if (own.liked === mk.liked && !finishes) return { ...text(`Это уже записано: ${name} — ${likeWords(mk.liked)}.`), components: nav(own) };
+  await c.repo.exec([patchOp(own.id, patch, c.now), ...touchOps()]);
+  const fresh = { ...own, ...patch } as Anime;
+  const line = mk.liked > 0 ? haru("liked", c.character, c.rand) : mk.liked === -2 ? haru("dropped", c.character, c.rand) : null;
+  return {
+    content: `Записала: ${name} — ${likeWords(mk.liked)}.${finishes ? " Отметила как просмотренное." : ""}${line ? `\n${voiceText(line)}` : ""}`,
+    components: nav(fresh),
+    allowed_mentions: { parse: [] },
+  };
 }
 
 /** Окно «＋ Добавить»: название, куда, серия. */
