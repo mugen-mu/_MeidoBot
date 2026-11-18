@@ -28,7 +28,7 @@ TEMPLATE = HERE / "template.html"
 QUESTIONS = BASE / "questions.js"
 TITLES = BASE / "titles.json"
 OUT = BASE / "page.html"
-LIST_PREFIX, LIST_KIND, LIST_GROUP = {1: ("a-", "title", "H"), 2: ("", "read", "L"), 3: ("", "anime2", "A")}[WAVE_N]
+LIST_PREFIX, LIST_KIND, LIST_GROUP = {1: ("a-", "title", "H"), 2: ("", "read", "L"), 3: ("", "anime2", "A"), 4: ("", "title", "P")}[WAVE_N]
 
 
 def fail(msg: str) -> None:

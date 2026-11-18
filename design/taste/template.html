@@ -137,7 +137,7 @@ textarea { display: block; width: 100%; margin-top: 10px; padding: 10px 12px; bo
 </style>
 
 <div class="top"><div class="inner">
-  <div class="toprow"><span class="brand">Анкета вкусов</span><span class="stat"><span id="nums"></span> <span id="sync" aria-live="polite"></span></span></div>
+  <div class="toprow"><span class="brand" id="brand">Анкета вкусов</span><span class="stat"><span id="nums"></span> <span id="sync" aria-live="polite"></span></span></div>
   <div class="bar"><i id="barfill"></i></div>
   <div class="chips" id="chips"></div>
 </div></div>
@@ -230,6 +230,7 @@ function lHtml(l) {
 }
 function build() {
   $("h1").textContent = DATA.wave.title;
+  if (DATA.wave.brand) $("brand").textContent = DATA.wave.brand;
   $("lead").innerHTML = DATA.wave.lead;
   $("end").innerHTML = DATA.wave.end;
   $("groups").innerHTML = GROUPS.map(g => {
@@ -265,7 +266,7 @@ function syncRow(lid, iid) {
 }
 function renderStats() {
   const t = totals(), all = t.qn + t.ln, done = t.qd + t.ld;
-  $("nums").textContent = `вопросов ${t.qd}/${t.qn} · отметок ${t.ld}/${t.ln}`;
+  $("nums").textContent = `вопросов ${t.qd}/${t.qn}${t.ln ? ` · отметок ${t.ld}/${t.ln}` : ""}`;
   $("barfill").style.width = (all ? 100 * done / all : 0).toFixed(1) + "%";
   LISTS.forEach(l => { const e = document.querySelector(`[data-lc="${l.id}"]`); if (e) e.textContent = `${listDone(l)} из ${l.items.length}`; });
   const chip = (id, t2, d, n) => `<button type="button" class="nav" data-nav="${id}" aria-pressed="${S.filterG === id}">${esc(t2)} ${d}/${n}</button>`;
