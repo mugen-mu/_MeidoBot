@@ -13,6 +13,7 @@ import { parseRecipe } from "../service.ts";
 import { isTail } from "../tail.ts";
 import { GAS_WORDS_HINT } from "../gas.ts";
 import { WATER_WORDS_HINT } from "../water.ts";
+import { describeReading, shortReading } from "../reading/ui.ts";
 import { describeWeekly, selectLabel, textLabel, modal } from "./ui.ts";
 import type { ActionRow, Button, MessageBody, StringSelect } from "./types.ts";
 
@@ -419,6 +420,7 @@ export function sectionMessage(s: AppSettings, sec: Section, now: number, dmOn: 
           `Недавние дела в «Добавить»: ${onOff(s.recentOn)}. Нажали «Добавить» — три последних дела кнопками, чтобы повторить в два касания.`,
           `Звук для всего: ${onOff(s.soundAll)}. Выкл — упоминание (звук) только у настоящих напоминаний; вкл — и у сводок, подтверждений и реплик Хару.`,
           `Дождь в Днепре: ${rainModeWord(rainModeOf(s))}. Раз в ${RAIN_CONFIG.checkEveryMinutes} минут бот смотрит погодную модель Open-Meteo и пишет, когда начался дождь и когда закончился (не в тихие часы); это модель, а не радар, поэтому возможны опоздания. «Скоро» — ещё и предупреждает примерно за 15 минут.`,
+          `Чтение (манга и ранобэ): ${describeReading(s)}. Раз в неделю бот пишет, что вышло и накопилось по тому, что вы читаете; не в тихие часы. Список — спросите «что я читаю».`,
         ].join("\n"),
         [
           row(
@@ -428,7 +430,7 @@ export function sectionMessage(s: AppSettings, sec: Section, now: number, dmOn: 
             btn(s.soundAll ? "Звук для всего: выключить" : "Звук для всего: включить", "mn:tg:snd:a", s.soundAll ? 3 : 2),
             btn(`Дождь: ${rainModeWord(rainModeOf(s))}`, "mn:tg:rn:a", s.rainOn ? 3 : 2),
           ),
-          row(btn("Слова Хару", "mn:gl"), btn("Сбросить настроение…", "mn:rs", 4)),
+          row(btn("Слова Хару", "mn:gl"), btn(`Чтение: ${shortReading(s)}`, "mn:md:rd:a", s.reading ? 3 : 2), btn("Сбросить настроение…", "mn:rs", 4)),
           back,
         ],
       );

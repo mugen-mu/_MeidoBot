@@ -24,6 +24,7 @@ import { type AnimeCtx, handleAddModal, handleAnimeButton, handleEpModal } from 
 import { listAnime } from "../anime/store.ts";
 import { tasksAnswer } from "../tasksAsk.ts";
 import { animeListMessage } from "../anime/ui.ts";
+import { parseReadingWhen, readingModal } from "../reading/ui.ts";
 import { detectSecret } from "../secrets.ts";
 import { META_KEY as PASSPORT_KEY, SILENT_BOT_TEXT, parsePassport, statusText } from "../sources.ts";
 import {
@@ -1056,6 +1057,8 @@ async function onMenu(c: C, parts: string[], values: string[]): Promise<Reply> {
           return tagged("m_gas", gasModal(c.s));
         case "ln":
           return tagged("m_ladn", ladderNumsModal());
+        case "rd":
+          return tagged("m_read", readingModal(c.s));
         default:
           return eph("Это окно бот не знает.");
       }
@@ -1185,6 +1188,11 @@ async function onModal(c: C): Promise<Reply> {
       const words = parseWaterWords(t);
       if (!words.length) return eph("Нужны слова от трёх букв через запятую, например: Героїв 35, Козака Мамая. Или «выкл».");
       return settingsUpdate(c, [setSetting("gas", words.join(", ")), deleteMeta("gas_state"), deleteMeta("gas_outbox"), setMeta("gas_next", "0")], sec);
+    }
+    case "m_read": {
+      const when = parseReadingWhen(str(v.get("when")));
+      if (when === null) return eph("Нужно, например, «суббота 11:00» или «выкл».");
+      return settingsUpdate(c, [setSetting("reading", when)], sec);
     }
     case "m_ladn": {
       const steps = parseCustomSteps(str(v.get("nums")));
