@@ -26,11 +26,16 @@ export interface Reading {
   src_ch: number;
   src_vol: number;
   src_at: number | null;
+  /** последняя глава и том по-русски (манга: MangaDex, `ru`; ранобэ: RanobeHub, справочно). null — ещё не смотрела, 0 — смотрела, перевода нет */
   ru_ch: number | null;
+  ru_vol: number | null;
   src_url: string | null;
   md_id: string | null;
   mu_id: number | null;
   map_at: number | null;
+  /** RanobeHub (ранобэ): номер тайтла и когда искала его там */
+  rh_id: number | null;
+  rh_map_at: number | null;
   checked_at: number | null;
   chk_fail: number;
   shiki_at: number | null;
@@ -77,10 +82,29 @@ export const readOf = (r: Reading, unit: ReadUnit = r.unit): number | null => (u
 export const srcOf = (r: Reading, unit: ReadUnit = r.unit): number => (unit === "ch" ? r.src_ch : r.src_vol);
 export const totalOf = (r: Reading, unit: ReadUnit = r.unit): number | null => (unit === "ch" ? r.total_ch : r.total_vol);
 
-/** Сколько накопилось: что вышло по источнику минус прочитанное. null — не знаем, на чём хозяин остановился, или источник не показывает счётчик. */
+/**
+ * Что у тайтла «вышло» для разговора с хозяином (решение Ihor 2026-11-18: «писать только когда глава есть по-русски»).
+ * Манга — только русский перевод на MangaDex (`ru_ch`, `ru_vol`): главы и тома, которых нет по-русски, не поднимают «накопилось» и не упоминаются.
+ * Ранобэ — по-прежнему счётчик источника (MangaUpdates: язык там не различается); RanobeHub для ранобэ — только справочная строка.
+ */
+export function availOf(r: Reading, unit: ReadUnit = r.unit): number {
+  if (r.kind === "manga") return (unit === "ch" ? r.ru_ch : r.ru_vol) ?? 0;
+  return srcOf(r, unit);
+}
+
+/** Есть ли у манги хоть что-то по-русски (по MangaDex). У ранобэ вопрос не стоит: правило языка там не действует. */
+export const hasRussian = (r: Reading): boolean => r.kind !== "manga" || (r.ru_ch ?? 0) > 0 || (r.ru_vol ?? 0) > 0;
+
+/** Манга, которую смотрели на MangaDex, а русского перевода там нет: о ней молчим, пока он не появится. */
+export const noRussianYet = (r: Reading): boolean => r.kind === "manga" && r.ru_ch !== null && !hasRussian(r);
+
+/** «до главы 150» / «до тома 25» (родительный, для «по-русски до … на …»). */
+export const upTo = (n: number, unit: ReadUnit): string => `до ${unit === "ch" ? "главы" : "тома"} ${n}`;
+
+/** Сколько накопилось: что вышло (по-русски — у манги) минус прочитанное. null — не знаем, на чём хозяин остановился, или счётчика нет. */
 export function unread(r: Reading): number | null {
   const have = readOf(r);
-  const top = srcOf(r);
+  const top = availOf(r);
   return have !== null && top > 0 ? Math.max(0, top - have) : null;
 }
 
@@ -143,12 +167,12 @@ export interface WeekItem {
   ended: boolean;
 }
 
-/** Что просится в субботнее сообщение: новое по источнику, завершение или накопленное непрочитанное. Только отслеживаемые тайтлы. */
+/** Что просится в субботнее сообщение: новое по-русски (у манги), завершение или накопленное непрочитанное. Только отслеживаемые тайтлы; манга без русского перевода молчит целиком. */
 export function weekItems(rows: Reading[]): WeekItem[] {
   const out: WeekItem[] = [];
   for (const r of rows) {
-    if (!isTracked(r)) continue;
-    const it: WeekItem = { r, newCh: r.src_ch > r.told_ch, newVol: r.src_vol > r.told_vol, unread: unread(r), ended: isFinished(r) && !r.end_told };
+    if (!isTracked(r) || !hasRussian(r)) continue;
+    const it: WeekItem = { r, newCh: availOf(r, "ch") > r.told_ch, newVol: availOf(r, "vol") > r.told_vol, unread: unread(r), ended: isFinished(r) && !r.end_told };
     if (it.ended || it.newCh || it.newVol || (it.unread ?? 0) > 0) out.push(it);
   }
   return out;

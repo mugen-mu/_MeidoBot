@@ -1,5 +1,7 @@
 // Чтение (манга и ранобэ): фразы в канале «бот», ночная проверка источников, субботнее сообщение, лимиты, сбои источника, настройки, миграция.
 // Сеть везде фальшивая и по выдуманным данным: ни одного настоящего запроса.
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
 import { beforeEach, describe, expect, it } from "vitest";
 import { runCron } from "../src/cron.ts";
 import { Repo, setMeta, setSetting } from "../src/db/repo.ts";
@@ -24,6 +26,7 @@ const day = (d: number, h: number, mi = 0) => kyiv(2026, 11, d, h, mi);
 const shikiManga = (id: number, ru: string, name: string, o: Record<string, unknown> = {}) => ({ id, russian: ru, name, kind: "manga", status: "ongoing", volumes: 0, chapters: 0, aired_on: "2020-05-01", ...o });
 const shikiNovel = (id: number, ru: string, name: string, o: Record<string, unknown> = {}) => ({ id, russian: ru, name, kind: "light_novel", status: "ongoing", volumes: 0, chapters: 0, aired_on: "2016-01-01", ...o });
 const mdEntry = (id: string, mal: number, langs = ["en", "ru"]) => ({ id, type: "manga", attributes: { links: { mal: String(mal) }, availableTranslatedLanguages: langs } });
+const rhBook = (id: number, ru: string, orig: string, vol: number, ch: number) => ({ id, slug: `b${id}`, title: ru, originalTitle: orig, volumes: vol, chapters: ch, status: "В процессе" });
 const agg = (ch: number, vol: number) => ({ result: "ok", volumes: { [String(vol)]: { volume: String(vol), chapters: { [String(ch - 2)]: {}, [String(ch - 1)]: {} } }, none: { volume: "none", chapters: { [String(ch)]: {} } } } });
 
 class Src {
@@ -37,6 +40,8 @@ class Src {
   mdFeed: Record<string, unknown> = {};
   muSearch: unknown[] | null = [];
   muSeries: Record<number, unknown | null> = {};
+  /** RanobeHub: ответ поиска по запросу `q` (массив книг; null — сайт не отвечает; нет записи — пустой ответ) */
+  rh: Record<string, unknown[] | null> = {};
   calls: string[] = [];
   count = (needle: string): number => this.calls.filter((u) => u.includes(needle)).length;
 
@@ -55,6 +60,10 @@ class Src {
     if (m) return json(decodeURIComponent(m[2]).includes("=en") ? this.mdAgg[m[1]] : this.mdAggRu[m[1]]);
     m = /api\.mangadex\.org\/manga\/([\w-]+)\/feed/.exec(url);
     if (m) return json(this.mdFeed[m[1]]);
+    if (url.includes("ranobehub.org/api/search")) {
+      const v = this.rh[new URL(url).searchParams.get("q") ?? ""];
+      return json(v === null ? null : { books: v ?? [] });
+    }
     if (url.includes("api.mangaupdates.com/v1/series/search")) return json(this.muSearch === null ? null : { results: this.muSearch.map((record) => ({ record })) });
     m = /api\.mangaupdates\.com\/v1\/series\/(\d+)/.exec(url);
     if (m) return json(this.muSeries[Number(m[1])]);
@@ -103,11 +112,25 @@ beforeEach(async () => {
 describe("чтение: миграция", () => {
   it("0011 применена: таблица на месте, безопасные значения по умолчанию, номер MAL уникален", () => {
     const cols = w.d1.q<{ name: string }>("PRAGMA table_info(reading)").map((c) => c.name);
-    for (const c of ["mal_id", "kind", "status", "unit", "read_ch", "read_vol", "liked", "src_ch", "src_vol", "src_at", "told_ch", "weekq_at", "last_move_at"]) expect(cols).toContain(c);
+    for (const c of ["mal_id", "kind", "status", "unit", "read_ch", "read_vol", "liked", "src_ch", "src_vol", "src_at", "told_ch", "weekq_at", "last_move_at", "ru_ch", "ru_vol", "rh_id", "rh_map_at"]) expect(cols).toContain(c);
     w.d1.sqlite.prepare("INSERT INTO reading (mal_id, title_ru, added_at, updated_at) VALUES (1, 'А', 0, 0)").run();
     expect(rows()[0]).toMatchObject({ kind: "manga", status: "reading", unit: "ch", read_ch: null, liked: 0, src_ch: 0, end_told: 0 });
     expect(() => w.d1.sqlite.prepare("INSERT INTO reading (mal_id, title_ru, added_at, updated_at) VALUES (1, 'Б', 0, 0)").run()).toThrow();
     expect(() => w.d1.sqlite.prepare("INSERT INTO reading (mal_id, title_ru, status, added_at, updated_at) VALUES (2, 'В', 'вообще', 0, 0)").run()).toThrow();
+  });
+});
+
+describe("чтение: миграция 0013", () => {
+  it("старые строки манги: «про что писала» не больше того, что известно по-русски; ранобэ не трогаем; томов по-русски ещё не знаем", () => {
+    const sql = readFileSync(join(process.cwd(), "migrations", "0013_reading_ru.sql"), "utf8");
+    const fix = /UPDATE reading[^;]*;/.exec(sql)?.[0];
+    expect(fix).toBeTruthy();
+    put({ mal_id: 1, title_ru: "А", src_ch: 199, told_ch: 199, told_vol: 24, ru_ch: 149 });
+    put({ mal_id: 2, title_ru: "Б", src_ch: 50, told_ch: 50, told_vol: 5 }); // русский счётчик не смотрели
+    put({ mal_id: 3, title_ru: "В", src_ch: 40, told_ch: 40, ru_ch: 60 }); // по-русски больше, чем писала: оставляем
+    put({ mal_id: 4, title_ru: "Г", kind: "ranobe", unit: "vol", src_vol: 12, told_vol: 12 });
+    w.d1.sqlite.prepare(fix as string).run();
+    expect(rows().map((r) => [r.told_ch, r.told_vol, r.ru_vol])).toEqual([[149, 0, null], [0, 0, null], [40, 0, null], [0, 12, null]]);
   });
 });
 
@@ -123,14 +146,34 @@ describe("чтение: запись фразой в канале «бот»", (
   it("новое название с обращением: нашли, привязали к MangaDex, записали; про уже вышедшее не пишем", async () => {
     const t = await say("бот читаю мангу цветок и меч глава 120", MON + MINUTE);
     expect(rows()).toHaveLength(1);
-    expect(rows()[0]).toMatchObject({ mal_id: 9001, kind: "manga", status: "reading", unit: "ch", read_ch: 120, src_ch: 199, src_vol: 24, told_ch: 199, told_vol: 24, ru_ch: 149, md_id: "md-1", end_told: 0 });
+    expect(rows()[0]).toMatchObject({ mal_id: 9001, kind: "manga", status: "reading", unit: "ch", read_ch: 120, src_ch: 199, src_vol: 24, told_ch: 149, told_vol: 19, ru_ch: 149, ru_vol: 19, md_id: "md-1", end_told: 0 });
     expect(t).toContain("Записала");
     expect(t).toContain("Цветок и меч");
-    expect(t).toContain("глава 120 из 199");
-    expect(t).toContain("Накопилось: 79 глав");
+    expect(t).toContain("глава 120 из 149"); // «из» — по-русски, 199 по-английски в разговоре не звучит
+    expect(t).toContain("Накопилось: 29 глав");
     expect(t).toContain("MangaDex");
+    expect(t).toContain("до главы 149");
+    expect(t).not.toContain("199");
     expect(w.d1.q("SELECT * FROM items")).toHaveLength(0); // это не дело
     expect(w.d1.q<{ value: string }>("SELECT value FROM meta WHERE key = 'reading_on'")[0].value).toBe("1");
+  });
+
+  it("русского перевода у тайтла нет совсем: записали, честно сказали, что о главах писать не будем, пока он не появится", async () => {
+    src.mdSearch = [mdEntry("md-1", 9001, ["en"])]; // MangaDex сам говорит: по-русски глав нет
+    const t = await say("бот читаю мангу цветок и меч глава 120", MON + MINUTE);
+    expect(rows()[0]).toMatchObject({ md_id: "md-1", src_ch: 199, ru_ch: 0, ru_vol: 0, told_ch: 0 });
+    expect(t).toContain("русского перевода там пока нет");
+    expect(t).toContain("писать не буду");
+    expect(t).not.toContain("из 199");
+    expect(t).not.toContain("Накопилось");
+    expect(src.calls.filter((u) => u.includes("/aggregate") && !decodeURIComponent(u).includes("=en"))).toHaveLength(0); // русских глав нет — русскую выдачу не спрашивали
+  });
+
+  it("MangaDex говорит, что русский есть, но цифры не отдал: русский счётчик не смотрели (null), доспросим ночью", async () => {
+    src.mdAggRu["md-1"] = null;
+    const t = await say("бот читаю мангу цветок и меч глава 120", MON + MINUTE);
+    expect(rows()[0]).toMatchObject({ ru_ch: null, ru_vol: null, told_ch: 0, src_ch: 199 });
+    expect(t).toContain("русский перевод проверю ночью");
   });
 
   it("«прочитал X» — на одну дальше; «прочитал главу N X» — ровно N; том переключает единицу", async () => {
@@ -139,7 +182,7 @@ describe("чтение: запись фразой в канале «бот»", (
     expect(rows()[0]).toMatchObject({ read_ch: 121, status: "reading" });
     const t = await say("прочитал главу 130 цветок", MON + 3 * MINUTE);
     expect(rows()[0].read_ch).toBe(130);
-    expect(t).toContain("глава 130 из 199");
+    expect(t).toContain("глава 130 из 149");
     await say("прочитал цветок и меч том 5", MON + 4 * MINUTE);
     expect(rows()[0]).toMatchObject({ read_vol: 5, unit: "vol", read_ch: 130 });
     await say("прочитал цветок", MON + 5 * MINUTE);
@@ -222,6 +265,36 @@ describe("чтение: запись фразой в канале «бот»", (
     expect(t2).toContain("Накопилось: 7 томов");
   });
 
+  it("ранобэ: русский перевод на RanobeHub — справочная строка, тома и «про что писала» остаются по MangaUpdates", async () => {
+    src.shikiRanobe = [KEN];
+    src.muSearch = [{ series_id: 555, title: "Ken to Kage (Novel)" }];
+    src.muSeries[555] = { status: "12 Volumes (Ongoing)" };
+    src.rh["Ken to Kage"] = [rhBook(77, "Меч и тень (ЛН)", "Ken to Kage (LN)", 7, 60), rhBook(78, "Меч и тень [Украинский]", "Ken to Kage", 12, 99), rhBook(79, "Совсем другое", "Other", 30, 300)];
+    const t = await say("читаю ранобэ меч и тень том 4", MON + MINUTE);
+    expect(rows()[0]).toMatchObject({ mu_id: 555, src_vol: 12, told_vol: 12, rh_id: 77, ru_vol: 7, ru_ch: 60, src_url: "https://ranobehub.org/ranobe/77" });
+    expect(rows()[0].rh_map_at).not.toBeNull();
+    expect(t).toContain("12 томов"); // тома — по MangaUpdates
+    expect(t).toContain("По-русски на RanobeHub есть до тома 7");
+    expect(t).toContain("Накопилось: 8 томов"); // 12 − 4: правило языка для ранобэ не менялось
+    expect(src.count("ranobehub.org")).toBe(1);
+  });
+
+  it("ранобэ: на RanobeHub не нашли — молча, повторю не раньше чем через неделю; сайт не ответил — найдём ночью", async () => {
+    src.shikiRanobe = [KEN];
+    src.muSearch = [];
+    let t = await say("читаю ранобэ меч и тень", MON + MINUTE);
+    expect(rows()[0]).toMatchObject({ rh_id: null, ru_vol: null });
+    expect(rows()[0].rh_map_at).not.toBeNull();
+    expect(t).not.toContain("RanobeHub");
+    w.d1.sqlite.prepare("DELETE FROM reading").run();
+    src.rh["Ken to Kage"] = null;
+    src.rh["Меч и тень"] = null;
+    t = await say("читаю ранобэ меч и тень", MON + 2 * MINUTE);
+    expect(rows()[0]).toMatchObject({ rh_id: null, rh_map_at: null });
+    expect(t).toContain("Записала");
+    expect(t).not.toContain("RanobeHub");
+  });
+
   it("источника счётчиков для названия нет: записываем, честно говорим, что главы сам считать буду по его фразам", async () => {
     src.mdSearch = []; // на MangaDex такого нет
     const t = await say("бот читаю мангу цветок и меч", MON + MINUTE);
@@ -274,7 +347,7 @@ describe("чтение: запись фразой в канале «бот»", (
 
 describe("чтение: вопросы", () => {
   beforeEach(async () => {
-    put({ mal_id: 1, title_ru: "Цветок и меч", read_ch: 190, src_ch: 199, told_ch: 199, ru_ch: 149, md_id: "md-1" });
+    put({ mal_id: 1, title_ru: "Цветок и меч", read_ch: 140, src_ch: 199, told_ch: 149, told_vol: 19, ru_ch: 149, ru_vol: 19, md_id: "md-1" });
     put({ mal_id: 2, title_ru: "Меч и тень", kind: "ranobe", unit: "vol", status: "waiting", read_vol: 12, src_vol: 12, told_vol: 12, mu_id: 5 });
     put({ mal_id: 3, title_ru: "Лунный сад", status: "planned" });
     put({ mal_id: 4, title_ru: "Старая сказка", status: "done", src_status: "finished", src_ch: 40, total_ch: 40, read_ch: 40 });
@@ -286,7 +359,7 @@ describe("чтение: вопросы", () => {
     const t = await say("что я читаю", MON + MINUTE);
     expect(t).toContain("📖 Чтение");
     expect(t).toContain("**Читаю** (1)");
-    expect(t).toContain("**Цветок и меч** (манга) — глава 190 из 199 · накопилось 9");
+    expect(t).toContain("**Цветок и меч** (манга) — глава 140 из 149 · накопилось 9");
     expect(t).toContain("**Жду продолжения** (1)");
     expect(t).toContain("**Меч и тень** (ранобэ) — том 12 из 12");
     expect(t).toContain("**В планах** (1): Лунный сад");
@@ -297,17 +370,35 @@ describe("чтение: вопросы", () => {
   it("«что вышло по чтению»: накопленное с ссылкой и русским переводом; когда всё прочитано — так и скажет", async () => {
     w.d1.sqlite.prepare("UPDATE reading SET src_url = 'https://example.test/c199' WHERE mal_id = 1").run();
     const t = await say("что вышло по чтению", MON + MINUTE);
-    expect(t).toContain("**Цветок и меч** (манга) — вы на 190, накопилось 9 · по-русски на MangaDex до 149");
-    expect(t).toContain("по-русски на MangaDex до 149");
+    expect(t).toContain("**Цветок и меч** (манга) — вы на 140, накопилось 9 · по-русски до главы 149 на MangaDex");
     expect(t).toContain("[читать](<https://example.test/c199>)");
-    w.d1.sqlite.prepare("UPDATE reading SET read_ch = 199 WHERE mal_id = 1").run();
+    w.d1.sqlite.prepare("UPDATE reading SET read_ch = 149 WHERE mal_id = 1").run();
     expect(await say("новые главы", MON + 2 * MINUTE)).toContain("нового нет");
+  });
+
+  it("манга без русского перевода: в «что вышло» честная строка (там можно), в списке — одна пометка; по ней не копится", async () => {
+    put({ mal_id: 5, title_ru: "Без перевода", read_ch: 3, src_ch: 120, ru_ch: 0, ru_vol: 0, md_id: "md-5" });
+    put({ mal_id: 6, title_ru: "Нет на MangaDex", read_ch: 3 });
+    const news = await say("что вышло по чтению", MON + MINUTE);
+    expect(news).toContain("**Цветок и меч**");
+    expect(news).not.toContain("**Без перевода**");
+    expect(news).toContain("Русского перевода на MangaDex не вижу: Без перевода, Нет на MangaDex. Пока он не появится, о них молчу.");
+    expect(news).not.toContain("120");
+    w.d1.sqlite.prepare("UPDATE reading SET read_ch = 149 WHERE mal_id = 1").run();
+    const none = await say("новые главы", MON + 2 * MINUTE);
+    expect(none).toContain("нового нет");
+    expect(none).toContain("Без перевода");
+    const list = await say("что я читаю", MON + 3 * MINUTE);
+    expect(list).toContain("**Без перевода** (манга) — глава 3 · русского перевода на MangaDex пока нет");
+    expect(list).not.toContain("120");
   });
 
   it("«какая глава Цветок»: где вы, что у источника; неизвестное название — подсказка", async () => {
     const t = await say("какая глава цветок и меч", MON + MINUTE);
-    expect(t).toContain("Вы на: глава 190 (по источнику вышло 199)");
+    expect(t).toContain("Вы на: глава 140 (по-русски вышло 149)");
     expect(t).toContain("Накопилось: 9 глав");
+    expect(t).toContain("По-русски до главы 149 на MangaDex.");
+    expect(t).not.toContain("199");
     expect(await say("на какой я главе неведомая вещь", MON + 2 * MINUTE)).toContain("в вашем чтении нет");
   });
 
@@ -328,31 +419,57 @@ describe("чтение: ночная проверка", () => {
     expect(w.d1.q("SELECT * FROM meta WHERE key LIKE 'reading%'")).toHaveLength(0);
   });
 
-  it("рост у MangaDex: новая глава заносится (ссылка на неё), «про что писала» не трогается; без роста — тишина", async () => {
+  it("рост у MangaDex: английская глава не новость, русская — новость (ссылка на неё), «про что писала» не трогается; без роста — тишина", async () => {
     src.shikiManga = [HANA];
     src.mdSearch = [mdEntry("md-1", 9001)];
     src.mdAgg["md-1"] = agg(199, 24);
     src.mdAggRu["md-1"] = agg(149, 19);
     src.shikiById[9001] = HANA;
     await run(MON);
-    await say("бот читаю мангу цветок и меч глава 190", MON + MINUTE);
-    expect(rows()[0]).toMatchObject({ src_ch: 199, told_ch: 199, src_at: null });
+    await say("бот читаю мангу цветок и меч глава 140", MON + MINUTE);
+    expect(rows()[0]).toMatchObject({ src_ch: 199, ru_ch: 149, told_ch: 149, src_at: null });
     // следующая ночь: ничего нового
     await run(NIGHT);
-    expect(rows()[0]).toMatchObject({ src_ch: 199, src_at: null, chk_fail: 0 });
+    expect(rows()[0]).toMatchObject({ src_ch: 199, ru_ch: 149, src_at: null, chk_fail: 0 });
     expect(rows()[0].checked_at).toBe(NIGHT);
-    // ещё через ночь вышло две главы
+    // ещё через ночь по-английски вышло две главы, по-русски ничего: тихо (общий счётчик записан, но не новость)
     src.mdAgg["md-1"] = agg(201, 24);
-    src.mdFeed["md-1"] = { result: "ok", data: [{ id: "chap-201", attributes: { chapter: "201", externalUrl: null } }] };
     await run(day(18, 3, 40));
-    expect(rows()[0]).toMatchObject({ src_ch: 201, told_ch: 199, src_vol: 24 });
-    expect(rows()[0].src_at).toBe(day(18, 3, 40));
-    expect(rows()[0].src_url).toBe("https://mangadex.org/chapter/chap-201");
-    // официальная ссылка важнее
+    expect(rows()[0]).toMatchObject({ src_ch: 201, ru_ch: 149, told_ch: 149, src_vol: 24, src_at: null });
+    expect(src.count("/feed")).toBe(0);
+    // ещё через ночь вышла русская глава 151: новость, ссылка на русскую главу
     src.mdAgg["md-1"] = agg(202, 24);
-    src.mdFeed["md-1"] = { result: "ok", data: [{ id: "chap-202", attributes: { chapter: "202", externalUrl: "https://official.test/202" } }] };
+    src.mdAggRu["md-1"] = agg(151, 19);
+    src.mdFeed["md-1"] = { result: "ok", data: [{ id: "chap-ru-151", attributes: { chapter: "151", externalUrl: null } }] };
     await run(day(19, 3, 40));
-    expect(rows()[0]).toMatchObject({ src_ch: 202, src_url: "https://official.test/202" });
+    expect(rows()[0]).toMatchObject({ src_ch: 202, ru_ch: 151, told_ch: 149 });
+    expect(rows()[0].src_at).toBe(day(19, 3, 40));
+    expect(rows()[0].src_url).toBe("https://mangadex.org/chapter/chap-ru-151");
+    expect(decodeURIComponent(src.calls.find((u) => u.includes("/feed")) ?? "")).not.toContain("translatedLanguage[]=en");
+    // официальная ссылка важнее
+    src.mdAggRu["md-1"] = agg(152, 19);
+    src.mdFeed["md-1"] = { result: "ok", data: [{ id: "chap-ru-152", attributes: { chapter: "152", externalUrl: "https://official.test/152" } }] };
+    await run(day(20, 3, 40));
+    expect(rows()[0]).toMatchObject({ ru_ch: 152, src_url: "https://official.test/152" });
+  });
+
+  it("русский перевод появился позже: по тайтлу молчали, потом появилась первая глава по-русски — это новость, и в субботу о ней напишут", async () => {
+    put({ mal_id: 9001, title_ru: "Цветок и меч", title_orig: "Hana to Ken", md_id: "md-1", src_ch: 199, ru_ch: 0, ru_vol: 0, told_ch: 0, read_ch: 3, map_at: MON, shiki_at: MON, adapt_at: MON });
+    src.mdAgg["md-1"] = agg(199, 24);
+    src.mdAggRu["md-1"] = agg(0, 0);
+    await turnOn();
+    await run(NIGHT);
+    expect(rows()[0]).toMatchObject({ ru_ch: 0, ru_vol: 0 });
+    await run(sat(11, 5));
+    expect(posted("Чтение")).toHaveLength(0); // молчим, хотя по-английски 199 глав
+    src.mdAggRu["md-1"] = agg(2, 1);
+    await run(day(22, 3, 40));
+    expect(rows()[0]).toMatchObject({ ru_ch: 2, ru_vol: 1 });
+    await run(day(28, 11, 5));
+    const t = posted("Чтение")[0].body.content ?? "";
+    expect(t).toContain("**Цветок и меч** (манга) — вышла глава 2");
+    expect(t).toContain("вы на 3");
+    expect(t).not.toContain("199");
   });
 
   it("проверка не чаще раза в сутки и понемногу: по паре тайтлов за запуск, потом день закрыт", async () => {
@@ -397,7 +514,7 @@ describe("чтение: ночная проверка", () => {
     src.shikiById[9001] = HANA;
     await turnOn();
     const rep = await run(NIGHT, 20);
-    expect(rows()[0]).toMatchObject({ md_id: "md-1", src_ch: 199, told_ch: 199, src_vol: 24, ru_ch: 149, src_status: "ongoing" });
+    expect(rows()[0]).toMatchObject({ md_id: "md-1", src_ch: 199, told_ch: 149, src_vol: 24, ru_ch: 149, ru_vol: 19, told_vol: 19, src_status: "ongoing" });
     expect(rows()[0].src_at).toBeNull();
     expect(rep.subrequests).toBeLessThanOrEqual(20);
     expect(rep.notes.some((n) => n.includes("чтение: проверено 1 из 1"))).toBe(true);
@@ -447,7 +564,7 @@ describe("чтение: субботнее сообщение", () => {
   const SAT = sat(11, 5);
 
   beforeEach(async () => {
-    put({ mal_id: 1, title_ru: "Цветок и меч", read_ch: 190, src_ch: 201, src_vol: 24, told_ch: 199, told_vol: 24, ru_ch: 149, src_url: "https://example.test/c201", md_id: "md-1" });
+    put({ mal_id: 1, title_ru: "Цветок и меч", read_ch: 140, src_ch: 201, src_vol: 24, told_ch: 149, told_vol: 19, ru_ch: 151, ru_vol: 19, src_url: "https://example.test/c151", md_id: "md-1" });
     await turnOn();
   });
 
@@ -459,9 +576,10 @@ describe("чтение: субботнее сообщение", () => {
     expect(msg).toHaveLength(1);
     const t = msg[0].body.content ?? "";
     expect(t).toContain("**📖 Чтение · что накопилось**");
-    expect(t).toContain("**Цветок и меч** (манга) — вышло 2 главы, последняя — 201 · вы на 190, накопилось 11 · по-русски на MangaDex до 149 · [читать](<https://example.test/c201>)");
+    expect(t).toContain("**Цветок и меч** (манга) — вышло 2 главы, последняя — 151 · вы на 140, накопилось 11 · по-русски до главы 151 на MangaDex · [читать](<https://example.test/c151>)");
+    expect(t).not.toContain("201"); // английские главы в сообщении не звучат
     expect(msg[0].body.components ?? []).toHaveLength(0); // кнопок нет
-    expect(rows()[0]).toMatchObject({ told_ch: 201 });
+    expect(rows()[0]).toMatchObject({ told_ch: 151 });
     await run(SAT + MINUTE);
     await run(SAT + 5 * HOUR);
     expect(posted("Чтение")).toHaveLength(1);
@@ -472,9 +590,9 @@ describe("чтение: субботнее сообщение", () => {
     expect(posted("Чтение")).toHaveLength(1);
     await run(sat(11, 5) + 7 * 24 * HOUR);
     expect(posted("Чтение")).toHaveLength(2);
-    expect(posted("Чтение")[1].body.content).toContain("вы на 190, накопилось 11");
+    expect(posted("Чтение")[1].body.content).toContain("вы на 140, накопилось 11");
     expect(posted("Чтение")[1].body.content).not.toContain("вышло 2 главы");
-    w.d1.sqlite.prepare("UPDATE reading SET read_ch = 201").run();
+    w.d1.sqlite.prepare("UPDATE reading SET read_ch = 151").run();
     await run(sat(11, 5) + 14 * 24 * HOUR);
     expect(posted("Чтение")).toHaveLength(2);
   });
@@ -505,11 +623,13 @@ describe("чтение: субботнее сообщение", () => {
   });
 
   it("много накопилось: Хару решает — 3 тайтла подробно (завершённое, любимое, свежее первыми), остальные одной строкой", async () => {
-    put({ mal_id: 2, title_ru: "Тайтл Б", read_ch: 10, src_ch: 50, told_ch: 50 });
-    put({ mal_id: 3, title_ru: "Тайтл В", read_ch: 10, src_ch: 31, told_ch: 30 });
-    put({ mal_id: 4, title_ru: "Тайтл Г", read_ch: 10, src_ch: 12, told_ch: 12, liked: 2 });
-    put({ mal_id: 5, title_ru: "Тайтл Д", read_ch: 1, src_ch: 90, told_ch: 90 });
-    put({ mal_id: 6, title_ru: "Тайтл Е", src_status: "finished", src_ch: 20, total_ch: 20, read_ch: 20 });
+    put({ mal_id: 2, title_ru: "Тайтл Б", read_ch: 10, ru_ch: 50, told_ch: 50 });
+    put({ mal_id: 3, title_ru: "Тайтл В", read_ch: 10, ru_ch: 31, told_ch: 30 });
+    put({ mal_id: 4, title_ru: "Тайтл Г", read_ch: 10, ru_ch: 12, told_ch: 12, liked: 2 });
+    put({ mal_id: 5, title_ru: "Тайтл Д", read_ch: 1, ru_ch: 90, told_ch: 90 });
+    put({ mal_id: 6, title_ru: "Тайтл Е", src_status: "finished", src_ch: 20, ru_ch: 20, total_ch: 20, read_ch: 20 });
+    put({ mal_id: 7, title_ru: "Тайтл Ж", src_ch: 400, ru_ch: 0, ru_vol: 0, read_ch: 1 }); // по-английски много, по-русски ничего
+    put({ mal_id: 8, title_ru: "Тайтл З", src_status: "finished", src_ch: 60, ru_ch: 0, ru_vol: 0, total_ch: 60, read_ch: 60 }); // закончен, но перевода нет
     await run(SAT);
     const t = posted("Чтение")[0].body.content ?? "";
     const lines = t.split("\n").filter((l) => l.startsWith("• "));
@@ -520,23 +640,39 @@ describe("чтение: субботнее сообщение", () => {
     expect(lines[2]).toContain("Цветок и меч"); // свежая глава и накопилось меньше, чем у «Тайтл В»
     expect(t).toContain("Ещё накопилось: Тайтл В +21, Тайтл Б +40, Тайтл Д +89.");
     expect(rows().find((r) => r.mal_id === 6)?.end_told).toBe(1);
-    expect(rows().find((r) => r.mal_id === 1)?.told_ch).toBe(201); // показан подробно: теперь про главу сказано
+    expect(t).not.toContain("Тайтл Ж"); // без русского перевода — ни слова, хотя 400 глав по-английски
+    expect(t).not.toContain("Тайтл З");
+    expect(t).not.toContain("не вижу");
+    expect(rows().find((r) => r.mal_id === 8)?.end_told).toBe(0); // про завершение скажу, когда будет что читать по-русски
+    expect(rows().find((r) => r.mal_id === 1)?.told_ch).toBe(151); // показан подробно: теперь про главу сказано
     expect(rows().find((r) => r.mal_id === 3)?.told_ch).toBe(30); // в «Ещё» одной строкой: новое ещё не рассказано, расскажу в следующий раз
   });
 
+  it("по-английски вышло много, по-русски ничего нового: ни сообщения, ни слова про английские главы", async () => {
+    w.d1.sqlite.prepare("UPDATE reading SET read_ch = 151, told_ch = 151, src_ch = 260, src_vol = 30").run();
+    await run(SAT);
+    expect(posted("Чтение")).toHaveLength(0);
+    expect(w.d1.q<{ value: string }>("SELECT value FROM meta WHERE key = 'reading_week'")[0].value).toBe("2026-11-16");
+    w.d1.sqlite.prepare("UPDATE reading SET ru_ch = 152, read_ch = 140").run();
+    await run(sat(11, 5) + 7 * 24 * HOUR);
+    const t = posted("Чтение")[0].body.content ?? "";
+    expect(t).toContain("вышла глава 152");
+    expect(t).not.toContain("260");
+  });
+
   it("аниме по его манге: один раз, когда идёт или анонсировано", async () => {
-    w.d1.sqlite.prepare("UPDATE reading SET read_ch = 201, adapt_mal = 8, adapt_ru = 'Цветок и меч 2', adapt_status = 'ongoing'").run();
+    w.d1.sqlite.prepare("UPDATE reading SET read_ch = 151, adapt_mal = 8, adapt_ru = 'Цветок и меч 2', adapt_status = 'ongoing'").run();
     await run(SAT);
     const t = posted("Чтение")[0].body.content ?? "";
     expect(t).toContain("🎬 По **Цветок и меч** сейчас идёт аниме: «Цветок и меч 2».");
     expect(rows()[0].adapt_told).toBe("8:ongoing");
-    w.d1.sqlite.prepare("UPDATE reading SET read_ch = 190").run();
+    w.d1.sqlite.prepare("UPDATE reading SET read_ch = 140").run();
     await run(SAT + 7 * 24 * HOUR);
     expect(posted("Чтение")[1].body.content).not.toContain("🎬");
   });
 
   it("давно не двигается: один раз спрашивает, продолжает ли; бросить можно фразой", async () => {
-    w.d1.sqlite.prepare("UPDATE reading SET read_ch = 201, last_move_at = ?").run(SAT - 70 * 24 * HOUR);
+    w.d1.sqlite.prepare("UPDATE reading SET read_ch = 151, last_move_at = ?").run(SAT - 70 * 24 * HOUR);
     await run(SAT);
     const t = posted("Чтение")[0].body.content ?? "";
     expect(t).toContain("не двигается уже 10 недель");
@@ -547,14 +683,14 @@ describe("чтение: субботнее сообщение", () => {
   });
 
   it("источник долго не отвечал: честная строка (даже если новых глав нет)", async () => {
-    w.d1.sqlite.prepare("UPDATE reading SET read_ch = 201, told_ch = 201, chk_fail = 4").run();
+    w.d1.sqlite.prepare("UPDATE reading SET read_ch = 151, told_ch = 151, chk_fail = 4").run();
     await run(SAT);
     expect(posted("Чтение")).toHaveLength(1);
     expect(posted("Чтение")[0].body.content).toContain("Источники глав последние дни не отвечали");
   });
 
   it("нечего сказать — тишина, но неделя помечена (не перечитываем таблицу каждую минуту)", async () => {
-    w.d1.sqlite.prepare("UPDATE reading SET read_ch = 201, told_ch = 201").run();
+    w.d1.sqlite.prepare("UPDATE reading SET read_ch = 151, told_ch = 151").run();
     await run(SAT);
     expect(posted("Чтение")).toHaveLength(0);
     expect(w.d1.q<{ value: string }>("SELECT value FROM meta WHERE key = 'reading_week'")[0].value).toBe("2026-11-16");
@@ -579,6 +715,76 @@ describe("чтение: ранобэ по томам", () => {
     await run(sat(11, 5));
     const t = posted("Чтение")[0].body.content ?? "";
     expect(t).toContain("**Меч и тень** (ранобэ) — вышел том 13 · вы на 10, накопилось 3");
+  });
+});
+
+describe("чтение: ранобэ и RanobeHub ночью", () => {
+  const NIGHT = day(17, 3, 40);
+  const novel = (o: Partial<Reading> = {}) => put({ mal_id: 9002, title_ru: "Меч и тень", title_orig: "Ken to Kage", kind: "ranobe", unit: "vol", read_vol: 10, src_vol: 12, told_vol: 12, mu_id: 555, map_at: MON, shiki_at: MON, adapt_at: MON, ...o });
+
+  it("находит книгу на RanobeHub и привязывает; тома по MangaUpdates, русская строка — справочно; ссылка на русский перевод", async () => {
+    novel();
+    src.muSeries[555] = { status: "13 Volumes (Ongoing)" };
+    src.rh["Ken to Kage"] = [rhBook(77, "Меч и тень", "Ken to Kage", 8, 70)];
+    await turnOn();
+    await run(NIGHT);
+    expect(rows()[0]).toMatchObject({ rh_id: 77, ru_vol: 8, ru_ch: 70, src_vol: 13, told_vol: 12, src_url: "https://ranobehub.org/ranobe/77" });
+    expect(rows()[0].rh_map_at).toBe(NIGHT);
+    await run(sat(11, 5));
+    const t = posted("Чтение")[0].body.content ?? "";
+    // правило языка для ранобэ не менялось: «вышел том 13» по MangaUpdates, даже если по-русски пока до 8
+    expect(t).toContain("**Меч и тень** (ранобэ) — вышел том 13 · вы на 10, накопилось 3 · по-русски до тома 8 на RanobeHub · [читать](<https://ranobehub.org/ranobe/77>)");
+  });
+
+  it("привязанная книга обновляется по номеру: растёт — записываем; сайт не отвечает или книга пропала из выдачи — прежние цифры, ночь не считается сбойной", async () => {
+    novel({ rh_id: 77, ru_vol: 8, ru_ch: 70, rh_map_at: MON, src_url: "https://ranobehub.org/ranobe/77" });
+    src.muSeries[555] = { status: "12 Volumes (Ongoing)" };
+    src.rh["Ken to Kage"] = [rhBook(76, "Другая", "Other", 1, 1), rhBook(77, "Меч и тень", "Ken to Kage", 9, 80)];
+    await turnOn();
+    await run(NIGHT);
+    expect(rows()[0]).toMatchObject({ rh_id: 77, ru_vol: 9, ru_ch: 80, chk_fail: 0 });
+    src.rh["Ken to Kage"] = null;
+    src.rh["Меч и тень"] = null;
+    await run(day(18, 3, 40));
+    expect(rows()[0]).toMatchObject({ rh_id: 77, ru_vol: 9, chk_fail: 0 });
+    expect(rows()[0].checked_at).toBe(day(18, 3, 40));
+    src.rh["Ken to Kage"] = [rhBook(76, "Другая", "Other", 1, 1)]; // книги нет в выдаче: цифры остаются
+    src.rh["Меч и тень"] = [];
+    await run(day(19, 3, 40));
+    expect(rows()[0]).toMatchObject({ rh_id: 77, ru_vol: 9 });
+  });
+
+  it("не нашла на RanobeHub — повтор не раньше чем через неделю; сайт не ответил — повтор в следующую ночь, проверка тайтла при этом удаётся", async () => {
+    novel();
+    src.muSeries[555] = { status: "12 Volumes (Ongoing)" };
+    await turnOn();
+    await run(NIGHT);
+    expect(rows()[0]).toMatchObject({ rh_id: null, ru_vol: null, chk_fail: 0 });
+    expect(rows()[0].rh_map_at).toBe(NIGHT);
+    const n = src.count("ranobehub.org");
+    await run(day(18, 3, 40));
+    await run(day(20, 3, 40));
+    expect(src.count("ranobehub.org")).toBe(n); // меньше недели: не ищем
+    await run(day(24, 3, 40));
+    expect(src.count("ranobehub.org")).toBeGreaterThan(n);
+    // сайт не отвечает: метку не ставим, на следующую ночь пробуем снова
+    w.d1.sqlite.prepare("UPDATE reading SET rh_map_at = NULL, checked_at = NULL").run();
+    src.rh["Ken to Kage"] = null;
+    src.rh["Меч и тень"] = null;
+    const before = src.count("ranobehub.org");
+    await run(day(25, 3, 40));
+    expect(rows()[0]).toMatchObject({ rh_map_at: null, chk_fail: 0 });
+    expect(src.count("ranobehub.org")).toBeGreaterThan(before);
+  });
+
+  it("запросов за ночь немного: у ранобэ с RanobeHub не больше трёх обращений к источникам на тайтл", async () => {
+    novel({ rh_id: 77, rh_map_at: MON, ru_vol: 8 });
+    src.muSeries[555] = { status: "12 Volumes (Ongoing)" };
+    src.rh["Ken to Kage"] = [rhBook(77, "Меч и тень", "Ken to Kage", 8, 70)];
+    await turnOn();
+    await run(NIGHT, 20);
+    expect(src.calls.length).toBeLessThanOrEqual(3); // MangaUpdates (том) + RanobeHub (одна выдача); Shikimori и аниме у свежепроверенных не спрашиваем
+    expect(src.count("ranobehub.org")).toBe(1);
   });
 });
 

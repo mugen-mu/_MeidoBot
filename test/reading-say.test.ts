@@ -1,17 +1,17 @@
 // Чтение: живые фразы и вопросы (чистые функции), разбор ответов источников, подсчёт «накопилось», выбор для субботнего сообщения.
 import { describe, expect, it } from "vitest";
-import { type Reading, ownMatches, rankWeek, unread, weekItems, weekKey } from "../src/reading/core.ts";
+import { type Reading, availOf, hasRussian, noRussianYet, ownMatches, rankWeek, unread, weekItems, weekKey } from "../src/reading/core.ts";
 import { readTarget, statusAfterRead } from "../src/reading/handlers.ts";
 import { JUMP_MAX, applyObs } from "../src/reading/refresh.ts";
 import { parseReadAsk, parseReadSay } from "../src/reading/say.ts";
-import { parseAggregate, parseMuStatus, parseReadCand, pickAdapt } from "../src/reading/sources.ts";
-import { parseReadingWhen } from "../src/reading/ui.ts";
+import { parseAggregate, parseMuStatus, parseReadCand, parseRhBooks, pickAdapt, pickRh } from "../src/reading/sources.ts";
+import { parseReadingWhen, progressText, ruBit, whereText } from "../src/reading/ui.ts";
 import { readSettings } from "../src/settings.ts";
 import { kyiv } from "./helpers.ts";
 
 const row = (o: Partial<Reading> = {}): Reading => ({
   id: 1, mal_id: 9001, kind: "manga", title_ru: "Цветок и меч", title_orig: "Hana to Ken", status: "reading", unit: "ch", read_ch: null, read_vol: null, liked: 0, total_ch: null, total_vol: null,
-  src_status: "ongoing", src_ch: 0, src_vol: 0, src_at: null, ru_ch: null, src_url: null, md_id: null, mu_id: null, map_at: null, checked_at: null, chk_fail: 0, shiki_at: null, told_ch: 0, told_vol: 0,
+  src_status: "ongoing", src_ch: 0, src_vol: 0, src_at: null, ru_ch: null, ru_vol: null, src_url: null, md_id: null, mu_id: null, rh_id: null, rh_map_at: null, map_at: null, checked_at: null, chk_fail: 0, shiki_at: null, told_ch: 0, told_vol: 0,
   end_told: 0, adapt_mal: null, adapt_ru: null, adapt_status: null, adapt_at: null, adapt_told: null, weekq_at: null, last_move_at: null, added_at: 0, updated_at: 0, ...o,
 });
 
@@ -91,12 +91,28 @@ describe("чтение: вопросы", () => {
 });
 
 describe("чтение: подсчёт и выбор", () => {
-  it("накопилось = вышло − прочитано; без «где я» или без счётчика — null", () => {
-    expect(unread(row({ src_ch: 199, read_ch: 190 }))).toBe(9);
-    expect(unread(row({ src_ch: 199, read_ch: null }))).toBeNull();
-    expect(unread(row({ src_ch: 0, read_ch: 5 }))).toBeNull();
-    expect(unread(row({ src_ch: 10, read_ch: 12 }))).toBe(0);
-    expect(unread(row({ unit: "vol", src_vol: 13, read_vol: 10, src_ch: 0 }))).toBe(3);
+  it("накопилось = вышло по-русски (манга) − прочитано; без «где я» или без счётчика — null; общий счётчик MangaDex у манги не считается", () => {
+    expect(unread(row({ ru_ch: 149, src_ch: 199, read_ch: 140 }))).toBe(9);
+    expect(unread(row({ ru_ch: 149, src_ch: 199, read_ch: null }))).toBeNull();
+    expect(unread(row({ ru_ch: 0, src_ch: 199, read_ch: 5 }))).toBeNull(); // по-русски нет: 199 глав по-английски не в счёт
+    expect(unread(row({ ru_ch: null, src_ch: 199, read_ch: 5 }))).toBeNull();
+    expect(unread(row({ ru_ch: 10, read_ch: 12 }))).toBe(0);
+    expect(unread(row({ unit: "vol", ru_vol: 13, read_vol: 10, src_vol: 20 }))).toBe(3);
+    // ранобэ: по-прежнему счётчик источника (MangaUpdates), RanobeHub на него не влияет
+    expect(unread(row({ kind: "ranobe", unit: "vol", src_vol: 13, read_vol: 10, ru_vol: 4, rh_id: 7 }))).toBe(3);
+    expect(availOf(row({ ru_ch: 149, src_ch: 199 }), "ch")).toBe(149);
+    expect(availOf(row({ kind: "ranobe", src_vol: 12, ru_vol: 3 }), "vol")).toBe(12);
+  });
+
+  it("есть ли что-то по-русски: у манги по счётчику, у ранобэ вопрос не стоит; «смотрела, нет» отличается от «не смотрела»", () => {
+    expect(hasRussian(row({ ru_ch: 1 }))).toBe(true);
+    expect(hasRussian(row({ ru_vol: 1 }))).toBe(true);
+    expect(hasRussian(row({ ru_ch: 0, ru_vol: 0 }))).toBe(false);
+    expect(hasRussian(row({ ru_ch: null }))).toBe(false);
+    expect(hasRussian(row({ kind: "ranobe", ru_ch: null }))).toBe(true);
+    expect(noRussianYet(row({ ru_ch: 0, ru_vol: 0 }))).toBe(true);
+    expect(noRussianYet(row({ ru_ch: null }))).toBe(false);
+    expect(noRussianYet(row({ ru_ch: 5 }))).toBe(false);
   });
 
   it("поиск в своём списке: точное важнее частичного, несколько — не угадываем", () => {
@@ -130,18 +146,28 @@ describe("чтение: подсчёт и выбор", () => {
     expect(statusAfterRead({ ...b, src_ch: 0 }, "ch", 5)).toBe("reading");
   });
 
-  it("в субботнее сообщение попадают новое, завершение и накопленное; порядок решает Хару", () => {
-    const quiet = row({ id: 1, title_ru: "A", src_ch: 50, told_ch: 50, read_ch: 50 }); // ничего нового
-    const heap = row({ id: 2, title_ru: "B", src_ch: 100, told_ch: 100, read_ch: 60 }); // накопилось 40
-    const fresh = row({ id: 3, title_ru: "C", src_ch: 31, told_ch: 30, read_ch: 30 }); // вышла новая
-    const fav = row({ id: 4, title_ru: "D", src_ch: 12, told_ch: 12, read_ch: 10, liked: 2 }); // любимое, накопилось 2
-    const ended = row({ id: 5, title_ru: "E", src_status: "finished", src_ch: 20, told_ch: 20, read_ch: 20, end_told: 0 });
-    const planned = row({ id: 6, title_ru: "F", status: "planned", src_ch: 9, told_ch: 0 });
-    const dropped = row({ id: 7, title_ru: "G", status: "dropped", src_ch: 9, told_ch: 0, read_ch: 1 });
-    const items = rankWeek(weekItems([quiet, heap, fresh, fav, ended, planned, dropped]));
+  it("в субботнее сообщение попадают новое по-русски, завершение и накопленное; порядок решает Хару; без русского перевода — молчание", () => {
+    const quiet = row({ id: 1, title_ru: "A", ru_ch: 50, told_ch: 50, read_ch: 50 }); // ничего нового
+    const heap = row({ id: 2, title_ru: "B", ru_ch: 100, told_ch: 100, read_ch: 60 }); // накопилось 40
+    const fresh = row({ id: 3, title_ru: "C", ru_ch: 31, told_ch: 30, read_ch: 30 }); // вышла новая по-русски
+    const fav = row({ id: 4, title_ru: "D", ru_ch: 12, told_ch: 12, read_ch: 10, liked: 2 }); // любимое, накопилось 2
+    const ended = row({ id: 5, title_ru: "E", src_status: "finished", src_ch: 20, ru_ch: 20, told_ch: 20, read_ch: 20, end_told: 0 });
+    const planned = row({ id: 6, title_ru: "F", status: "planned", ru_ch: 9, told_ch: 0 });
+    const dropped = row({ id: 7, title_ru: "G", status: "dropped", ru_ch: 9, told_ch: 0, read_ch: 1 });
+    const noRu = row({ id: 8, title_ru: "H", src_ch: 300, ru_ch: 0, ru_vol: 0, told_ch: 0, read_ch: 1 }); // по-английски 300 глав, по-русски нет совсем
+    const noRuEnded = row({ id: 9, title_ru: "I", src_status: "finished", src_ch: 50, ru_ch: 0, ru_vol: 0, read_ch: 50 });
+    const unseen = row({ id: 10, title_ru: "J", src_ch: 80, ru_ch: null, read_ch: 1 });
+    const items = rankWeek(weekItems([quiet, heap, fresh, fav, ended, planned, dropped, noRu, noRuEnded, unseen]));
     expect(items.map((x) => x.r.title_ru)).toEqual(["E", "D", "C", "B"]);
     expect(items[0].ended).toBe(true);
     expect(items[2]).toMatchObject({ newCh: true, unread: 1 });
+  });
+
+  it("английская глава не новость: общий счётчик вырос, а русский нет — тишина; русский вырос — новость", () => {
+    const en = row({ src_ch: 201, ru_ch: 149, told_ch: 149, read_ch: 149 });
+    expect(weekItems([en])).toEqual([]);
+    expect(weekItems([{ ...en, ru_ch: 150 }])).toHaveLength(1);
+    expect(weekItems([{ ...en, ru_ch: 150 }])[0]).toMatchObject({ newCh: true, unread: 1 });
   });
 
   it("ключ недели — понедельник; суббота и пятница одной недели совпадают, следующая суббота — нет", () => {
@@ -154,23 +180,105 @@ describe("чтение: подсчёт и выбор", () => {
 
 describe("чтение: что увидели у источника", () => {
   const T = 1_000_000;
-  it("первая цифра — отправная точка (про неё не пишем), рост — новость, спад и скачок — игнор", () => {
-    const first = applyObs(row({ src_ch: 0 }), { ch: 199, vol: 24 }, T);
-    expect(first).toMatchObject({ src_ch: 199, told_ch: 199, src_vol: 24, told_vol: 24 });
+  it("ранобэ: первая цифра — отправная точка (про неё не пишем), рост — новость, спад и скачок — игнор", () => {
+    const novel = (o: Partial<Reading> = {}) => row({ kind: "ranobe", unit: "vol", ...o });
+    const first = applyObs(novel({ src_vol: 0 }), { vol: 24 }, T);
+    expect(first).toMatchObject({ src_vol: 24, told_vol: 24 });
     expect(first.src_at).toBeUndefined();
-    const grew = applyObs(row({ src_ch: 199, told_ch: 199, src_vol: 24, told_vol: 24 }), { ch: 201, vol: 24, url: "https://x/y" }, T);
-    expect(grew).toMatchObject({ src_ch: 201, src_at: T, src_url: "https://x/y" });
+    const grew = applyObs(novel({ src_vol: 24, told_vol: 24 }), { vol: 25, url: "https://x/y" }, T);
+    expect(grew).toMatchObject({ src_vol: 25, src_at: T, src_url: "https://x/y" });
+    expect(grew.told_vol).toBeUndefined();
+    expect(applyObs(novel({ src_vol: 24 }), { vol: 20 }, T).src_vol).toBeUndefined();
+    expect(applyObs(novel({ src_vol: 24 }), { vol: 24 + JUMP_MAX + 1 }, T).src_vol).toBeUndefined();
+    expect(applyObs(novel({ src_vol: 24 }), { vol: 24 + JUMP_MAX }, T).src_vol).toBe(124);
+    // справочные цифры RanobeHub: записываются как есть и «про что писала» не трогают
+    const rh = applyObs(novel({ src_vol: 24, told_vol: 24, ru_vol: 3 }), { ruCh: 40, ruVol: 2 }, T);
+    expect(rh).toMatchObject({ ru_ch: 40, ru_vol: 2 });
+    expect(rh.told_vol).toBeUndefined();
+    expect(rh.src_at).toBeUndefined();
+  });
+
+  it("манга: общий счётчик MangaDex про «вышло» не говорит; по-русски первая цифра — отправная точка, рост — новость, спад и заливка — не новость", () => {
+    const all = applyObs(row({ src_ch: 199, told_ch: 149, ru_ch: 149 }), { ch: 201, vol: 24 }, T);
+    expect(all).toMatchObject({ src_ch: 201, src_vol: 24 });
+    expect(all.src_at).toBeUndefined(); // английские главы — не новость
+    expect(all.told_ch).toBeUndefined();
+    const first = applyObs(row({ src_ch: 199, ru_ch: null, told_ch: 0 }), { ch: 199, ruCh: 149, ruVol: 19 }, T);
+    expect(first).toMatchObject({ ru_ch: 149, told_ch: 149, ru_vol: 19, told_vol: 19 });
+    expect(first.src_at).toBeUndefined();
+    const none = applyObs(row({ ru_ch: null }), { ruCh: 0, ruVol: 0 }, T);
+    expect(none).toMatchObject({ ru_ch: 0, told_ch: 0, ru_vol: 0 });
+    const grew = applyObs(row({ ru_ch: 149, told_ch: 149, ru_vol: 19, told_vol: 19 }), { ruCh: 151, ruVol: 19, url: "https://x/ru" }, T);
+    expect(grew).toMatchObject({ ru_ch: 151, src_at: T, src_url: "https://x/ru" });
     expect(grew.told_ch).toBeUndefined();
-    expect(applyObs(row({ src_ch: 199 }), { ch: 150 }, T).src_ch).toBeUndefined();
-    expect(applyObs(row({ src_ch: 199 }), { ch: 199 + JUMP_MAX + 1 }, T).src_ch).toBeUndefined();
-    expect(applyObs(row({ src_ch: 199 }), { ch: 199 + JUMP_MAX }, T).src_ch).toBe(299);
+    expect(applyObs(row({ ru_ch: 149, told_ch: 149 }), { ruCh: 140 }, T).ru_ch).toBe(149); // счётчик только растёт
+    const bulk = applyObs(row({ ru_ch: 0, told_ch: 0, ru_vol: 0 }), { ruCh: 150 + JUMP_MAX, ruVol: 0 }, T);
+    expect(bulk).toMatchObject({ ru_ch: 150 + JUMP_MAX, told_ch: 150 + JUMP_MAX }); // залили разом: «накопилось» покажет, «вышла глава» — нет
+    expect(bulk.src_at).toBeUndefined();
+    const appeared = applyObs(row({ ru_ch: 0, told_ch: 0, ru_vol: 0 }), { ruCh: 12, ruVol: 1 }, T);
+    expect(appeared).toMatchObject({ ru_ch: 12, src_at: T }); // русский перевод появился: это новость
+    expect(appeared.told_ch).toBeUndefined();
   });
 
   it("итоги закончившегося: счётчики и состояние, ссылка запоминается только при росте или в первый раз", () => {
-    const p = applyObs(row({ src_ch: 150, told_ch: 150 }), { status: "finished", totalCh: 160, totalVol: 18 }, T);
-    expect(p).toMatchObject({ src_status: "finished", total_ch: 160, total_vol: 18, src_ch: 160, src_at: T });
+    const p = applyObs(row({ kind: "ranobe", unit: "vol", src_vol: 15, told_vol: 15 }), { status: "finished", totalCh: 160, totalVol: 18 }, T);
+    expect(p).toMatchObject({ src_status: "finished", total_ch: 160, total_vol: 18, src_vol: 18, src_at: T });
+    const m = applyObs(row({ src_ch: 150, ru_ch: 100, told_ch: 100 }), { status: "finished", totalCh: 160, totalVol: 18 }, T);
+    expect(m).toMatchObject({ src_status: "finished", total_ch: 160, src_ch: 160 });
+    expect(m.src_at).toBeUndefined(); // итоги не делают «вышла глава» у манги: по-русски они могут быть позже
     expect(applyObs(row({ src_ch: 150, src_url: "u1" }), { ch: 150, url: "u2" }, T).src_url).toBeUndefined();
     expect(applyObs(row({ src_ch: 150, src_url: null }), { ch: 150, url: "u2" }, T).src_url).toBe("u2");
+  });
+
+  it("RanobeHub: книги из ответа поиска; выбор — только точное совпадение названия, чужой язык и похожее не берём", () => {
+    const books = parseRhBooks({
+      books: [
+        { id: 1265, title: "Володар [Украинский]", originalTitle: "Overlord", volumes: 2, chapters: 12 },
+        { id: 206, title: "Повелитель", originalTitle: "Overlord", volumes: 19, chapters: 177 },
+        { id: 49, title: "Повелитель, люби меня нежно!", originalTitle: "废材七小姐", volumes: 1, chapters: 498 },
+        { id: "x", title: "мусор" },
+        { id: 7, title: "Без цифр", originalTitle: "No Numbers", volumes: 0, chapters: -5 },
+      ],
+    });
+    expect(books).toHaveLength(4);
+    expect(books[3]).toMatchObject({ id: 7, vol: 0, ch: 0 });
+    expect(pickRh(books, "Overlord", "Повелитель")).toMatchObject({ id: 206, vol: 19, ch: 177 });
+    expect(pickRh(books, "Overlord Spin", "Повелитель-2")).toBeNull();
+    expect(pickRh(books, "", "")).toBeNull();
+    // пометки «(LN)», «(Новелла)», «[перевод …]» не мешают; несколько совпадений — берём с большим числом томов
+    const marked = parseRhBooks({
+      books: [
+        { id: 47, title: "О моём перерождении в слизь", originalTitle: "Tensei Shitara Slime Datta Ken", volumes: 1, chapters: 435 },
+        { id: 966, title: "О моем перерождении в слизь (LN)", originalTitle: "Tensei Shitara Slime Datta Ken (LN)", volumes: 21, chapters: 136 },
+        { id: 708, title: "Re:Zero [перевод команда]", originalTitle: "Re:Zero Kara Hajimeru Isekai Seikatsu", volumes: 9, chapters: 179 },
+      ],
+    });
+    expect(pickRh(marked, "Tensei shitara Slime Datta Ken", "О моём перерождении в слизь")?.id).toBe(966);
+    expect(pickRh(marked, "Re:Zero kara Hajimeru Isekai Seikatsu", "Re:Zero. Жизнь с нуля")?.id).toBe(708);
+    // русское название совпало, оригинал у сайта японский («Мастера меча онлайн»)
+    expect(pickRh([{ id: 114, ru: "Мастера меча онлайн", orig: "ソードアート・オンライン", vol: 21, ch: 291 }], "Sword Art Online", "Мастера Меча Онлайн")?.id).toBe(114);
+    expect(parseRhBooks(null)).toEqual([]);
+    expect(parseRhBooks({ books: "нет" })).toEqual([]);
+  });
+
+  it("строки про русский перевод: манга — «по-русски до главы N на MangaDex», ранобэ — RanobeHub; список и «какая глава» честно говорят, если перевода нет", () => {
+    const hana = row({ ru_ch: 149, ru_vol: 19, src_ch: 199, read_ch: 140, md_id: "md-1" });
+    expect(ruBit(hana)).toBe("по-русски до главы 149 на MangaDex");
+    expect(ruBit({ ...hana, unit: "vol" })).toBe("по-русски до тома 19 на MangaDex");
+    expect(ruBit({ ...hana, unit: "vol", ru_vol: 0 })).toBe("по-русски до главы 149 на MangaDex");
+    expect(ruBit({ ...hana, ru_ch: 0, ru_vol: 0 })).toBeNull();
+    expect(progressText(hana)).toBe("глава 140 из 149 · накопилось 9");
+    const none = row({ ru_ch: 0, ru_vol: 0, src_ch: 199, read_ch: 30, md_id: "md-1" });
+    expect(progressText(none)).toBe("глава 30 · русского перевода на MangaDex пока нет");
+    expect(whereText(none)).toContain("Русского перевода на MangaDex пока нет");
+    expect(whereText(none)).not.toContain("199");
+    expect(whereText(hana)).toContain("Вы на: глава 140 (по-русски вышло 149).");
+    expect(whereText(hana)).not.toContain("199");
+    const novel = row({ kind: "ranobe", unit: "vol", src_vol: 12, read_vol: 10, rh_id: 7, ru_vol: 9, ru_ch: 80 });
+    expect(ruBit(novel)).toBe("по-русски до тома 9 на RanobeHub");
+    expect(ruBit({ ...novel, unit: "ch" })).toBe("по-русски до главы 80 на RanobeHub");
+    expect(ruBit({ ...novel, rh_id: null })).toBeNull();
+    expect(progressText(novel)).toBe("том 10 из 12 · накопилось 2");
   });
 
   it("MangaDex: наибольшие целые глава и том; дробные главы считаем целой частью; «none» не считается", () => {

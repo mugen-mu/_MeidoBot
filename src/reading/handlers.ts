@@ -11,6 +11,7 @@ import {
   clip,
   defaultUnit,
   haru,
+  hasRussian,
   isTracked,
   norm,
   ownMatches,
@@ -67,7 +68,7 @@ export async function handleReadAsk(c: ReadCtx, q: ReadAsk): Promise<MessageBody
   if (q.kind === "list") return text(listText(rows, c.character, c.rand));
   if (q.kind === "news") {
     const tracked = trackedSet(rows);
-    return text(newsText(rankWeek(weekItems(tracked)), tracked.length));
+    return text(newsText(rankWeek(weekItems(tracked)), tracked.length, tracked.filter((r) => !hasRussian(r))));
   }
   const hits = ownMatches(rows, q.query, null);
   if (hits.length > 1) return text(ambiguousOwn(hits));
@@ -217,18 +218,21 @@ async function addNew(c: ReadCtx, say: ReadSay, rows: Reading[]): Promise<Messag
     srcCh: base.src_ch,
     srcVol: base.src_vol,
     ruCh: src.ruCh,
+    ruVol: src.ruVol,
     srcUrl: src.url,
     mdId: src.mdId,
     muId: src.muId,
+    rhId: src.rhId,
     mapAt: src.search === "fail" ? null : c.now,
+    rhMapAt: src.rhSearch === null || src.rhSearch === "fail" ? null : c.now,
     now: c.now,
   };
   await c.repo.exec([insertOp(n), setMeta("reading_on", "1")]);
   c.onAdded?.();
   const fresh: Reading = {
     id: 0, mal_id: n.mal, kind: n.kind, title_ru: n.ru, title_orig: n.orig, status: n.status, unit: n.unit, read_ch: n.readCh, read_vol: n.readVol, liked: 0,
-    total_ch: n.totalCh, total_vol: n.totalVol, src_status: n.srcStatus, src_ch: n.srcCh, src_vol: n.srcVol, src_at: null, ru_ch: n.ruCh, src_url: n.srcUrl, md_id: n.mdId, mu_id: n.muId,
-    map_at: n.mapAt, checked_at: c.now, chk_fail: 0, shiki_at: null, told_ch: n.srcCh, told_vol: n.srcVol, end_told: finished ? 1 : 0, adapt_mal: null, adapt_ru: null, adapt_status: null,
+    total_ch: n.totalCh, total_vol: n.totalVol, src_status: n.srcStatus, src_ch: n.srcCh, src_vol: n.srcVol, src_at: null, ru_ch: n.ruCh, ru_vol: n.ruVol, src_url: n.srcUrl, md_id: n.mdId, mu_id: n.muId,
+    rh_id: n.rhId, rh_map_at: n.rhMapAt, map_at: n.mapAt, checked_at: c.now, chk_fail: 0, shiki_at: null, told_ch: n.kind === "manga" ? (n.ruCh ?? 0) : n.srcCh, told_vol: n.kind === "manga" ? (n.ruVol ?? 0) : n.srcVol, end_told: finished ? 1 : 0, adapt_mal: null, adapt_ru: null, adapt_status: null,
     adapt_at: null, adapt_told: null, weekq_at: null, last_move_at: c.now, added_at: c.now, updated_at: c.now,
   };
   return savedMessage({ r: fresh, how: "added", guessed, sourceNote: sourceNote(pick, src, c), overLimit: isTracked(fresh) && trackedSet(rows).length >= TRACK_LIMIT, line: lineFor(say.action, status, "added", c) });
@@ -239,12 +243,18 @@ function sourceNote(pick: ReadCand, src: Awaited<ReturnType<typeof lookupSource>
   const when = c.weeklyOn === false ? "Сообщения о чтении сейчас выключены («⋯ Ещё»)." : "Напишу в субботу, если что-то накопится.";
   if (pick.kind === "manga") {
     if (src.search === "fail") return "MangaDex сейчас не ответил, найду это название ночью.";
-    if (src.mdId && src.counted) return `Главы смотрю по MangaDex${src.ch ? `: сейчас по источнику вышла глава ${src.ch}` : ""}. ${when}`;
+    if (src.mdId && src.counted) {
+      if (src.ruCh === null) return `Главы смотрю по MangaDex, русский перевод проверю ночью. ${when}`;
+      if (!src.ruCh && !src.ruVol) return "На MangaDex это название есть, но русского перевода там пока нет, поэтому о новых главах писать не буду, пока он не появится.";
+      return `Главы смотрю по MangaDex, пишу только про то, что там есть по-русски: сейчас ${src.ruCh ? `до главы ${src.ruCh}` : `до тома ${src.ruVol}`}. ${when}`;
+    }
     if (src.mdId) return `Нашла название на MangaDex, но число глав пока не прочиталось, догоню ночью. ${when}`;
     return "На MangaDex этого названия нет, поэтому главы сама не вижу. Отмечайте прочитанное фразой «прочитал …», я посчитаю.";
   }
-  if (src.search === "fail") return "MangaUpdates сейчас не ответил, найду это название ночью.";
-  if (src.muId && src.counted) return `Тома смотрю по MangaUpdates (там число томов ведут люди, оно может отставать): сейчас вышло ${volumesText(src.vol)}. ${when}`;
-  if (src.muId) return "Нашла название на MangaUpdates, но число томов там не указано. Отмечайте прочитанное фразой «прочитал том …», я посчитаю.";
-  return "По ранобэ у меня нет надёжного источника новых томов, и этого названия я там не нашла. Отмечайте прочитанное фразой «прочитал том …», я посчитаю.";
+  // ранобэ: тома по MangaUpdates (язык там не различается), русская строка по RanobeHub — справочно
+  const ru = src.rhId && (src.ruVol || src.ruCh) ? ` По-русски на RanobeHub ${src.ruVol ? `есть до тома ${src.ruVol}` : `есть до главы ${src.ruCh}`}.` : "";
+  if (src.search === "fail") return `MangaUpdates сейчас не ответил, найду это название ночью.${ru}`;
+  if (src.muId && src.counted) return `Тома смотрю по MangaUpdates (там число томов ведут люди, оно может отставать): сейчас вышло ${volumesText(src.vol)}. ${when}${ru}`;
+  if (src.muId) return `Нашла название на MangaUpdates, но число томов там не указано. Отмечайте прочитанное фразой «прочитал том …», я посчитаю.${ru}`;
+  return `По ранобэ у меня нет надёжного источника новых томов, и этого названия я там не нашла. Отмечайте прочитанное фразой «прочитал том …», я посчитаю.${ru}`;
 }
