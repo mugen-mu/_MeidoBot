@@ -7,20 +7,23 @@ import { fmtHHMM, parseHHMM } from "../time/tz.ts";
 import {
   type ReadKind,
   type ReadStatus,
+  type ReadUnit,
   type Reading,
   type WeekItem,
   KIND_WORD,
   STATUS_LABEL,
+  availOf,
   chaptersText,
   clip,
   haru,
   isFinished,
+  noRussianYet,
   readOf,
-  srcOf,
   totalOf,
   unitLabel,
   unitText,
   unread,
+  upTo,
   volumesText,
   weeksText,
 } from "./core.ts";
@@ -34,15 +37,19 @@ const name = (r: Reading): string => `**${clip(r.title_ru, 70)}**`;
 
 // ---------- одна строка про тайтл ----------
 
-/** Где хозяин и сколько накопилось: «глава 120 из 199 · накопилось 79». */
+const NO_RU_NOTE = "русского перевода на MangaDex пока нет";
+
+/** Где хозяин и сколько накопилось: «глава 120 из 149 · накопилось 29». У манги «из N» и «накопилось» — по-русски (MangaDex). */
 export function progressText(r: Reading): string {
   const have = readOf(r);
-  const top = srcOf(r);
+  const top = availOf(r);
   const left = unread(r);
+  const active = r.status !== "planned" && r.status !== "dropped";
   const parts: string[] = [];
   if (have === null) parts.push(r.status === "planned" ? "ещё не начато" : "на чём остановились — не говорили");
   else parts.push(`${unitLabel(have, r.unit)}${top > 0 ? ` из ${top}` : ""}`);
-  if (left && r.status !== "planned" && r.status !== "dropped") parts.push(`накопилось ${left}`);
+  if (left && active) parts.push(`накопилось ${left}`);
+  if (noRussianYet(r) && active) parts.push(NO_RU_NOTE);
   if (isFinished(r) && r.status !== "dropped") parts.push("закончен");
   return parts.join(" · ");
 }
@@ -69,18 +76,25 @@ export function listText(rows: Reading[], ch: Character, rand?: () => number): s
   return headVoice(haru("list", ch, rand), out.join("\n"));
 }
 
-/** Что нового у тайтла по росту счётчика у источника. */
+/** Что нового у тайтла по росту счётчика (у манги — по-русски, у ранобэ — у источника). */
 function newBits(it: WeekItem): string[] {
   const { r } = it;
+  const ch = availOf(r, "ch");
+  const vol = availOf(r, "vol");
   const bits: string[] = [];
-  if (it.ended) bits.push(`закончен${r.src_ch > 0 || r.src_vol > 0 ? `: всего ${[r.src_ch > 0 ? chaptersText(r.src_ch) : "", r.src_vol > 0 ? volumesText(r.src_vol) : ""].filter(Boolean).join(", ")}` : ""}`);
+  if (it.ended) {
+    // у манги всего глав и томов может быть больше, чем есть по-русски: цифры оставляем только когда они совпадают, иначе их заменит строка «по-русски до …»
+    const full = r.kind !== "manga" || (ch >= r.src_ch && vol >= r.src_vol);
+    const total = full ? [r.src_ch > 0 ? chaptersText(r.src_ch) : "", r.src_vol > 0 ? volumesText(r.src_vol) : ""].filter(Boolean).join(", ") : "";
+    bits.push(`закончен${total ? `: всего ${total}` : ""}`);
+  }
   if (it.newCh) {
-    const n = r.src_ch - r.told_ch;
-    bits.push(n > 1 && r.told_ch > 0 ? `вышло ${chaptersText(n)}, последняя — ${r.src_ch}` : `вышла глава ${r.src_ch}`);
+    const n = ch - r.told_ch;
+    bits.push(n > 1 && r.told_ch > 0 ? `вышло ${chaptersText(n)}, последняя — ${ch}` : `вышла глава ${ch}`);
   }
   if (it.newVol) {
-    const n = r.src_vol - r.told_vol;
-    bits.push(n > 1 && r.told_vol > 0 ? `вышло ${volumesText(n)}, последний — ${r.src_vol}` : `вышел том ${r.src_vol}`);
+    const n = vol - r.told_vol;
+    bits.push(n > 1 && r.told_vol > 0 ? `вышло ${volumesText(n)}, последний — ${vol}` : `вышел том ${vol}`);
   }
   return bits;
 }
@@ -93,7 +107,21 @@ function whereBits(r: Reading): string | null {
   return `вы на ${have}${left ? `, накопилось ${left}` : ""}`;
 }
 
-const ruBit = (r: Reading): string | null => (r.unit === "ch" && r.ru_ch && r.ru_ch < r.src_ch ? `по-русски на MangaDex до ${r.ru_ch}` : null);
+/**
+ * Честная строка про русский перевод и сайт: «по-русски до главы 149 на MangaDex» (манга: по этому счётчику говорю «вышла» и «накопилось»)
+ * или «по-русски до тома 21 на RanobeHub» (ранобэ: справочно, новые тома по-прежнему по MangaUpdates, там язык не различается).
+ */
+export function ruBit(r: Reading): string | null {
+  if (r.kind === "manga") {
+    const unit: ReadUnit = availOf(r, r.unit) > 0 ? r.unit : r.unit === "ch" ? "vol" : "ch";
+    const n = availOf(r, unit);
+    return n > 0 ? `по-русски ${upTo(n, unit)} на MangaDex` : null;
+  }
+  if (!r.rh_id) return null;
+  const unit: ReadUnit = (r.unit === "ch" ? r.ru_ch : r.ru_vol) ? r.unit : r.unit === "ch" ? "vol" : "ch";
+  const n = (unit === "ch" ? r.ru_ch : r.ru_vol) ?? 0;
+  return n > 0 ? `по-русски ${upTo(n, unit)} на RanobeHub` : null;
+}
 const linkBit = (r: Reading): string | null => (r.src_url ? `[читать](<${r.src_url}>)` : null);
 
 /** Строка тайтла в новостях и субботнем сообщении: что вышло, где хозяин и сколько накопилось, русский перевод, ссылка. */
@@ -106,24 +134,30 @@ function itemLine(it: WeekItem): string {
 }
 
 /** «Что вышло по чтению» по запросу: без перезаписи «про что уже писала», только честный взгляд на то, что накопилось. */
-export function newsText(items: WeekItem[], tracked: number): string {
+export function newsText(items: WeekItem[], tracked: number, silent: Reading[] = []): string {
   if (!tracked) return "В «Читаю» и «Жду продолжения» пока пусто, так что и нового нет. Добавить: «бот читаю мангу Название».";
-  if (!items.length) return "По чтению нового нет: что вышло по моим источникам, вы уже прочитали. Я смотрю источники раз в ночь.";
-  return [`**📖 Чтение · что вышло и накопилось** (${items.length})`, ...items.map(itemLine), "Я смотрю источники раз в ночь."].join("\n");
+  // честно говорим о молчании только по запросу; в субботнем сообщении об этих тайтлах не пишем вообще
+  const tail = silent.length ? `Русского перевода на MangaDex не вижу: ${silent.slice(0, 5).map((r) => clip(r.title_ru, 30)).join(", ")}${silent.length > 5 ? "…" : ""}. Пока он не появится, о них молчу.` : null;
+  if (!items.length) return ["По чтению нового нет: что вышло по моим источникам (у манги — по-русски), вы уже прочитали. Я смотрю источники раз в ночь.", tail].filter(Boolean).join("\n");
+  return [`**📖 Чтение · что вышло и накопилось** (${items.length})`, ...items.map(itemLine), tail, "Я смотрю источники раз в ночь."].filter(Boolean).join("\n");
 }
 
-/** «Какая глава Кауру»: где он, что у источника. */
+/** «Какая глава Кауру»: где он, что есть по-русски (манга) или у источника (ранобэ). */
 export function whereText(r: Reading): string {
   const have = readOf(r);
-  const top = srcOf(r);
+  const top = availOf(r);
+  const manga = r.kind === "manga";
   const lines = [`${name(r)} (${KIND_WORD[r.kind]}) — ${STATUS_LABEL[r.status].toLowerCase()}.`];
-  lines.push(have === null ? "Вы не говорили, на чём остановились. Скажите: «прочитал главу 120 …»." : `Вы на: ${unitLabel(have, r.unit)}${top > 0 ? ` (по источнику вышло ${top})` : ""}.`);
+  lines.push(have === null ? "Вы не говорили, на чём остановились. Скажите: «прочитал главу 120 …»." : `Вы на: ${unitLabel(have, r.unit)}${top > 0 ? ` (${manga ? "по-русски вышло" : "по источнику вышло"} ${top})` : ""}.`);
   const left = unread(r);
   if (left) lines.push(`Накопилось: ${unitText(left, r.unit)}.`);
   const total = totalOf(r);
-  if (isFinished(r) && total) lines.push(`Тайтл закончен: всего ${unitText(total, r.unit)}.`);
-  else if (top === 0 && !isFinished(r)) lines.push(r.md_id || r.mu_id ? "Источник пока не показал, сколько вышло." : "Сколько вышло, сама не вижу: источника для этого названия не нашла.");
   const ru = ruBit(r);
+  if (isFinished(r) && total && !(manga && top < total)) lines.push(`Тайтл закончен: всего ${unitText(total, r.unit)}.`);
+  else if (isFinished(r) && manga) lines.push("Тайтл закончен.");
+  if (noRussianYet(r)) lines.push("Русского перевода на MangaDex пока нет, поэтому о новых главах не пишу, пока он не появится.");
+  else if (manga && top === 0 && !isFinished(r)) lines.push(r.md_id ? "Русский перевод на MangaDex пока не посмотрела, догоню ночью." : "Сколько вышло по-русски, сама не вижу: на MangaDex этого названия не нашла.");
+  else if (!manga && top === 0 && !isFinished(r)) lines.push(r.mu_id ? "Источник пока не показал, сколько вышло." : "Сколько вышло, сама не вижу: источника для этого названия не нашла.");
   if (ru) lines.push(`${ru[0].toUpperCase()}${ru.slice(1)}.`);
   return lines.join("\n");
 }
@@ -153,7 +187,7 @@ export interface SavedInfo {
 
 export function savedMessage(s: SavedInfo): MessageBody {
   const { r } = s;
-  const lines = [`Записала: ${name(r)} (${KIND_WORD[r.kind]}) — ${STATUS_LABEL[r.status].toLowerCase()}${readOf(r) !== null ? `, ${unitLabel(readOf(r) as number, r.unit)}${srcOf(r) > 0 ? ` из ${srcOf(r)}` : ""}` : ""}.`];
+  const lines = [`Записала: ${name(r)} (${KIND_WORD[r.kind]}) — ${STATUS_LABEL[r.status].toLowerCase()}${readOf(r) !== null ? `, ${unitLabel(readOf(r) as number, r.unit)}${availOf(r) > 0 ? ` из ${availOf(r)}` : ""}` : ""}.`];
   const left = unread(r);
   if (left && r.status !== "planned" && r.status !== "dropped") lines.push(`Накопилось: ${unitText(left, r.unit)}.`);
   if (s.guessed) lines.push("Я не знала, где вы были, и считаю от начала. Если вы дальше, напишите «прочитал главу 120 …».");

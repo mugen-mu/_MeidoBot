@@ -4,6 +4,8 @@
 //  • MangaDex (`api.mangadex.org`, без ключа) — главы и тома манги: `aggregate` отдаёт все главы по томам; у многих глав есть ссылка на официальное чтение.
 //    Склейка с Shikimori — по номеру MyAnimeList (`attributes.links.mal`). Есть русские переводы (`ru`), но отстают от английских.
 //  • MangaUpdates (`api.mangaupdates.com/v1`, без ключа) — тома ранобэ: «28 Volumes (Ongoing)» в поле `status`. Номера MAL там нет, склейка по названию.
+//  • RanobeHub (`ranobehub.org/api/search`, без ключа; robots.txt разрешает, закрыты только /api/user и /api/admin) — русские переводы ранобэ: в ответе поиска
+//    у каждой книги `volumes` и `chapters` (сколько есть по-русски). Номера MAL нет, склейка по названию. Разведка 2026-11-18 — docs/RECON-READING-RU.md.
 // AniList из Cloudflare Worker не отвечает (src/anime/sources.ts), поэтому не используется. Любой сбой = null: проверка повторится, ничего не ломаем.
 import type { ReadKind } from "./core.ts";
 
@@ -14,6 +16,7 @@ const TIMEOUT_MS = 3500;
 const SHIKI = "https://shikimori.io/api";
 const MD = "https://api.mangadex.org";
 const MU = "https://api.mangaupdates.com/v1";
+const RH = "https://ranobehub.org";
 
 async function getJson(fetchFn: FetchFn, url: string, init: RequestInit = {}): Promise<unknown | null> {
   try {
@@ -171,18 +174,16 @@ export async function mdProgress(id: string, fetchFn: FetchFn): Promise<{ ch: nu
   return parseAggregate(await getJson(fetchFn, aggregateUrl(id, ["ru", "en"])));
 }
 
-/** Последняя глава на русском (0 — русского перевода нет). null — не ответил. */
-export async function mdRussian(id: string, fetchFn: FetchFn): Promise<number | null> {
-  const p = parseAggregate(await getJson(fetchFn, aggregateUrl(id, ["ru"])));
-  return p ? p.ch : null;
+/** Последние глава и том на русском ({0, 0} — русского перевода нет). null — не ответил. */
+export async function mdRussian(id: string, fetchFn: FetchFn): Promise<{ ch: number; vol: number } | null> {
+  return parseAggregate(await getJson(fetchFn, aggregateUrl(id, ["ru"])));
 }
 
-/** Ссылка на последнюю главу: официальная (`externalUrl`) или страница главы на MangaDex. null — не ответил или глав нет. */
+/** Ссылка на последнюю главу по-русски: официальная (`externalUrl`) или страница главы на MangaDex. null — не ответил или русских глав нет. */
 export async function mdLatestLink(id: string, fetchFn: FetchFn): Promise<string | null> {
   const q = new URLSearchParams({ limit: "1", includeFutureUpdates: "0" });
   q.append("order[chapter]", "desc");
   q.append("translatedLanguage[]", "ru");
-  q.append("translatedLanguage[]", "en");
   for (const r of RATINGS) q.append("contentRating[]", r);
   const j = (await getJson(fetchFn, `${MD}/manga/${id}/feed?${q}`)) as { data?: unknown } | null;
   const c = Array.isArray(j?.data) ? (j?.data[0] as Record<string, any> | undefined) : undefined;
@@ -229,4 +230,84 @@ export async function muVolumes(id: number, fetchFn: FetchFn): Promise<{ vol: nu
   const j = (await getJson(fetchFn, `${MU}/series/${id}`)) as { status?: unknown } | null;
   if (!j) return null;
   return parseMuStatus(String(j.status ?? "")) ?? { vol: 0, finished: false };
+}
+
+// ---------- RanobeHub (русские переводы ранобэ) ----------
+
+/** Книга из ответа поиска RanobeHub: сколько томов и глав есть по-русски. */
+export interface RhBook {
+  id: number;
+  /** название по-русски */
+  ru: string;
+  /** оригинальное название (английское, японское — как заведено на сайте) */
+  orig: string;
+  vol: number;
+  ch: number;
+}
+
+/** Ссылка на страницу тайтла (сайт сам перенаправит на «…-название»). */
+export const rhTitleUrl = (id: number): string => `${RH}/ranobe/${id}`;
+
+export function parseRhBooks(j: unknown): RhBook[] {
+  const list = (j as { books?: unknown } | null)?.books;
+  if (!Array.isArray(list)) return [];
+  const out: RhBook[] = [];
+  for (const b of list as Record<string, unknown>[]) {
+    if (!b || typeof b.id !== "number") continue;
+    const nn = (v: unknown): number => (typeof v === "number" && Number.isFinite(v) && v > 0 && v < 10_000 ? Math.floor(v) : 0);
+    out.push({ id: b.id, ru: String(b.title ?? ""), orig: String(b.originalTitle ?? ""), vol: nn(b.volumes), ch: nn(b.chapters) });
+  }
+  return out;
+}
+
+/** Поиск по названию (до шести книг, самые подходящие первыми). null — не ответил. */
+export async function rhSearch(q: string, fetchFn: FetchFn): Promise<RhBook[] | null> {
+  const j = await getJson(fetchFn, `${RH}/api/search?${new URLSearchParams({ q })}`);
+  return j && typeof j === "object" && Array.isArray((j as { books?: unknown }).books) ? parseRhBooks(j) : null;
+}
+
+/** Название без пометок вида «(LN)», «(Новелла)», «[перевод …]» и без регистра, ё и знаков: для точного сравнения. */
+const rhCore = (t: string): string =>
+  t
+    .replace(/\[[^\]]*\]|\((?:ln|лн|novel|новелла|light novel|web novel|ранобэ)\)/giu, " ")
+    .toLowerCase()
+    .replace(/ё/g, "е")
+    .replace(/[^\p{L}\p{N}]+/gu, " ")
+    .trim();
+
+/** Книги с пометкой другого языка («[Украинский]») не берём: это не русский перевод. */
+const OTHER_LANG = /\[\s*(?:украинск|белорусск|английск|польск|немецк|французск)[^\]]*\]/iu;
+
+/**
+ * Из ответа поиска выбрать нужную книгу: название по-русски или оригинальное совпало целиком (после снятия пометок вроде «(LN)»).
+ * Несколько совпадений — берём ту, где больше томов (у веб-версии обычно один «том»), потом больше глав, потом меньший номер. Похожее не берём: лучше «нет», чем чужая книга.
+ */
+export function pickRh(books: RhBook[], orig: string, ru: string): RhBook | null {
+  const o = rhCore(orig);
+  const r = rhCore(ru);
+  const ok = books.filter((b) => !OTHER_LANG.test(b.ru) && ((o !== "" && rhCore(b.orig) === o) || (r !== "" && rhCore(b.ru) === r)));
+  return [...ok].sort((x, y) => y.vol - x.vol || y.ch - x.ch || x.id - y.id)[0] ?? null;
+}
+
+/** Найти ранобэ на RanobeHub по оригинальному, потом по русскому названию. "none" — нет; null — сайт не ответил. */
+export async function findRanobeHub(orig: string, ru: string, fetchFn: FetchFn): Promise<RhBook | "none" | null> {
+  const queries = [...new Set([orig.trim(), ru.trim()].filter(Boolean))];
+  for (const q of queries) {
+    const books = await rhSearch(q, fetchFn);
+    if (books === null) return null;
+    const b = pickRh(books, orig, ru);
+    if (b) return b;
+  }
+  return "none";
+}
+
+/** Свежие цифры уже найденной книги (повторный поиск по названию и выбор по номеру). null — сайт не ответил или книги в выдаче нет: прежние цифры остаются. */
+export async function rhRefresh(id: number, orig: string, ru: string, fetchFn: FetchFn): Promise<RhBook | null> {
+  for (const q of [...new Set([orig.trim(), ru.trim()].filter(Boolean))]) {
+    const books = await rhSearch(q, fetchFn);
+    if (books === null) return null;
+    const b = books.find((x) => x.id === id);
+    if (b) return b;
+  }
+  return null;
 }
