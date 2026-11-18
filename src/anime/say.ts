@@ -19,10 +19,10 @@ export interface SayPhrase extends AnimePhrase {
   soft?: true;
 }
 
-const MAX_CHARS = 90;
-const MAX_QUERY = 70;
+export const MAX_CHARS = 90;
+export const MAX_QUERY = 70;
 
-const PREFIX = /^(?:бот|аниме|хару)(?![\p{L}\p{N}])\s*[,:;.\-–—]?\s*(?:аниме(?![\p{L}\p{N}])\s*[,:;.\-–—]?\s*)?/iu;
+export const PREFIX = /^(?:бот|аниме|хару)(?![\p{L}\p{N}])\s*[,:;.\-–—]?\s*(?:аниме(?![\p{L}\p{N}])\s*[,:;.\-–—]?\s*)?/iu;
 
 const SEEN = /^(?:посмотрел[аи]?|глянул[аи]?|просмотрел[аи]?|досмотрел[аи]?)\s+(.+)$/iu;
 const DROP = /^(?:бросил[аи]?|бросаю|дропнул[аи]?|дропаю|забил[аи]?(?:\s+на)?|забиваю(?:\s+на)?|перестал[аи]?(?:\s+смотреть)?)\s+(.+)$/iu;
@@ -40,7 +40,7 @@ const LATEST = /(?:^|\s)(?:последн(?:юю|яя|ей)|новую|нова�
 const EP_NUM = /(?:^|\s)(?:на\s+)?(?:(\d{1,4})(?:-?(?:ю|я|й|е))?\s+(?:серию|серия|серии|эпизод)|(?:серию|серия|серии|эпизод)\s+(\d{1,4}))(?=\s|$)/iu;
 const EP_BARE = /(?:^|\s)(?:серию|серия|серии|эпизод)(?=\s|$)/iu;
 
-interface Marks {
+export interface Marks {
   rest: string;
   episode: number | null;
   latest: boolean;
@@ -50,7 +50,7 @@ interface Marks {
 }
 
 /** Вынуть из остатка фразы серию, сезон и слова «последняя серия»; остаток — название. */
-function takeMarks(input: string): Marks {
+export function takeMarks(input: string): Marks {
   let rest = ` ${input} `;
   let episode: number | null = null;
   let season: number | null = null;

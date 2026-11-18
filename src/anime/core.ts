@@ -88,8 +88,12 @@ export function dayShort(ms: number, now: number, tz: string): string {
 
 export const clip = (s: string, n: number): string => (s.length > n ? `${s.slice(0, n - 1)}…` : s);
 
-/** liked: 0 нет отметки, 1 понравилось, 2 в восторге, -1 «так себе» (в списке без значка). */
-export const likeMark = (a: Anime): string => (a.liked === 2 ? "🔥 " : a.liked === 1 ? "❤ " : "");
+/** liked: 0 нет отметки, 1 понравилось, 2 в восторге, -1 «так себе» (в списке без значка), -2 «не зашло» (👎). */
+export const likeMark = (a: Anime): string => (a.liked === 2 ? "🔥 " : a.liked === 1 ? "❤ " : a.liked <= -2 ? "👎 " : "");
+
+/** Отметка словами для карточки и ответов: «🔥 в восторге», «❤ понравилось», «так себе», «👎 не зашло»; пусто — отметки нет. */
+export const likeWords = (liked: number): string =>
+  liked >= 2 ? "🔥 в восторге" : liked === 1 ? "❤ понравилось" : liked === -1 ? "так себе" : liked <= -2 ? "👎 не зашло" : "";
 
 /** Хвост строки списка про серии: на какой я и что дальше. */
 export function progressText(a: Anime, now: number, tz: string): string {
@@ -98,8 +102,9 @@ export function progressText(a: Anime, now: number, tz: string): string {
     if (e.upcoming) return `${e.upcoming.ep === 1 ? "старт" : `${e.upcoming.ep}-я`}: ${whenShort(e.upcoming.at, now, tz)}`;
     return a.src_status === "FINISHED" || a.src_status === "RELEASING" ? "уже вышло" : "дата не объявлена";
   }
-  if (a.status === "done") return a.episodes ? `${a.episodes} сер.` : `серия ${a.watched}`;
-  if (a.status === "dropped") return `остановился на ${a.watched}`;
+  // у загруженных из анкеты отметок серий нет (watched = 0): «серия 0» и «остановился на 0» не пишем
+  if (a.status === "done") return a.episodes ? `${a.episodes} сер.` : a.watched ? `серия ${a.watched}` : "просмотрено";
+  if (a.status === "dropped") return a.watched ? `остановился на ${a.watched}` : "бросил";
   const parts = [`серия ${a.watched}`];
   if (e.airedEp > a.watched) parts.push(`вышла ${e.airedEp}-я`);
   if (e.upcoming) parts.push(`${e.upcoming.ep}-я: ${whenShort(e.upcoming.at, now, tz)}`);
@@ -290,7 +295,8 @@ export function weekPicks(rows: Anime[], now: number): WeekPicks {
     planned: oldest(rows.filter((a) => a.status === "planned" && idle(a) >= PLANNED_OLD && !asked(a, PLANNED_OLD, now))),
     liked: done.filter((a) => a.liked === 0 && a.weekq_at === null).sort((x, y) => y.updated_at - x.updated_at || y.id - x.id)[0] ?? null,
     seq: done
-      .filter((a) => a.seq_at === null || now - a.seq_at >= SEQ_RECHECK)
+      // про продолжение того, что не зашло («так себе», «не зашло»), не спрашиваем
+      .filter((a) => a.liked >= 0 && (a.seq_at === null || now - a.seq_at >= SEQ_RECHECK))
       .sort((x, y) => y.liked - x.liked || y.updated_at - x.updated_at)
       .slice(0, 3),
   };

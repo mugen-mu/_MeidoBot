@@ -91,7 +91,9 @@ export async function runAnime(a: AnimeCronArgs): Promise<{ ops: Op[]; notes: st
 
   // ---------- ночное обновление расписания ----------
   if (a.minuteOfDay >= REFRESH_FROM && meta.get("anime_refresh") !== today && now >= (Number(meta.get("anime_next") ?? 0) || 0) && a.room(12)) {
-    const tracked = (await rows()).filter((x) => x.status === "watching" || x.status === "planned");
+    // законченные тайтлы расписание больше не меняют: запросов на них не тратим (иначе загруженные из анкеты «В планах» занимали бы
+    // все 8 мест «добора» каждую ночь и новые тайтлы не обновлялись бы)
+    const tracked = (await rows()).filter((x) => (x.status === "watching" || x.status === "planned") && x.src_status !== "FINISHED");
     if (!tracked.length) {
       ops.push(setMeta("anime_refresh", today));
     } else {
