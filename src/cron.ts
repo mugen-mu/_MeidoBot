@@ -34,6 +34,8 @@ import { parseAnimeDid, parseAnimeMark } from "./anime/mark.ts";
 import { parseAnimeAsk, parseAnimeSay } from "./anime/say.ts";
 import { listAnime } from "./anime/store.ts";
 import { eveningLines } from "./anime/ui.ts";
+import { runReading } from "./reading/cron.ts";
+import { handleReading, parseReading } from "./reading/handlers.ts";
 import { handleReply } from "./reply.ts";
 import { YASNO_ATTEMPTS, fetchYasno, groupsFor, lightFullText, lightLines, publishedFor, tomorrowDigest, type LightData } from "./light.ts";
 import { isLightQuestion, lightAskMessage } from "./lightAsk.ts";
@@ -590,6 +592,23 @@ ${n.text}` } : n;
                 if (e instanceof BudgetExceeded) break;
               }
               await react(ch, m.id, true);
+              continue;
+            }
+          }
+          // чтение (манга и ранобэ) фразой и вопросом: «прочитал главу 120 Кауру», «читаю …», «бросил читать …», «что я читаю», «что вышло по чтению» (волны 2–3 анкеты); без модели.
+          // Стоит раньше аниме-фраз: «продолжаю читать …» и «бросил читать …» иначе принял бы за аниме. Чужое название без обращения («бот», «Хару») или слова «манга»/«ранобэ» — обычное дело.
+          const readIn = parseReading(m.content);
+          if (readIn && !detectSecret(m.content).secret && room2(8)) {
+            try {
+              const reply = await handleReading({ repo, now, tz: s.tz, character: s.character, fetchFn: d.fetchFn ?? fetch, rand: d.rand, spend: (n) => repo.counter.spend(n), weeklyOn: s.reading !== null, any: meta.get("reading_on") === "1", onAdded: () => meta.set("reading_on", "1") }, readIn);
+              if (reply) {
+                report.intake++;
+                await api.postMessage(ch, reply);
+                continue;
+              }
+            } catch (e) {
+              if (e instanceof BudgetExceeded) break;
+              report.notes.push("чтение: не удалось ответить на фразу");
               continue;
             }
           }
@@ -1259,6 +1278,14 @@ ${n.text}` } : n;
       ops2.push(...r.ops);
       report.notes.push(...r.notes);
       if (!r.healthy) healthy = false;
+    }
+
+    // 2б7. чтение (манга и ранобэ): ночная проверка источников и субботнее сообщение; без единого тайтла в чтении — ни одного подзапроса
+    if (owner && s.chRemind) {
+      const rr = await runReading({ repo, api, now, s, meta, away, quiet: inQuietHours(s, minuteOfDay), minuteOfDay, fetchFn: d.fetchFn ?? fetch, rand: d.rand, room: room2, spend: (n) => repo.counter.spend(n) });
+      ops2.push(...rr.ops);
+      report.notes.push(...rr.notes);
+      if (!rr.healthy) healthy = false;
     }
 
     // 2в. остаток убранной панели «Горит» (решение 2026-11-11): её сообщение, которое бот правил раз в 5 минут, удаляем один раз;

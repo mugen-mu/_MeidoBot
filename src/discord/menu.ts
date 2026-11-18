@@ -13,6 +13,7 @@ import { parseRecipe } from "../service.ts";
 import { isTail } from "../tail.ts";
 import { GAS_WORDS_HINT } from "../gas.ts";
 import { WATER_WORDS_HINT } from "../water.ts";
+import { describeReading, shortReading } from "../reading/ui.ts";
 import { describeWeekly, selectLabel, textLabel, modal } from "./ui.ts";
 import type { ActionRow, Button, MessageBody, StringSelect } from "./types.ts";
 
@@ -420,6 +421,7 @@ export function sectionMessage(s: AppSettings, sec: Section, now: number, dmOn: 
           `Подсказки перевода: ${onOff(s.style.hints)}. Выкл — японские слова без перевода в скобках (они остаются в «Слова Хару»); вкл — первые два раза у нового слова.`,
           `Дождь в Днепре: ${rainModeWord(rainModeOf(s))}. Раз в ${RAIN_CONFIG.checkEveryMinutes} минут бот смотрит погодную модель Open-Meteo и пишет, когда начался дождь и когда закончился (не в тихие часы); это модель, а не радар, поэтому возможны опоздания. «Скоро» — ещё и предупреждает примерно за 15 минут.`,
           `Подборка аниме по субботам: ${s.animePick === null ? "выкл" : `вкл, суббота ${fmtHHMM(s.animePick)}`}. Одно сообщение в неделю: что вышло и не посмотрено, что-то из «В планах», новинки сезона, похожее на любимое и сюрприз (не в тихие часы). Кнопка перебирает время: 12:00, 18:00, выкл.`,
+          `Чтение (манга и ранобэ): ${describeReading(s)}. Раз в неделю бот пишет, что вышло и накопилось по тому, что вы читаете; не в тихие часы. Список — спросите «что я читаю».`,
         ].join("\n"),
         [
           row(
@@ -434,7 +436,10 @@ export function sectionMessage(s: AppSettings, sec: Section, now: number, dmOn: 
             btn(`Подсказки перевода: ${onOff(s.style.hints)}`, "mn:tg:hi:a", s.style.hints ? 3 : 2),
             btn("Сбросить настроение…", "mn:rs", 4),
           ),
-          row(btn(s.animePick === null ? "Подборка аниме: выкл" : `Подборка аниме: сб ${fmtHHMM(s.animePick)}`, "mn:tg:pk:a", s.animePick === null ? 2 : 3)),
+          row(
+            btn(s.animePick === null ? "Подборка аниме: выкл" : `Подборка аниме: сб ${fmtHHMM(s.animePick)}`, "mn:tg:pk:a", s.animePick === null ? 2 : 3),
+            btn(`Чтение: ${shortReading(s)}`, "mn:md:rd:a", s.reading ? 3 : 2),
+          ),
           back,
         ],
       );

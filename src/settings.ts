@@ -68,6 +68,8 @@ export interface AppSettings {
   /** жанры для подборки: любимые (новинки сезона) и те, что не предлагаем; стартовые значения из анкеты вкусов, интерфейса пока нет — меняются записью `pick_genres` / `pick_avoid` */
   pickGenres: GenreKey[];
   pickAvoid: GenreKey[];
+  /** субботнее сообщение про чтение (манга и ранобэ, src/reading): день недели 1..7 и время; null = выкл. По умолчанию суббота 11:00 (слова Ihor: «раз в неделю, по субботам») */
+  reading: { dow: number; at: number } | null;
 }
 
 /** Ключ меты с копией каналов до включения «Личка» (по нему выключение возвращает всё как было). */
@@ -86,7 +88,7 @@ export const SETTING_KEYS = [
   "tz", "default_ladder", "default_time", "quiet_enabled", "quiet_from", "quiet_to", "away_until",
   "summary_morning", "summary_evening", "weekly", "ch_remind", "ch_bot", "ch_today", "ch_forum", "ch_archive", "intake", "light", "water", "gas", "character", "mood_on",
   "style_level", "style_script", "style_sfx", "style_honorifics", "style_kaomoji", "hints_on", "llm_on", "live_on", "birthday",
-  "time_morning", "time_evening", "recent_on", "sound_all", "chores", "rain", "anime_pick", "pick_genres", "pick_avoid",
+  "time_morning", "time_evening", "recent_on", "sound_all", "chores", "rain", "anime_pick", "pick_genres", "pick_avoid", "reading",
 ] as const;
 
 function minutes(v: string | undefined, fallback: number | null): number | null {
@@ -104,6 +106,15 @@ export function readSettings(rows: { key: string; value: string }[]): AppSetting
     const [d, t] = w.split("@");
     const at = parseHHMM(t ?? "");
     if (Number(d) >= 1 && Number(d) <= 7 && at !== null) weekly = { dow: Number(d), at };
+  }
+  // чтение: «6@11:00» (суббота 11:00) или «off»; нет значения или оно битое — суббота 11:00
+  let reading: AppSettings["reading"] = { dow: 6, at: 11 * 60 };
+  const rd = m.get("reading");
+  if (rd === "off") reading = null;
+  else if (rd) {
+    const [d, t] = rd.split("@");
+    const at = parseHHMM(t ?? "");
+    if (Number(d) >= 1 && Number(d) <= 7 && at !== null) reading = { dow: Number(d), at };
   }
   let intake: string[] = [];
   try {
@@ -148,6 +159,7 @@ export function readSettings(rows: { key: string; value: string }[]): AppSetting
     animePick: minutes(m.get("anime_pick"), PICK_AT),
     pickGenres: parseGenreList(m.get("pick_genres"), DEFAULT_LIKES),
     pickAvoid: parseGenreList(m.get("pick_avoid"), DEFAULT_AVOID),
+    reading,
   };
 }
 
