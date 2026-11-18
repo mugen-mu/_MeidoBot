@@ -4,9 +4,9 @@ import type { Voice } from "./core.ts";
 
 export type FetchFn = typeof fetch;
 
-const UA = "MeidoBot/1.0 (personal reminder bot)";
+export const UA = "MeidoBot/1.0 (personal reminder bot)";
 const TIMEOUT_MS = 2500;
-const SHIKI = "https://shikimori.io/api/animes";
+export const SHIKI = "https://shikimori.io/api/animes";
 
 /** Тайтл из поиска Shikimori. `status`: anons — анонс, ongoing — идёт, released — вышел. */
 export interface Candidate {
@@ -51,7 +51,7 @@ export function parseCandidate(a: unknown): Candidate | null {
   };
 }
 
-async function getJson(fetchFn: FetchFn, url: string, init?: RequestInit): Promise<unknown | null> {
+export async function getJson(fetchFn: FetchFn, url: string, init?: RequestInit): Promise<unknown | null> {
   try {
     const r = await fetchFn(url, { ...init, signal: AbortSignal.timeout(TIMEOUT_MS) });
     if (!r.ok) return null;

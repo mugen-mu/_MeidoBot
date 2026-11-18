@@ -33,6 +33,8 @@ export interface ActionRow {
 /** Карточка (embed): цветная полоска, текст и миниатюра. Горничная показывает в ней свою реплику (этап Х3). */
 export interface Embed {
   title?: string;
+  /** заголовок становится ссылкой (карточка тайтла в субботней подборке) */
+  url?: string;
   description?: string;
   color?: number;
   thumbnail?: { url: string };

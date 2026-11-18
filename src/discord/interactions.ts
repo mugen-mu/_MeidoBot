@@ -44,6 +44,7 @@ import {
 } from "../service.ts";
 import { type AppSettings, DM_BACKUP_KEY, dmAllOn, rainModeOf, timeOpts } from "../settings.ts";
 import { nextRainMode } from "../rain.ts";
+import { nextPickAt } from "../anime/pickGenres.ts";
 import { describeLead, describeRecipe, formatWhen } from "../time/format.ts";
 import { normalizeEvery, parseInput, parseWhen } from "../time/parse.ts";
 import { quickDue } from "../time/quick.ts";
@@ -1025,6 +1026,11 @@ async function onMenu(c: C, parts: string[], values: string[]): Promise<Reply> {
         case "rn":
           ops.push(setSetting("rain", nextRainMode(rainModeOf(c.s))));
           break;
+        case "pk": {
+          const at = nextPickAt(c.s.animePick);
+          ops.push(setSetting("anime_pick", at === null ? "off" : fmtHHMM(at)));
+          break;
+        }
         default:
           return eph("Это действие бот не знает.");
       }
