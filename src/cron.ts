@@ -30,6 +30,7 @@ import { UKR_CHECK_EVERY, UKR_LAST_KEY, UKR_NEXT_KEY, UKR_OUTBOX_KEY, UKR_STATE_
 import { parseAnimePhrase } from "./anime/core.ts";
 import { runAnime } from "./anime/cron.ts";
 import { handleAnimeAsk, handleMark, handlePhrase, handleSay } from "./anime/handlers.ts";
+import { type AnimeLlmRun, animeViaModel } from "./anime/llmSay.ts";
 import { parseAnimeDid, parseAnimeMark } from "./anime/mark.ts";
 import { parseAnimeAsk, parseAnimeSay } from "./anime/say.ts";
 import { listAnime } from "./anime/store.ts";
@@ -360,6 +361,8 @@ ${n.text}` } : n;
   /** последнее прочитанное сообщение канала в памяти запуска: быстрые опросы (шаг 4) не ждут записи в базу и не читают её */
   const lastSeen = new Map<string, string>();
   let blindNoticed = false;
+  /** запасной разбор аниме моделью: сколько раз спросили в этом запуске и не упала ли она (после сбоя до конца запуска не спрашиваем) */
+  const animeLlm: AnimeLlmRun = { calls: 0, down: false };
   let intakeOn = false;
   let intakeRound: (ops2: Op[], now: number) => Promise<void> = async () => {};
   try {
@@ -646,6 +649,27 @@ ${n.text}` } : n;
               report.notes.push("аниме: не удалось ответить на фразу");
             }
             continue;
+          }
+          // аниме запасным путём (волна 4 анкеты, «Да, всегда»): ни одно правило не узнало фразу, модель включена — спрашиваем её, не про аниме ли это.
+          // Секреты, фразы со временем, длинные и при нехватке бесплатной нормы нейронов не уходят в модель; любой сбой — дальше обычным делом (src/anime/llmSay.ts)
+          if (s.llmOn && ai && room2(8)) {
+            try {
+              const reply = await animeViaModel({
+                ai, text: m.content, now, at: messageTime(m, now), settings: s, days: parseUsage(meta.get("usage")), neurons: repo.counter.neurons,
+                run: animeLlm, spend: (n) => repo.counter.spend(n),
+                ctx: { repo, now, tz: s.tz, character: s.character, fetchFn: d.fetchFn ?? fetch, rand: d.rand },
+              });
+              if (reply) {
+                repo.counter.spend(2);
+                report.intake++;
+                await api.postMessage(ch, reply);
+                continue;
+              }
+            } catch (e) {
+              if (e instanceof BudgetExceeded) break;
+              report.notes.push("аниме: не удалось разобрать фразу моделью");
+              continue;
+            }
           }
           const recordedFor = async (title: string, critical: boolean) => {
             if (!mood?.loaded) return null;

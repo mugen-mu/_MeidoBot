@@ -41,7 +41,7 @@ title — суть дела с большой буквы, без слов о в�
 }
 
 /** Достаёт текст ответа из двух возможных форм ответа Workers AI. */
-function replyText(out: unknown): string | null {
+export function replyText(out: unknown): string | null {
   const o = out as { response?: unknown; choices?: { message?: { content?: unknown } }[] } | null;
   if (!o || typeof o !== "object") return null;
   const t = o.response ?? o.choices?.[0]?.message?.content;

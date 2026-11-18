@@ -126,6 +126,15 @@ export function neuronsOf(response: unknown): number {
   return NEURONS_FALLBACK;
 }
 
+/**
+ * Можно ли звать модель ради необязательного разбора фразы (аниме запасным путём): сегодня (сутки UTC) съедено меньше WARN_AT дневной нормы
+ * нейронов, считая и то, что уже потратил этот запуск (`thisRun`, в итог суток оно попадёт только в конце запуска). Дальше — готовые фразы и обычные дела.
+ */
+export function aiHasRoom(days: DayUsage[], now: number, thisRun: number): boolean {
+  const today = days.find((x) => x.d === utcDay(now));
+  return ((today?.ai ?? 0) + Math.max(0, thisRun)) / LIMITS.neurons < WARN_AT;
+}
+
 export type Shares = Record<Metric, number>;
 
 /** Доля нормы (0..1+) по каждой метрике за одни сутки. */
