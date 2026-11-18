@@ -25,7 +25,9 @@ import {
   noticeSet,
   progressText,
 } from "./core.ts";
-import type { AnimeDid, MarkPhrase } from "./mark.ts";
+import { type AnimeDid, type MarkPhrase, scoreLabel } from "./mark.ts";
+import type { Recommend } from "./recommend.ts";
+import { type RecCtx, runRecommend } from "./recommendRun.ts";
 import type { AnimeAsk, SayPhrase } from "./say.ts";
 import { type Candidate, type FetchFn, getShikiFull, searchShiki } from "./sources.ts";
 import { deleteOp, getAnime, listAnime, patchOp, upsertOp } from "./store.ts";
@@ -170,16 +172,23 @@ export async function handleMark(c: AnimeCtx, mk: MarkPhrase): Promise<MessageBo
     if (own.episodes) patch.watched = own.episodes;
   }
   const name = `**${clip(own.title_ru, 80)}**`;
-  if (own.liked === mk.liked && !finishes) return { ...text(`Это уже записано: ${name} — ${likeWords(mk.liked)}.`), components: nav(own) };
+  const mine = mk.score !== undefined ? ` (ваши ${scoreLabel(mk.score)} из 10)` : ""; // оценка числом: храню отметкой по шкале, само число в ответе
+  if (own.liked === mk.liked && !finishes) return { ...text(`Это уже записано: ${name} — ${likeWords(mk.liked)}${mine}.`), components: nav(own) };
   await c.repo.exec([patchOp(own.id, patch, c.now), ...touchOps()]);
   const fresh = { ...own, ...patch } as Anime;
   const line = mk.liked === 2 ? haru("loved", c.character, c.rand) : mk.liked > 0 ? haru("liked", c.character, c.rand) : mk.liked < 0 ? haru("meh", c.character, c.rand) : null;
   return {
-    content: `Записала: ${name} — ${likeWords(mk.liked)}.${finishes ? " Отметила как просмотренное." : ""}${line ? `\n${voiceText(line)}` : ""}`,
+    content: `Записала: ${name} — ${likeWords(mk.liked)}${mine}.${finishes ? " Отметила как просмотренное." : ""}${line ? `\n${voiceText(line)}` : ""}`,
     components: nav(fresh),
     allowed_mentions: { parse: [] },
   };
 }
+
+/**
+ * Просьба «посоветуй» живой фразой («хочу что-то лёгкое», «похожее на Фрирен»): 2–3 карточки в виде субботней подборки, до 8 обращений к Shikimori.
+ * Подробности — recommendRun.ts. null — это не про аниме (слабая форма с неизвестным названием), фраза остаётся делом.
+ */
+export const handleRecommend = (c: RecCtx, r: Recommend): Promise<MessageBody | null> => runRecommend(c, r);
 
 /** Окно «＋ Добавить»: название, куда, серия. */
 export async function handleAddModal(c: AnimeCtx, v: { name: string; st: string; ep: string }): Promise<Reply> {

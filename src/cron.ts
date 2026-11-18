@@ -32,6 +32,8 @@ import { runAnime } from "./anime/cron.ts";
 import { handleAnimeAsk, handleMark, handlePhrase, handleSay } from "./anime/handlers.ts";
 import { parseAnimeDid, parseAnimeMark } from "./anime/mark.ts";
 import { parseAnimeAsk, parseAnimeSay } from "./anime/say.ts";
+import { handleRecommend } from "./anime/handlers.ts";
+import { parseRecommend } from "./anime/recommend.ts";
 import { listAnime } from "./anime/store.ts";
 import { eveningLines } from "./anime/ui.ts";
 import { runReading } from "./reading/cron.ts";
@@ -552,6 +554,24 @@ ${n.text}` } : n;
               report.intake++;
               if (e instanceof BudgetExceeded) break;
               report.notes.push("аниме: не удалось ответить на вопрос");
+              continue;
+            }
+          }
+          // «посоветуй» живой фразой: «хочу что-то лёгкое», «посоветуй комедию», «похожее на Фрирен» (волна 4 анкеты, 2026-11-18): 2–3 карточки с Shikimori, без модели.
+          // Запаса мало — честно «сейчас не получится», а не молчание; слабая форма с неизвестным названием («посоветуй как приготовить борщ») остаётся делом
+          const recQ = parseRecommend(m.content);
+          if (recQ && !detectSecret(m.content).secret) {
+            try {
+              const reply = await handleRecommend({ repo, now, tz: s.tz, character: s.character, fetchFn: d.fetchFn ?? fetch, rand: d.rand, pickGenres: s.pickGenres, pickAvoid: s.pickAvoid, seenRaw: meta.get("anime_pick_seen"), onSeen: (v) => meta.set("anime_pick_seen", v) }, recQ);
+              if (reply) {
+                report.intake++;
+                await api.postMessage(ch, reply);
+                continue;
+              }
+            } catch (e) {
+              if (e instanceof BudgetExceeded) break;
+              report.intake++;
+              report.notes.push("аниме: не удалось подобрать по просьбе «посоветуй»");
               continue;
             }
           }

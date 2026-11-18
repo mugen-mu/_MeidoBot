@@ -218,7 +218,8 @@ export function mergeNovelties(lists: { key: GenreKey; items: PickTitle[] }[], k
 
 // ---------- рекомендация и текст ----------
 
-export type RecKind = "planned" | "new" | "similar" | "surprise";
+/** `mood` — подбор по просьбе «хочу что-то лёгкое» (recommend.ts), остальные — субботняя подборка. */
+export type RecKind = "planned" | "new" | "similar" | "surprise" | "mood";
 
 export interface Rec {
   kind: RecKind;
@@ -270,6 +271,7 @@ const HARU: Record<RecKind | "head" | "empty", string[]> = {
   new: ["Свежее из сезона. Обложка мне понравилась, это не оценка.", "Новенькое. Вдруг это ваше."],
   similar: ["Вы любите такое. Я заметила, я ведь слежу.", "Похоже на то, что вам зашло. Не гарантирую, но стараюсь."],
   surprise: ["Это вне ваших жанров. Мне просто кажется, что зайдёт.", "Сюрприз. Не спойлерю, хозяин."],
+  mood: ["Под ваше настроение. Я прислушалась, а не угадывала.", "Выбирала с вниманием. Выбирать вам, хозяин."],
   empty: ["Сегодня подборка пустая. Я не виновата, я честно искала."],
 };
 
@@ -280,7 +282,7 @@ function line(kind: keyof typeof HARU, character: Character, rand: () => number)
 }
 
 const COLOR = 0xf4a6c0;
-const LABEL: Record<RecKind, string> = { planned: "Из «В планах»", new: "Новинка сезона", similar: "Похожее", surprise: "Сюрприз" };
+const LABEL: Record<RecKind, string> = { planned: "Из «В планах»", new: "Новинка сезона", similar: "Похожее", surprise: "Сюрприз", mood: "Подбор" };
 
 /** Карточка рекомендации: 2–3 строки (почему, сколько серий и оценка, реплика Хару), обложка справа. */
 export function recEmbed(r: Rec, character: Character, rand: () => number): Embed {
