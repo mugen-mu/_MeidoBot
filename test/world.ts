@@ -3,6 +3,7 @@ import { type CronEnv, type CronReport, runCron } from "../src/cron.ts";
 import { Counter, Repo, setMeta, setSetting } from "../src/db/repo.ts";
 import { countedApi } from "../src/discord/api.ts";
 import { createFromText } from "../src/intake.ts";
+import type { AiBinding } from "../src/llm.ts";
 import { type AppSettings, readSettings } from "../src/settings.ts";
 import { FakeD1 } from "./d1shim.ts";
 import { FakeDiscord } from "./fakeDiscord.ts";
@@ -47,6 +48,8 @@ export class World {
   rainFetches = 0;
   /** строки журнала, которые cron передал через log */
   logs: string[] = [];
+  /** привязка модели (env.AI) для запуска cron; по умолчанию нет */
+  ai?: AiBinding;
 
   /** Репозиторий с новым счётчиком (как новый запуск Worker). */
   repo(limit = 50): Repo {
@@ -122,7 +125,7 @@ export class World {
       this.lightFetches++;
       return this.light === null ? new Response("down", { status: 503 }) : Response.json(this.light);
     }) as unknown as typeof fetch;
-    return runCron({ repo, api, now, env, fetchFn, ping: async (u) => void this.pings.push(u), log: (l) => void this.logs.push(l) });
+    return runCron({ repo, api, now, env, fetchFn, ai: this.ai, ping: async (u) => void this.pings.push(u), log: (l) => void this.logs.push(l) });
   }
 
   occ(id: number) {
