@@ -111,6 +111,13 @@ textarea { display: block; width: 100%; margin-top: 10px; padding: 10px 12px; bo
 .row[data-s="now"] .rs { background: var(--accent); color: var(--accent-ink); }
 .row[data-s="seen"] .rs { background: var(--c-meh); } .row[data-s="must"] .rs { background: var(--c-like); }
 .row[data-s="nice"] .rs { background: var(--c-plan); } .row[data-s="no"] .rs { background: var(--c-none); }
+/* строка с несколькими отметками: у каждой своя цветная плашка, они переносятся на следующую строку */
+.row .rs.multi, .row[data-s] .rs.multi { display: flex; flex-wrap: wrap; gap: 4px; justify-content: flex-end; max-width: 55%; padding: 0; border: 0; background: none; color: inherit; }
+.rs.multi .c { border-radius: 999px; padding: 3px 10px; font-size: 12px; font-weight: 500; line-height: 1.35; color: var(--on-c); background: var(--c-none); }
+.rs.multi .c[data-c="love"] { background: var(--c-love); } .rs.multi .c[data-c="like"] { background: var(--c-like); }
+.rs.multi .c[data-c="seen"] { background: var(--c-meh); } .rs.multi .c[data-c="dislike"] { background: var(--c-dislike); }
+.rs.multi .c[data-c="drop"] { background: var(--c-drop); } .rs.multi .c[data-c="plan"] { background: var(--c-plan); }
+.rs.multi .c[data-c="now"] { background: var(--accent); color: var(--accent-ink); }
 .row.open { background: var(--surface2); }
 .pick { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; padding: 2px 14px 14px; }
 .pick button { border: 1px solid var(--line); background: var(--surface); border-radius: 10px; padding: 10px 6px; font-size: 14px; min-height: 44px; }
@@ -119,7 +126,9 @@ textarea { display: block; width: 100%; margin-top: 10px; padding: 10px 12px; bo
 .pick button[data-st="never"] { color: var(--c-never); } .pick button[data-st="now"] { color: var(--accent); }
 .pick button[data-st="must"] { color: var(--c-like); } .pick button[data-st="nice"] { color: var(--c-plan); }
 .pick button[aria-pressed="true"] { border-color: currentColor; font-weight: 600; box-shadow: inset 0 0 0 1px currentColor; }
-@media (min-width: 620px) { .pick { grid-template-columns: repeat(6, 1fr); } .pick.five { grid-template-columns: repeat(5, 1fr); } .pick.seven, .pick.eight { grid-template-columns: repeat(4, 1fr); } .pick.three { grid-template-columns: repeat(3, 1fr); } }
+.pick.multi button[data-st][aria-pressed="true"]::before { content: "✓ "; }
+.pick .next { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); font-weight: 600; }
+@media (min-width: 620px) { .pick { grid-template-columns: repeat(6, 1fr); } .pick.five { grid-template-columns: repeat(5, 1fr); } .pick.seven, .pick.eight { grid-template-columns: repeat(4, 1fr); } .pick.three { grid-template-columns: repeat(3, 1fr); } .pick .next { grid-column: 1 / -1; } }
 
 .end { margin-top: 36px; padding: 16px; border: 1px dashed var(--line); border-radius: var(--r); color: var(--muted); font-size: 14px; }
 .end b { color: var(--ink); }
@@ -160,6 +169,17 @@ const STATES = {
 };
 const BULK = { title: ["none", "Остальное — не смотрел"], taste: ["ok", "Остальное — нейтрально"], read: ["none", "Остальное — не читал"], anime2: ["none", "Остальное — не смотрел"], need: ["nice", "Остальное — пригодится"] };
 const QUICK = { title: "none", read: "none", anime2: "none" }; // быстрая кнопка на строке: одно нажатие вместо двух
+/* Волна 3: на строке можно выбрать несколько отметок («смотрел» + «понравилось», «не смотрел» + «отложил на потом»).
+   В базе у такой строки массив кодов (в порядке STATES), у остальных видов списков по-прежнему одна строка-код.
+   «Не смотрел» исключает отметки о просмотре (смотрю/смотрел/бросил/оценки): они друг другу противоречат; с «отложил на потом» сочетается. */
+const MULTI = { anime2: true };
+const SEEN_SET = ["now", "love", "like", "seen", "dislike", "drop"];
+const codesOf = v => Array.isArray(v) ? v : v ? [v] : [];
+function normMarks(l, st) {
+  const o = {};
+  Object.keys(st || {}).forEach(i => { const cs = codesOf(st[i]); if (!cs.length) return; o[i] = MULTI[l.kind] ? cs : cs[0]; });
+  return o;
+}
 const $ = id => document.getElementById(id);
 const esc = s => String(s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 const byQ = new Map(Q.map(q => [q.id, q])), byL = new Map(LISTS.map(l => [l.id, l]));
@@ -201,9 +221,10 @@ function lHtml(l) {
   const st = STATES[l.kind], bulk = BULK[l.kind];
   const qk = QUICK[l.kind], qlab = qk ? st.find(x => x[0] === qk)[1] : "";
   const cols = st.length === 5 ? " five" : st.length === 7 ? " seven" : st.length === 8 ? " eight" : st.length === 3 ? " three" : "";
+  const multiCls = MULTI[l.kind] ? " multi" : "";
   const rows = l.items.map(it => `<li class="row${qk ? " hasq" : ""}" id="r-${l.id}-${it.id}" data-l="${l.id}" data-i="${it.id}"><div class="line"><button type="button" class="head" aria-expanded="false"><span class="rt"><b>${esc(it.t)}</b>${it.d ? `<i>${esc(it.d)}</i>` : ""}</span><span class="rs">Отметить</span></button>` +
     (qk ? `<button type="button" class="quick" data-st="${qk}">${qlab}</button>` : "") + `</div>` +
-    `<div class="pick${cols}" hidden>${st.map(([k, t]) => `<button type="button" data-st="${k}" aria-pressed="false">${t}</button>`).join("")}</div></li>`).join("");
+    `<div class="pick${cols}${multiCls}" hidden>${st.map(([k, t]) => `<button type="button" data-st="${k}" aria-pressed="false">${t}</button>`).join("")}${MULTI[l.kind] ? `<button type="button" class="next" data-next="1">Дальше ›</button>` : ""}</div></li>`).join("");
   return `<section class="list" id="l-${l.id}" data-l="${l.id}"><div class="lh"><h3><span>${esc(l.t)}</span><span class="lc" data-lc="${l.id}"></span></h3>${l.sub ? `<p>${esc(l.sub)}</p>` : ""}` +
     `<button type="button" class="link" data-bulk="${l.id}">${bulk[1]}</button></div><ul class="rows">${rows}</ul></section>`;
 }
@@ -231,11 +252,13 @@ function syncQ(q) {
   const sk = el.querySelector('[data-act="skip"]'); sk.textContent = a.skip ? "Вернуть вопрос" : "Пропустить";
 }
 function syncRow(lid, iid) {
-  const el = $(`r-${lid}-${iid}`), l = byL.get(lid), s = (S.marks[lid] || {})[iid];
+  const el = $(`r-${lid}-${iid}`), l = byL.get(lid), cs = codesOf((S.marks[lid] || {})[iid]), s = cs.join(" "), rs = el.querySelector(".rs");
   if (s) el.dataset.s = s; else delete el.dataset.s;
-  const lab = s ? STATES[l.kind].find(x => x[0] === s)[1] : "Отметить";
-  el.querySelector(".rs").textContent = lab;
-  el.querySelectorAll(".pick button").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.st === s)));
+  if (MULTI[l.kind]) {
+    rs.classList.toggle("multi", cs.length > 0);
+    rs.innerHTML = cs.length ? cs.map(c => `<span class="c" data-c="${c}">${esc(STATES[l.kind].find(x => x[0] === c)[1])}</span>`).join("") : "Отметить";
+  } else rs.textContent = s ? STATES[l.kind].find(x => x[0] === s)[1] : "Отметить";
+  el.querySelectorAll(".pick button[data-st]").forEach(b => b.setAttribute("aria-pressed", String(cs.includes(b.dataset.st))));
   const open = S.open === el.id;
   el.classList.toggle("open", open); el.querySelector(".pick").hidden = !open; el.querySelector(".head").setAttribute("aria-expanded", String(open));
   el.hidden = S.onlyOpen && !!s && !open;
@@ -277,11 +300,11 @@ async function writeL(lid) {
   const l = byL.get(lid), m = S.marks[lid] || {}, ref = S.db.collection("lists").doc(lid), n = Object.keys(m).length;
   if (!n) { await ref.delete(); return; }
   const names = {}; Object.keys(m).forEach(i => { const it = l.items.find(x => String(x.id) === i); if (it) names[i] = it.t; });
-  await ref.set({ list: lid, title: l.t, kind: l.kind, marked: n, of: l.items.length, states: m, names, at: new Date().toISOString() });
+  await ref.set({ list: lid, title: l.t, kind: l.kind, marked: n, of: l.items.length, multi: !!MULTI[l.kind], states: m, names, at: new Date().toISOString() });
 }
 const LS = "taste-w" + DATA.wave.n;
 function saveLocal() { try { localStorage.setItem(LS, JSON.stringify({ ans: S.ans, marks: S.marks })); } catch (e) { /* браузер не даёт хранить */ } }
-function loadLocal() { try { const v = JSON.parse(localStorage.getItem(LS) || "null"); if (v) { S.ans = v.ans || {}; S.marks = v.marks || {}; } } catch (e) { /* пусто */ } }
+function loadLocal() { try { const v = JSON.parse(localStorage.getItem(LS) || "null"); if (v) { S.ans = v.ans || {}; S.marks = {}; Object.keys(v.marks || {}).forEach(id => { if (byL.has(id)) S.marks[id] = normMarks(byL.get(id), v.marks[id]); }); } } catch (e) { /* пусто */ } }
 
 /* ---- события ---- */
 document.addEventListener("click", e => {
@@ -307,7 +330,7 @@ document.addEventListener("click", e => {
   if (quick) {
     // быстрая отметка без раскрытия строки: список можно пройти одним нажатием на строку
     const row = quick.closest(".row"), lid = row.dataset.l, iid = row.dataset.i, prev = S.open;
-    M(lid)[iid] = quick.dataset.st; S.open = null;
+    M(lid)[iid] = MULTI[byL.get(lid).kind] ? [quick.dataset.st] : quick.dataset.st; S.open = null;
     if (prev) syncRow(...rowKey(prev));
     syncRow(lid, iid); touchL(lid); return;
   }
@@ -315,14 +338,27 @@ document.addEventListener("click", e => {
   if (head) { const row = head.closest(".row"), prev = S.open; S.open = prev === row.id ? null : row.id; if (prev) syncRow(...rowKey(prev)); syncRow(row.dataset.l, row.dataset.i); return; }
   const st = t.closest(".pick button");
   if (st) {
-    const row = st.closest(".row"), lid = row.dataset.l, iid = row.dataset.i, m = M(lid);
+    const row = st.closest(".row"), lid = row.dataset.l, iid = row.dataset.i, m = M(lid), l = byL.get(lid);
+    if (st.dataset.next) { advance(row, lid); return; } // «Дальше»: строка остаётся с теми отметками, что выбраны
+    if (MULTI[l.kind]) {
+      // несколько отметок: нажатие включает или выключает отметку, строка остаётся открытой до «Дальше»
+      const code = st.dataset.st; let cs = codesOf(m[iid]);
+      if (cs.includes(code)) cs = cs.filter(c => c !== code);
+      else {
+        cs = cs.concat(code);
+        if (code === "none") cs = cs.filter(c => !SEEN_SET.includes(c)); else if (SEEN_SET.includes(code)) cs = cs.filter(c => c !== "none");
+      }
+      cs = STATES[l.kind].map(x => x[0]).filter(c => cs.includes(c));
+      if (cs.length) m[iid] = cs; else delete m[iid];
+      syncRow(lid, iid); touchL(lid); return;
+    }
     if (m[iid] === st.dataset.st) delete m[iid]; else m[iid] = st.dataset.st;
     advance(row, lid); touchL(lid); return;
   }
   const bulk = t.closest("[data-bulk]");
   if (bulk) {
     const l = byL.get(bulk.dataset.bulk), m = M(l.id); let n = 0;
-    l.items.forEach(it => { if (!m[it.id]) { m[it.id] = BULK[l.kind][0]; n++; } });
+    l.items.forEach(it => { if (!m[it.id]) { m[it.id] = MULTI[l.kind] ? [BULK[l.kind][0]] : BULK[l.kind][0]; n++; } });
     S.open = null; l.items.forEach(it => syncRow(l.id, it.id)); touchL(l.id); toast(n ? `Отмечено: ${n}` : "Всё уже отмечено"); return;
   }
 });
@@ -371,7 +407,7 @@ build(); refresh();
     snap.docs.forEach(d => {
       const v = d.data(); if (!v || !byL.has(v.list)) return; seen.add(v.list);
       if (S.writing["l:" + v.list] || S.timers["l:" + v.list]) return;
-      S.marks[v.list] = Object.assign({}, v.states || {});
+      S.marks[v.list] = normMarks(byL.get(v.list), v.states);
     });
     Object.keys(S.marks).forEach(id => { if (!seen.has(id) && !S.writing["l:" + id] && !S.timers["l:" + id]) delete S.marks[id]; });
     LISTS.forEach(l => l.items.forEach(it => syncRow(l.id, it.id))); renderStats(); applyFilter();
