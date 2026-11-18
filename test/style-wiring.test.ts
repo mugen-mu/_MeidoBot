@@ -88,12 +88,18 @@ describe("команды стиля", () => {
     expect((await w.settings()).style.hints).toBe(false);
   });
 
-  it("подсказки перевода включаются кнопкой в Настройки → Характер → Стиль речи", async () => {
+  it("подсказки перевода включаются кнопкой в Настройки → Ещё (по умолчанию выкл), в «Стиле речи» кнопки нет", async () => {
     const s = await click("mn:s:s");
     expect(s.data.content).toContain("подсказки перевода: выкл");
-    const on = await click("mn:tg:hi:s");
-    expect(on.data.content).toContain("подсказки перевода: вкл");
+    expect(JSON.stringify(s.data.components)).not.toContain("mn:tg:hi");
+    const more = await click("mn:s:a");
+    expect(more.data.content).toContain("Подсказки перевода: выкл");
+    const on = await click("mn:tg:hi:a");
+    expect(on.data.content).toContain("Подсказки перевода: вкл");
     expect((await w.settings()).style.hints).toBe(true);
+    const off = await click("mn:tg:hi:a");
+    expect(off.data.content).toContain("Подсказки перевода: выкл");
+    expect((await w.settings()).style.hints).toBe(false);
   });
 
   it("уровень и письмо — выпадающими списками, манга-звуки и каомодзи — кнопками по кругу", async () => {

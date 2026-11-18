@@ -74,7 +74,7 @@ const GRUMPY_SITUATIONS: ReadonlySet<Situation> = new Set<Situation>([
 ]);
 /** В мягкий день усталая Хару теплее на этом (гордится). */
 const SOFT_SITUATIONS: ReadonlySet<Situation> = new Set<Situation>([
-  "done", "done_late", "done_major", "recorded", "greeting", "summary_morning", "summary_evening", "summary_weekly", "empty_list", "empty_today", "thanks",
+  "done", "done_late", "done_major", "heavy_day", "recorded", "greeting", "summary_morning", "summary_evening", "summary_weekly", "empty_list", "empty_today", "thanks",
 ]);
 
 /** Шанс, что у отдельного дела образ дня «не сработал» (щепотка), и шанс яндере-подколки на пропуске. */
@@ -200,6 +200,23 @@ export function observeHot(st: StyleState, a: { day: number; hot: number }): { s
   if (a.day - st.cl < WEEK_DAYS || st.ac?.wc === st.cl || st.ac?.any === a.day) return { state: st, achievement: null };
   return { state: withAc(st, { any: a.day, wc: st.cl }), achievement: "week_clean" };
 }
+
+// ---------- тяжёлый день: подбодрить цитатой (анкета вкусов, 2026-11-18) ----------
+
+/** «Тяжёлый день»: висит три дела и больше, или в списке двенадцать и больше, или подряд три пропуска и больше. Числа здесь же, чтобы их было видно. */
+export const HEAVY = { hot: 3, open: 12, miss: 3 } as const;
+/** Подбадривание не чаще одного раза в столько суток: если тяжело долго, цитата не должна стать привычной. */
+export const HEAVY_GAP_DAYS = 3;
+
+export function isHeavyDay(a: { open: number; hot?: number; missStreak: number }): boolean {
+  return (a.hot ?? 0) >= HEAVY.hot || a.open >= HEAVY.open || a.missStreak >= HEAVY.miss;
+}
+
+/** Пора ли подбодрить: прошло ли `HEAVY_GAP_DAYS` суток с прошлого раза (`ac.hd`). */
+export const heavyReady = (st: StyleState, day: number): boolean => st.ac?.hd === undefined || day - st.ac.hd >= HEAVY_GAP_DAYS;
+
+/** Запомнить, что подбодрили в сутки day. */
+export const markHeavy = (st: StyleState, day: number): StyleState => withAc(st, { hd: day });
 
 // ---------- память реплик: 14 дней ----------
 

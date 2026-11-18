@@ -392,13 +392,12 @@ export function sectionMessage(s: AppSettings, sec: Section, now: number, dmOn: 
         [
           "**🎭 Стиль речи**",
           styleSummary(s.style),
-          "Подсказки перевода (слово в скобках) по умолчанию скрыты: включите, если хотите видеть значение новых слов.",
+          "Японские слова, каомодзи и манга-звуки здесь настраиваются; переводов в скобках нет (включаются в «⋯ Ещё» → «Подсказки перевода»).",
           "Стиль работает, пока включено «Настроение».",
         ].join("\n"),
         [
           row(
             btn(`Обращения: ${onOff(s.style.honorifics)}`, "mn:tg:ho:s", s.style.honorifics ? 3 : 2),
-            btn(`Подсказки перевода: ${onOff(s.style.hints)}`, "mn:tg:hi:s", s.style.hints ? 3 : 2),
             btn(`Манга-звуки: ${SFX_WORD[s.style.sfx]}`, "mn:tg:sx:s"),
             btn(`Каомодзи: ${KAO_WORD[s.style.kaomoji]}`, "mn:tg:km:s"),
           ),
@@ -418,6 +417,7 @@ export function sectionMessage(s: AppSettings, sec: Section, now: number, dmOn: 
             : `Личка: выкл. Всё идёт в каналы сервера (канал «бот»: ${s.chBot ? "заведён" : "не создан, /setup"}). Включите — и всё переедет в личные сообщения.`,
           `Недавние дела в «Добавить»: ${onOff(s.recentOn)}. Нажали «Добавить» — три последних дела кнопками, чтобы повторить в два касания.`,
           `Звук для всего: ${onOff(s.soundAll)}. Выкл — упоминание (звук) только у настоящих напоминаний; вкл — и у сводок, подтверждений и реплик Хару.`,
+          `Подсказки перевода: ${onOff(s.style.hints)}. Выкл — японские слова без перевода в скобках (они остаются в «Слова Хару»); вкл — первые два раза у нового слова.`,
           `Дождь в Днепре: ${rainModeWord(rainModeOf(s))}. Раз в ${RAIN_CONFIG.checkEveryMinutes} минут бот смотрит погодную модель Open-Meteo и пишет, когда начался дождь и когда закончился (не в тихие часы); это модель, а не радар, поэтому возможны опоздания. «Скоро» — ещё и предупреждает примерно за 15 минут.`,
         ].join("\n"),
         [
@@ -428,7 +428,11 @@ export function sectionMessage(s: AppSettings, sec: Section, now: number, dmOn: 
             btn(s.soundAll ? "Звук для всего: выключить" : "Звук для всего: включить", "mn:tg:snd:a", s.soundAll ? 3 : 2),
             btn(`Дождь: ${rainModeWord(rainModeOf(s))}`, "mn:tg:rn:a", s.rainOn ? 3 : 2),
           ),
-          row(btn("Слова Хару", "mn:gl"), btn("Сбросить настроение…", "mn:rs", 4)),
+          row(
+            btn("Слова Хару", "mn:gl"),
+            btn(`Подсказки перевода: ${onOff(s.style.hints)}`, "mn:tg:hi:a", s.style.hints ? 3 : 2),
+            btn("Сбросить настроение…", "mn:rs", 4),
+          ),
           back,
         ],
       );
