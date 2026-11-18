@@ -3,6 +3,7 @@
 import { type Repo, deleteMeta, setMeta } from "../db/repo.ts";
 import type { Op } from "../db/types.ts";
 import type { MessageBody } from "../discord/types.ts";
+import { wallOf } from "../time/tz.ts";
 import type { Character } from "../flavor.ts";
 import { headVoice, voiceText } from "../discord/ui.ts";
 import {
@@ -59,6 +60,8 @@ type Reply = Record<string, unknown>;
 const update = (body: MessageBody): Reply => ({ type: 7, data: { embeds: [], ...body } });
 const text = (content: string): MessageBody => ({ content, components: [], allowed_mentions: { parse: [] } });
 const code = (s: AnimeStatus) => STATUS_CODE[s];
+/** Местный час: на отметку серии ночью (с полуночи до пяти) Хару чаще шутит «пора спать». */
+const hourOf = (c: AnimeCtx): number => wallOf(c.now, c.tz).h;
 
 /** Что нажал хозяин в аниме: обнуляем счётчик «без ответа» и снимаем паузу вопросов. */
 const touchOps = (): Op[] => [setMeta("anime_unanswered", "0"), deleteMeta("anime_ask_off"), deleteMeta("anime_ask_wait")];
@@ -71,7 +74,7 @@ function savedMessage(a: Anime, c: AnimeCtx, kind: "added" | "changed"): Message
   const e = effective(a, c.now);
   const where = `**${a.title_ru}** — ${STATUS_LABEL[a.status]}${a.watched ? `, серия ${a.watched}` : ""}`;
   const more = a.status === "watching" || a.status === "planned" ? `\n${progressText(a, c.now, c.tz)}${e.upcoming || a.src_status === "FINISHED" ? "" : ". Напомню, когда появится дата."}` : "";
-  const line = haru(kind === "added" ? "added" : a.status === "dropped" ? "dropped" : "ep", c.character, c.rand);
+  const line = haru(kind === "added" ? "added" : a.status === "dropped" ? "dropped" : "ep", c.character, c.rand, hourOf(c));
   return { content: `Записала: ${where}.${more}${line ? `\n${voiceText(line)}` : ""}`, components: nav(a), allowed_mentions: { parse: [] } };
 }
 
@@ -170,7 +173,7 @@ export async function handleMark(c: AnimeCtx, mk: MarkPhrase): Promise<MessageBo
   if (own.liked === mk.liked && !finishes) return { ...text(`Это уже записано: ${name} — ${likeWords(mk.liked)}.`), components: nav(own) };
   await c.repo.exec([patchOp(own.id, patch, c.now), ...touchOps()]);
   const fresh = { ...own, ...patch } as Anime;
-  const line = mk.liked > 0 ? haru("liked", c.character, c.rand) : mk.liked === -2 ? haru("dropped", c.character, c.rand) : null;
+  const line = mk.liked === 2 ? haru("loved", c.character, c.rand) : mk.liked > 0 ? haru("liked", c.character, c.rand) : mk.liked < 0 ? haru("meh", c.character, c.rand) : null;
   return {
     content: `Записала: ${name} — ${likeWords(mk.liked)}.${finishes ? " Отметила как просмотренное." : ""}${line ? `\n${voiceText(line)}` : ""}`,
     components: nav(fresh),
@@ -201,7 +204,7 @@ async function setEpisode(c: AnimeCtx, a: Anime, n: number, cd: string, page: nu
   if (finished && a.status === "watching") patch.status = "done";
   await c.repo.exec([patchOp(a.id, patch, c.now), ...touchOps()]);
   const fresh = { ...a, ...patch } as Anime;
-  const note = patch.status === "done" ? "Досмотрели! Понравилось? Нажмите отметку." : haru("ep", c.character, c.rand) ?? undefined;
+  const note = patch.status === "done" ? "Досмотрели! Понравилось? Нажмите отметку." : haru("ep", c.character, c.rand, hourOf(c)) ?? undefined;
   return update(animeCardMessage(fresh, patch.status === "done" ? "d" : cd, patch.status === "done" ? 0 : page, c.now, c.tz, c.character, { note: note ? (patch.status === "done" ? note : voiceText(note)) : undefined, rand: c.rand }));
 }
 
@@ -238,7 +241,7 @@ export async function handleAnimeButton(c: AnimeCtx, parts: string[]): Promise<R
       const v = Number(parts[3]) === 2 ? 2 : 1;
       const liked = a.liked === v ? 0 : v;
       await c.repo.exec([patchOp(a.id, { liked }, c.now)]);
-      const line = liked ? haru("liked", c.character, c.rand) : null;
+      const line = liked ? haru(liked === 2 ? "loved" : "liked", c.character, c.rand) : null;
       return update(animeCardMessage({ ...a, liked }, parts[4] ?? "w", pageOf(parts[5]), c.now, c.tz, c.character, { note: line ? voiceText(line) : undefined, rand: c.rand }));
     }
     case "nt": {
