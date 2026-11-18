@@ -21,6 +21,8 @@ import {
   voiceObservation,
   weekPicks,
 } from "./core.ts";
+import { WARN_GENRES } from "./pickGenres.ts";
+import { pickDue, runSaturdayPick } from "./pickCron.ts";
 import { type FetchFn, fetchSchedules, fetchSequels, fetchVoice } from "./sources.ts";
 import { listAnime, patchOp, scheduleOp, seqMarkOp, voiceOp, weekMarkOp } from "./store.ts";
 import { type AskItem, type WeekAsk, askMessage, askPauseMessage, seasonStartMessage, weekExpiredBody, weekQuestion } from "./ui.ts";
@@ -262,6 +264,14 @@ ${FAIL_NOTICE}` : FAIL_NOTICE, allowed_mentions: { parse: [] } });
         if (!(e instanceof BudgetExceeded)) healthy = false;
       }
     }
+  }
+
+  // ---------- субботняя подборка «что посмотреть» (src/anime/pick.ts): отдельное сообщение раз в неделю ----------
+  if (pickDue(a)) {
+    const r = await runSaturdayPick(a, await rows(), { likes: s.pickGenres, avoid: s.pickAvoid, warn: WARN_GENRES });
+    ops.push(...r.ops);
+    notes.push(...r.notes);
+    if (!r.healthy) healthy = false;
   }
   return { ops, notes, healthy };
 }

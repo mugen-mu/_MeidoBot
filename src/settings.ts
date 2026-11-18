@@ -2,6 +2,7 @@
 import { type Character, parseCharacter } from "./flavor.ts";
 import { type StyleConfig, parseStyle } from "./personality/animeStyle.ts";
 import { type MonthDay, parseBirthday } from "./personality/occasions.ts";
+import { DEFAULT_AVOID, DEFAULT_LIKES, type GenreKey, PICK_AT, parseGenreList } from "./anime/pickGenres.ts";
 import { DEFAULT_SPEC, type LadderSpec, parseSpec } from "./ladder.ts";
 import { DEFAULT_TZ, parseHHMM } from "./time/tz.ts";
 import { RAIN_CONFIG, type RainMode } from "./rain.ts";
@@ -62,6 +63,11 @@ export interface AppSettings {
   rainOn: boolean;
   /** и предупреждение «скоро может пойти дождь»: по умолчанию как в `RAIN_CONFIG.earlyWarning` (выкл) */
   rainEarly: boolean;
+  /** субботняя подборка аниме «что посмотреть» (src/anime/pick.ts): во сколько по субботам, минуты от полуночи; null = выключена. Вкл по умолчанию (слова Ihor, волна 3) */
+  animePick: number | null;
+  /** жанры для подборки: любимые (новинки сезона) и те, что не предлагаем; стартовые значения из анкеты вкусов, интерфейса пока нет — меняются записью `pick_genres` / `pick_avoid` */
+  pickGenres: GenreKey[];
+  pickAvoid: GenreKey[];
 }
 
 /** Ключ меты с копией каналов до включения «Личка» (по нему выключение возвращает всё как было). */
@@ -80,7 +86,7 @@ export const SETTING_KEYS = [
   "tz", "default_ladder", "default_time", "quiet_enabled", "quiet_from", "quiet_to", "away_until",
   "summary_morning", "summary_evening", "weekly", "ch_remind", "ch_bot", "ch_today", "ch_forum", "ch_archive", "intake", "light", "water", "gas", "character", "mood_on",
   "style_level", "style_script", "style_sfx", "style_honorifics", "style_kaomoji", "hints_on", "llm_on", "live_on", "birthday",
-  "time_morning", "time_evening", "recent_on", "sound_all", "chores", "rain",
+  "time_morning", "time_evening", "recent_on", "sound_all", "chores", "rain", "anime_pick", "pick_genres", "pick_avoid",
 ] as const;
 
 function minutes(v: string | undefined, fallback: number | null): number | null {
@@ -139,6 +145,9 @@ export function readSettings(rows: { key: string; value: string }[]): AppSetting
     choresOn: m.get("chores") !== "0",
     rainOn: rainMode(m.get("rain")) !== "off",
     rainEarly: rainMode(m.get("rain")) === "early",
+    animePick: minutes(m.get("anime_pick"), PICK_AT),
+    pickGenres: parseGenreList(m.get("pick_genres"), DEFAULT_LIKES),
+    pickAvoid: parseGenreList(m.get("pick_avoid"), DEFAULT_AVOID),
   };
 }
 

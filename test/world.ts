@@ -61,6 +61,7 @@ export class World {
     // с 2026-11-08 характер включён по умолчанию; старые тесты проверяют нейтральный тон — выключаем явно (settings перекрывает)
     ops.push(setSetting("mood_on", "0"), setSetting("character", "neutral"), setSetting("chores", "0")); // дела-сопровождение (этап 4) включают только свои тесты
     ops.push(setSetting("rain", "off")); // дождь (src/rain.ts) включают только его тесты: иначе старые тесты считали бы лишние запросы
+    ops.push(setSetting("anime_pick", "off")); // субботняя подборка аниме (NOW по умолчанию — суббота 12:00, как раз её время): включают только её тесты
     for (const [k, v] of Object.entries(opts.settings ?? {})) ops.push(setSetting(k, v));
     await this.repo().exec(ops);
   }

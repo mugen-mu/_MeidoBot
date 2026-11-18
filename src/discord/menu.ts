@@ -419,6 +419,7 @@ export function sectionMessage(s: AppSettings, sec: Section, now: number, dmOn: 
           `Недавние дела в «Добавить»: ${onOff(s.recentOn)}. Нажали «Добавить» — три последних дела кнопками, чтобы повторить в два касания.`,
           `Звук для всего: ${onOff(s.soundAll)}. Выкл — упоминание (звук) только у настоящих напоминаний; вкл — и у сводок, подтверждений и реплик Хару.`,
           `Дождь в Днепре: ${rainModeWord(rainModeOf(s))}. Раз в ${RAIN_CONFIG.checkEveryMinutes} минут бот смотрит погодную модель Open-Meteo и пишет, когда начался дождь и когда закончился (не в тихие часы); это модель, а не радар, поэтому возможны опоздания. «Скоро» — ещё и предупреждает примерно за 15 минут.`,
+          `Подборка аниме по субботам: ${s.animePick === null ? "выкл" : `вкл, суббота ${fmtHHMM(s.animePick)}`}. Одно сообщение в неделю: что вышло и не посмотрено, что-то из «В планах», новинки сезона, похожее на любимое и сюрприз (не в тихие часы). Кнопка перебирает время: 12:00, 18:00, выкл.`,
         ].join("\n"),
         [
           row(
@@ -428,7 +429,7 @@ export function sectionMessage(s: AppSettings, sec: Section, now: number, dmOn: 
             btn(s.soundAll ? "Звук для всего: выключить" : "Звук для всего: включить", "mn:tg:snd:a", s.soundAll ? 3 : 2),
             btn(`Дождь: ${rainModeWord(rainModeOf(s))}`, "mn:tg:rn:a", s.rainOn ? 3 : 2),
           ),
-          row(btn("Слова Хару", "mn:gl"), btn("Сбросить настроение…", "mn:rs", 4)),
+          row(btn("Слова Хару", "mn:gl"), btn("Сбросить настроение…", "mn:rs", 4), btn(s.animePick === null ? "Подборка аниме: выкл" : `Подборка аниме: сб ${fmtHHMM(s.animePick)}`, "mn:tg:pk:a", s.animePick === null ? 2 : 3)),
           back,
         ],
       );
