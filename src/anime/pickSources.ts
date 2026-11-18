@@ -98,6 +98,13 @@ export const fetchSimilarTo = (mal: number, fetchFn: FetchFn): Promise<PickTitle
 export const fetchRanked = (era: string, page: number, limit: number, exclude: string, fetchFn: FetchFn): Promise<PickTitle[] | null> =>
   getList(`${SHIKI}?${query({ kind: "tv", status: "released", season: era, score: 8, order: "ranked", limit, page, ...(exclude ? { genre: exclude } : {}) })}`, fetchFn);
 
+/**
+ * Подбор по настроению («хочу что-то лёгкое»): вышедшие сериалы одного жанра с оценкой от 7 за период (например, «2010_2026»), по рейтингу,
+ * сразу «без таких-то жанров» (`exclude` — «!14,!18»). Жанров в ответе нет: какой жанр совпал, видно по тому, о каком жанре спрашивали.
+ */
+export const fetchMoodGenre = (era: string, genre: number, exclude: string, page: number, limit: number, fetchFn: FetchFn): Promise<PickTitle[] | null> =>
+  getList(`${SHIKI}?${query({ kind: "tv", status: "released", season: era, score: 7, order: "ranked", limit, page, genre: [genre, exclude].filter(Boolean).join(",") })}`, fetchFn);
+
 /** Карточка одного тайтла (с жанрами). */
 export async function fetchDetail(mal: number, fetchFn: FetchFn): Promise<PickTitle | null> {
   return parsePickTitle(await getJson(fetchFn, `${SHIKI}/${mal}`, { headers: { "User-Agent": UA }, redirect: "follow" }));
