@@ -5,6 +5,7 @@
   1) python -I design/taste/fetch_titles.py   — один раз (или чтобы обновить списки аниме) → titles.json
      (волна 2, манга и ранобэ: python -I design/taste/w2/fetch_titles.py → w2/titles.json)
   2) python -I design/taste/build.py          — сборка и проверки (волна 1); --wave 2 берёт файлы из design/taste/w2/
+     (волна 5, большой забег по аниме: python -X utf8 -I design/taste/w5/fetch_titles.py → w5/titles.json; сборка: build.py --wave 5)
 Проверки: вычисляется questions.js (node), уникальные id, группы существуют, варианты у one/many (2–18), у text вариантов нет,
 у списков уникальные id строк, синтаксис скрипта страницы (node --check), нет «</script» в данных.
 Необязательный аргумент — куда положить копию с doctype для просмотра в браузере (в публикации оболочку добавляет платформа).
@@ -28,7 +29,17 @@ TEMPLATE = HERE / "template.html"
 QUESTIONS = BASE / "questions.js"
 TITLES = BASE / "titles.json"
 OUT = BASE / "page.html"
-LIST_PREFIX, LIST_KIND, LIST_GROUP = {1: ("a-", "title", "H"), 2: ("", "read", "L"), 3: ("", "anime2", "A"), 4: ("", "title", "P")}[WAVE_N]
+LIST_PREFIX, LIST_KIND, LIST_GROUP = {1: ("a-", "title", "H"), 2: ("", "read", "L"), 3: ("", "anime2", "A"), 4: ("", "title", "P"), 5: ("", "anime2", "A")}[WAVE_N]
+# тайтлы аниме, которых в этой волне быть не должно: уже спрашивали (проверка пересечений при сборке)
+EARLIER = {5: [HERE / "titles.json", HERE / "w3" / "titles.json"]}
+
+
+def clip(s: str, n: int = 90) -> str:
+    """Слишком длинные названия (у новых исэкаев бывает по 200 знаков) в строке обрезаются по слову; в titles.json остаются целиком."""
+    s = s.strip()
+    if len(s) <= n:
+        return s
+    return s[:n].rsplit(" ", 1)[0].rstrip(" ,:;—-") + "…"
 
 
 def fail(msg: str) -> None:
@@ -74,9 +85,15 @@ def main() -> int:
         fail("нет titles.json: сначала python -I design/taste/fetch_titles.py")
     tj = json.loads(TITLES.read_text(encoding="utf-8"))
     for l in tj["lists"]:
-        items = [{"id": str(it["id"]), "t": re.sub(r"\s*\(\d{4}\)\s*$", "", it["ru"]),
-                  "d": " · ".join(x for x in [it["orig"] if it["orig"] != it["ru"] else "", str(it["year"] or ""), it.get("tag", "")] if x)} for it in l["items"]]
+        items = [{"id": str(it["id"]), "t": clip(re.sub(r"\s*\(\d{4}\)\s*$", "", it["ru"])),
+                  "d": " · ".join(x for x in [clip(it["orig"]) if it["orig"] != it["ru"] else "", str(it["year"] or ""), it.get("tag", "")] if x)} for it in l["items"]]
         lists.append({"id": LIST_PREFIX + l["id"], "g": LIST_GROUP, "kind": LIST_KIND, "pos": "last", "t": l["t"], "sub": l.get("sub", ""), "items": items})
+    for page in EARLIER.get(WAVE_N, []):
+        old = {str(it["id"]) for l in json.loads(page.read_text(encoding="utf-8"))["lists"] for it in l["items"]}
+        for l in lists:
+            for it in l["items"]:
+                if it["id"] in old and l["kind"] in ("title", "read", "anime2"):
+                    problems.append(f"тайтл {it['id']} уже был в {page.relative_to(HERE)}")
     lids = [l["id"] for l in lists]
     if len(lids) != len(set(lids)):
         problems.append("повторяются id списков")
