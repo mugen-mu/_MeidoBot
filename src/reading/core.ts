@@ -2,6 +2,7 @@
 // Решения Ihor по анкете вкусов (волна 2): сообщать о «Читаю сейчас», «Жду продолжения» и любимом; раз в неделю по субботам; начать с малого.
 import type { Character } from "../flavor.ts";
 import { DAY, addDaysWall, localDate, wallOf } from "../time/tz.ts";
+import { siteById, siteCounts } from "./siteIds.ts";
 
 export type ReadKind = "manga" | "ranobe";
 export type ReadStatus = "reading" | "planned" | "done" | "dropped" | "waiting";
@@ -36,6 +37,12 @@ export interface Reading {
   /** RanobeHub (ранобэ): номер тайтла и когда искала его там */
   rh_id: number | null;
   rh_map_at: number | null;
+  /** сайт по ссылке хозяина (миграция 0016): id сайта, адрес страницы тайтла, ключ на сайте, запрос поиска и когда число глав с сайта прочиталось. Необязательные: до миграции полей нет */
+  site?: string | null;
+  site_url?: string | null;
+  site_key?: string | null;
+  site_q?: string | null;
+  site_at?: number | null;
   checked_at: number | null;
   chk_fail: number;
   shiki_at: number | null;
@@ -83,20 +90,36 @@ export const srcOf = (r: Reading, unit: ReadUnit = r.unit): number => (unit === 
 export const totalOf = (r: Reading, unit: ReadUnit = r.unit): number | null => (unit === "ch" ? r.total_ch : r.total_vol);
 
 /**
+ * Число глав у тайтла считает сайт, где хозяин читает (ссылка из фразы «бот читаю <ссылка>»): Senkuro, ReManga, ReNovels, RanobeHub.
+ * Тогда это главный счётчик, русский по сути: прежние источники (MangaDex, MangaUpdates) для такого тайтла не спрашиваем.
+ */
+export const siteLed = (r: Reading): boolean => siteCounts(r.site) && !!r.site_key;
+
+/** Как называется сайт тайтла по ссылке («Senkuro»); null — ссылки нет. */
+export const siteNameOf = (r: Reading): string | null => siteById(r.site)?.name ?? null;
+
+/** Где смотрим русский счётчик: сайт по ссылке или MangaDex. */
+export const ruWhere = (r: Reading): string => (siteLed(r) ? (siteNameOf(r) ?? "сайте") : "MangaDex");
+
+/** Русский счётчик ведёт «вышла» и «накопилось»: у манги всегда, у ранобэ — когда счётчик даёт сайт по ссылке. */
+export const ruLed = (r: Reading): boolean => r.kind === "manga" || siteLed(r);
+
+/**
  * Что у тайтла «вышло» для разговора с хозяином (решение Ihor 2026-11-18: «писать только когда глава есть по-русски»).
  * Манга — только русский перевод на MangaDex (`ru_ch`, `ru_vol`): главы и тома, которых нет по-русски, не поднимают «накопилось» и не упоминаются.
  * Ранобэ — по-прежнему счётчик источника (MangaUpdates: язык там не различается); RanobeHub для ранобэ — только справочная строка.
+ * Тайтл со ссылкой на сайт со счётчиком (`siteLed`) — всегда по русскому счётчику сайта (`ru_ch`, `ru_vol`), и манга, и ранобэ.
  */
 export function availOf(r: Reading, unit: ReadUnit = r.unit): number {
-  if (r.kind === "manga") return (unit === "ch" ? r.ru_ch : r.ru_vol) ?? 0;
+  if (ruLed(r)) return (unit === "ch" ? r.ru_ch : r.ru_vol) ?? 0;
   return srcOf(r, unit);
 }
 
 /** Есть ли у манги хоть что-то по-русски (по MangaDex). У ранобэ вопрос не стоит: правило языка там не действует. */
-export const hasRussian = (r: Reading): boolean => r.kind !== "manga" || (r.ru_ch ?? 0) > 0 || (r.ru_vol ?? 0) > 0;
+export const hasRussian = (r: Reading): boolean => !ruLed(r) || (r.ru_ch ?? 0) > 0 || (r.ru_vol ?? 0) > 0;
 
 /** Манга, которую смотрели на MangaDex, а русского перевода там нет: о ней молчим, пока он не появится. */
-export const noRussianYet = (r: Reading): boolean => r.kind === "manga" && r.ru_ch !== null && !hasRussian(r);
+export const noRussianYet = (r: Reading): boolean => ruLed(r) && r.ru_ch !== null && !hasRussian(r);
 
 /** «до главы 150» / «до тома 25» (родительный, для «по-русски до … на …»). */
 export const upTo = (n: number, unit: ReadUnit): string => `до ${unit === "ch" ? "главы" : "тома"} ${n}`;
@@ -172,7 +195,9 @@ export function weekItems(rows: Reading[]): WeekItem[] {
   const out: WeekItem[] = [];
   for (const r of rows) {
     if (!isTracked(r) || !hasRussian(r)) continue;
-    const it: WeekItem = { r, newCh: availOf(r, "ch") > r.told_ch, newVol: availOf(r, "vol") > r.told_vol, unread: unread(r), ended: isFinished(r) && !r.end_told };
+    // ранобэ с сайтом по ссылке (RanobeHub даёт и тома, и главы): новости — только в той единице, которой считает хозяин, иначе каждая новая глава веб-новеллы была бы «новостью»
+    const only = r.kind === "ranobe" && siteLed(r) ? r.unit : null;
+    const it: WeekItem = { r, newCh: only !== "vol" && availOf(r, "ch") > r.told_ch, newVol: only !== "ch" && availOf(r, "vol") > r.told_vol, unread: unread(r), ended: isFinished(r) && !r.end_told };
     if (it.ended || it.newCh || it.newVol || (it.unread ?? 0) > 0) out.push(it);
   }
   return out;

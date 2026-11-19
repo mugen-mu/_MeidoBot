@@ -18,7 +18,8 @@ import {
   rhTitleUrl,
   shikiOne,
 } from "./sources.ts";
-import type { Reading } from "./core.ts";
+import { type Reading, ruLed, siteLed } from "./core.ts";
+import { readSiteObs } from "./siteRefresh.ts";
 import type { Patch } from "./store.ts";
 
 const WEEK = 7 * DAY;
@@ -123,7 +124,7 @@ export interface Obs {
  */
 export function applyObs(r: Reading, o: Obs, now: number): Patch {
   const p: Patch = {};
-  const manga = r.kind === "manga";
+  const manga = ruLed(r); // манга, а также тайтл с сайтом по ссылке: «вышла» и «про что писала» считаются по русскому счётчику
   const ch = Math.max(o.ch ?? 0, o.totalCh ?? 0);
   const vol = Math.max(o.vol ?? 0, o.totalVol ?? 0);
   let grew = false;
@@ -188,8 +189,16 @@ export async function refreshTitle(r: Reading, f: FetchFn, now: number): Promise
   let muId = r.mu_id;
   let reached = false;
   const mapDue = r.map_at === null || now - r.map_at >= WEEK;
+  const real = r.mal_id > 0; // у тайтла, которого нет на Shikimori, номер выдуман (отрицательный): по нему ни в MangaDex, ни в Shikimori не ходим
 
-  if (r.kind === "manga" && !mdId && mapDue) {
+  if (siteLed(r)) {
+    // сайт, где хозяин читает (ссылка из фразы): главный счётчик, прежние источники для этого тайтла не спрашиваем (экономим подзапросы)
+    const s = await readSiteObs(r, f, now);
+    if (!s) return { patch: {}, ok: false, reached };
+    reached = true;
+    Object.assign(patch, s.patch);
+    Object.assign(obs, s.obs);
+  } else if (r.kind === "manga" && !mdId && mapDue && real) {
     const m = await findMangaDex(r.mal_id, r.title_orig ?? "", f);
     if (m === null) return { patch: {}, ok: false, reached };
     reached = true;
@@ -199,7 +208,7 @@ export async function refreshTitle(r: Reading, f: FetchFn, now: number): Promise
       patch.md_id = m.id;
       if (!r.src_url) obs.url = mdTitleUrl(m.id);
     }
-  } else if (r.kind === "ranobe" && !muId && mapDue) {
+  } else if (r.kind === "ranobe" && !muId && mapDue && real) {
     const id = await findMangaUpdates(r.title_orig ?? "", f);
     if (id === null) return { patch: {}, ok: false, reached };
     reached = true;
@@ -210,7 +219,7 @@ export async function refreshTitle(r: Reading, f: FetchFn, now: number): Promise
     }
   }
 
-  if (mdId) {
+  if (mdId && !siteLed(r)) {
     const p = await mdProgress(mdId, f);
     if (!p) return { patch: {}, ok: false, reached };
     reached = true;
@@ -224,7 +233,7 @@ export async function refreshTitle(r: Reading, f: FetchFn, now: number): Promise
     // ссылка — на последнюю главу по-русски, и только когда русский счётчик вырос (а не английский)
     if (ru && r.ru_ch !== null && ru.ch > r.ru_ch) obs.url = (await mdLatestLink(mdId, f)) ?? mdTitleUrl(mdId);
   }
-  if (muId) {
+  if (muId && !siteLed(r)) {
     const v = await muVolumes(muId, f);
     if (!v) return { patch: {}, ok: false, reached };
     reached = true;
@@ -232,7 +241,7 @@ export async function refreshTitle(r: Reading, f: FetchFn, now: number): Promise
   }
 
   // русский перевод ранобэ — RanobeHub, справочно и необязательно: сайт не ответил — ничего не меняем и не считаем это сбоем проверки
-  if (r.kind === "ranobe") {
+  if (r.kind === "ranobe" && !siteLed(r)) {
     const orig = r.title_orig ?? "";
     if (r.rh_id) {
       const b = await rhRefresh(r.rh_id, orig, r.title_ru, f);
@@ -255,7 +264,7 @@ export async function refreshTitle(r: Reading, f: FetchFn, now: number): Promise
     }
   }
 
-  if (r.shiki_at === null || now - r.shiki_at >= WEEK) {
+  if (real && (r.shiki_at === null || now - r.shiki_at >= WEEK)) {
     const c = await shikiOne(r.mal_id, f);
     if (c) {
       patch.shiki_at = now;
@@ -268,7 +277,7 @@ export async function refreshTitle(r: Reading, f: FetchFn, now: number): Promise
   }
 
   const adaptEvery = r.adapt_status === "ongoing" || r.adapt_status === "anons" ? WEEK : 30 * DAY;
-  if (r.adapt_at === null || now - r.adapt_at >= adaptEvery) {
+  if (real && (r.adapt_at === null || now - r.adapt_at >= adaptEvery)) {
     const list = await fetchAdaptations(r.mal_id, f);
     if (list) {
       const a = pickAdapt(list);

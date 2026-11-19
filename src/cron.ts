@@ -1328,7 +1328,7 @@ ${n.text}` } : n;
 
     // 2б7. чтение (манга и ранобэ): ночная проверка источников и субботнее сообщение; без единого тайтла в чтении — ни одного подзапроса
     if (owner && s.chRemind) {
-      const rr = await runReading({ repo, api, now, s, meta, away, quiet: inQuietHours(s, minuteOfDay), minuteOfDay, fetchFn: d.fetchFn ?? fetch, rand: d.rand, room: room2, spend: (n) => repo.counter.spend(n) });
+      const rr = await runReading({ repo, api, now, s, meta, away, quiet: inQuietHours(s, minuteOfDay), minuteOfDay, fetchFn: d.fetchFn ?? fetch, rand: d.rand, room: room2, spend: (n) => repo.counter.spend(n), note: (id, ok) => { passport = recordSource(passport, id, ok, now); passportDirty = true; } });
       ops2.push(...rr.ops);
       report.notes.push(...rr.notes);
       if (!rr.healthy) healthy = false;

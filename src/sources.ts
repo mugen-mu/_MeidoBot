@@ -27,6 +27,16 @@ export const SOURCES: SourceInfo[] = [
   { id: "rain", name: "Дождь (Open-Meteo)", icon: "🌧" },
 ];
 
+/** Сайты чтения по ссылкам (манга и ранобэ, 2026-11-19): отдельный список, чтобы не мешать основным источникам. Строка на «Состоянии» появляется, только когда сайт хоть раз читался. */
+export type ReadingSourceId = "rd_senkuro" | "rd_remanga" | "rd_renovels" | "rd_ranobehub";
+
+export const READING_SOURCES: { id: ReadingSourceId; name: string; icon: string }[] = [
+  { id: "rd_senkuro", name: "Чтение: Senkuro", icon: "📖" },
+  { id: "rd_remanga", name: "Чтение: ReManga", icon: "📖" },
+  { id: "rd_renovels", name: "Чтение: ReNovels", icon: "📖" },
+  { id: "rd_ranobehub", name: "Чтение: RanobeHub", icon: "📖" },
+];
+
 export const META_KEY = "src_passport";
 
 /** Запись об одном источнике: последнее удачное и последнее чтение, неудач подряд, с какого времени неудачи идут. */
@@ -39,14 +49,14 @@ export interface SourceRec {
   said?: 1;
 }
 
-export type Passport = Partial<Record<SourceId, SourceRec>>;
+export type Passport = Partial<Record<SourceId | ReadingSourceId, SourceRec>>;
 
 /** Сколько неудач подряд считаем поломкой (а не разовым сбоем). */
 export const BROKEN_FAILS = 3;
 /** Свет читается часто и по случаю (сводки, проверки раз в 10 минут): сообщение о поломке — не раньше чем через 2 часа. */
 export const LIGHT_NOTICE_AFTER_MS = 2 * 60 * 60_000;
 
-const IDS = new Set<string>(SOURCES.map((s) => s.id));
+const IDS = new Set<string>([...SOURCES, ...READING_SOURCES].map((s) => s.id));
 const num = (v: unknown): number | undefined => (typeof v === "number" && Number.isFinite(v) ? v : undefined);
 
 export function parsePassport(raw: string | undefined): Passport {
@@ -64,7 +74,7 @@ export function parsePassport(raw: string | undefined): Passport {
       if (tr !== undefined) rec.try = tr;
       if (since !== undefined) rec.since = since;
       if (r.said === 1) rec.said = 1;
-      out[id as SourceId] = rec;
+      out[id as SourceId | ReadingSourceId] = rec;
     }
     return out;
   } catch {
@@ -73,7 +83,7 @@ export function parsePassport(raw: string | undefined): Passport {
 }
 
 /** Записать итог одного чтения. Возвращает новый паспорт, прежний не меняет. */
-export function recordSource(p: Passport, id: SourceId, ok: boolean, now: number): Passport {
+export function recordSource(p: Passport, id: SourceId | ReadingSourceId, ok: boolean, now: number): Passport {
   const prev = p[id];
   if (ok) return { ...p, [id]: { ok: now, try: now, fails: 0 } };
   const rec: SourceRec = { ...(prev ?? { fails: 0 }), try: now, fails: (prev?.fails ?? 0) + 1 };
@@ -120,7 +130,15 @@ export function statusText(p: Passport, enabled: Enabled, now: number, tz: strin
     if (r.fails > 0) return `${s.icon} ${s.name} — был сбой (${r.fails}), пробую снова; ${last}.`;
     return `${s.icon} ${s.name} — ${last}, всё в порядке.`;
   });
-  return ["**Состояние**", "Когда бот последний раз читал каждый источник:", ...lines].join("\n");
+  // сайты чтения по ссылкам: строка только у тех, что хоть раз читались (ссылок нет — и строки нет)
+  const reading = READING_SOURCES.filter((s) => p[s.id]?.try !== undefined).map((s) => {
+    const r = p[s.id] as SourceRec;
+    const last = r.ok !== undefined ? `читалось ${whenText(r.ok, now, tz)}` : "ни разу не прочиталось";
+    if (isBroken(r)) return `${s.icon} ${s.name} — не отвечает с ${whenText(r.since ?? r.try ?? now, now, tz)} (неудач подряд: ${r.fails}); ${last}.`;
+    if (r.fails > 0) return `${s.icon} ${s.name} — был сбой (${r.fails}), пробую снова; ${last}.`;
+    return `${s.icon} ${s.name} — ${last}, всё в порядке.`;
+  });
+  return ["**Состояние**", "Когда бот последний раз читал каждый источник:", ...lines, ...reading].join("\n");
 }
 
 /** Строки для итога недели: только сломанные и только включённые. */

@@ -4,9 +4,11 @@ import { BudgetExceeded, type Repo, event, setMeta } from "../db/repo.ts";
 import type { Op } from "../db/types.ts";
 import type { DiscordApi } from "../discord/types.ts";
 import type { AppSettings } from "../settings.ts";
+import type { ReadingSourceId } from "../sources.ts";
 import { MINUTE, localDate, startOfDay, wallOf } from "../time/tz.ts";
-import { type Reading, WEEK_SHOWN, adaptKey, adaptNew, idleTitle, rankWeek, trackedSet, weekItems, weekKey } from "./core.ts";
+import { type Reading, WEEK_SHOWN, adaptKey, adaptNew, idleTitle, rankWeek, siteLed, trackedSet, weekItems, weekKey } from "./core.ts";
 import { refreshTitle } from "./refresh.ts";
+import { siteById } from "./siteIds.ts";
 import type { FetchFn } from "./sources.ts";
 import { listReading, patchOp, toldOp } from "./store.ts";
 import { weekMessage } from "./ui.ts";
@@ -26,6 +28,8 @@ export interface ReadingCronArgs {
   /** хватит ли подзапросов на n действий (как room2 в cron) */
   room: (n: number) => boolean;
   spend: (n: number) => void;
+  /** записать итог чтения сайта в «Паспорт источников» (экран «Состояние»); без него — не пишем (тесты) */
+  note?: (id: ReadingSourceId, ok: boolean) => void;
 }
 
 /** С какого часа (минут от полуночи) проверяем источники: после ночных проверок аниме (03:00 и 03:10), когда у источников уже свежие данные. */
@@ -67,6 +71,9 @@ export async function runReading(a: ReadingCronArgs): Promise<{ ops: Op[]; notes
           if (e instanceof BudgetExceeded) break;
           throw e;
         }
+        // сайт по ссылке (Senkuro, ReManga, ReNovels, RanobeHub): итог чтения — в паспорт источников, чтобы поломку было видно
+        const sid = siteLed(r) ? siteById(r.site)?.source : null;
+        if (sid) a.note?.(sid, res.ok);
         if (res.ok) {
           ops.push(patchOp(r.id, { ...res.patch, checked_at: now, chk_fail: 0 }, now));
           handled++;
@@ -96,7 +103,7 @@ export async function runReading(a: ReadingCronArgs): Promise<{ ops: Op[]; notes
     const shown = items.slice(0, WEEK_SHOWN);
     const adapt = tracked.filter(adaptNew).slice(0, 2);
     const idle = idleTitle(tracked, now);
-    const stale = tracked.some((r) => (r.md_id || r.mu_id) && r.chk_fail >= STALE_AT);
+    const stale = tracked.some((r) => (r.md_id || r.mu_id || siteLed(r)) && r.chk_fail >= STALE_AT);
     const body = weekMessage({ shown, rest: items.slice(WEEK_SHOWN), adapt, idle: idle ? { r: idle, ms: now - (idle.last_move_at ?? idle.added_at) } : null, stale }, s.character, a.rand);
     if (!body) {
       ops.push(setMeta("reading_week", key));
