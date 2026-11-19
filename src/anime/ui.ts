@@ -6,6 +6,7 @@ import { headVoice, voiceText, modal, selectLabel, textLabel } from "../discord/
 import type { ActionRow, Button, MessageBody } from "../discord/types.ts";
 import { MINUTE, startOfDay, wallOf, fmtHHMM } from "../time/tz.ts";
 import type { Candidate, Sequel } from "./sources.ts";
+import { type RuRow, ruNewsTail, ruNextLines } from "./tgReleases.ts";
 import {
   type Anime,
   type AnimeStatus,
@@ -282,18 +283,24 @@ export function seasonStartMessage(a: Anime, at: number, now: number, tz: string
 // ---------- вопросы про своё аниме текстом (без кнопок «Смотрю/…»: списки — animeListMessage) ----------
 
 /** «Что вышло нового»: серии «Смотрю», которые вышли, а вы на более ранней; если таких нет — ближайшая. */
-export function animeNewsText(rows: Anime[], now: number, tz: string): string {
+export function animeNewsText(rows: Anime[], now: number, tz: string, ru?: Map<number, RuRow> | null): string {
   const watching = rows.filter((a) => a.status === "watching");
   if (!watching.length) return "В «Смотрю» пока пусто, так что и новых серий нет.";
+  // выходы по-русски (телеграм-каналы озвучек, tgReleases.ts) — главный источник «вышло»: если они впереди расписания Shikimori, верим им
   const behind = watching
-    .map((a) => ({ a, e: effective(a, now) }))
-    .filter((x) => x.e.airedEp > x.a.watched)
-    .sort((x, y) => (y.e.airedAt ?? 0) - (x.e.airedAt ?? 0) || x.a.id - y.a.id);
+    .map((a) => {
+      const e = effective(a, now);
+      const r = ru?.get(a.id);
+      const fromRu = !!r && r.ep >= 1 && r.ep >= e.airedEp;
+      return { a, r, airedEp: fromRu ? r.ep : e.airedEp, airedAt: fromRu ? r.at : e.airedAt };
+    })
+    .filter((x) => x.airedEp > x.a.watched)
+    .sort((x, y) => (y.airedAt ?? 0) - (x.airedAt ?? 0) || x.a.id - y.a.id);
   if (behind.length) {
-    const lines = behind.slice(0, 8).map(({ a, e }) => {
-      const n = e.airedEp - a.watched;
+    const lines = behind.slice(0, 8).map(({ a, r, airedEp, airedAt }) => {
+      const n = airedEp - a.watched;
       const me = a.watched ? `вы на ${a.watched}-й` : "вы ещё не начинали";
-      return `• **${clip(a.title_ru, 60)}** — вышла ${e.airedEp}-я${e.airedAt !== null ? ` (${whenShort(e.airedAt, now, tz)})` : ""}, ${me}${n > 1 && a.watched ? ` · пропущено ${n}` : ""}`;
+      return `• **${clip(a.title_ru, 60)}** — вышла ${airedEp}-я${airedAt !== null ? ` (${whenShort(airedAt, now, tz)})` : ""}, ${me}${n > 1 && a.watched ? ` · пропущено ${n}` : ""}${ruNewsTail(r, airedEp)}`;
     });
     return `**🎬 Вышло, а вы ещё не смотрели** (${behind.length})\n${lines.join("\n")}`;
   }
@@ -304,19 +311,19 @@ export function animeNewsText(rows: Anime[], now: number, tz: string): string {
   return `Нового, чего вы не видели, нет: всё досмотрено.${up?.u ? `\nБлижайшая: **${clip(up.a.title_ru, 60)}** — ${up.u.ep}-я, ${whenShort(up.u.at, now, tz)}.` : ""}`;
 }
 
-function nextLine(a: Anime, now: number, tz: string): string {
+function nextLine(a: Anime, now: number, tz: string, ru?: RuRow): string {
   const e = effective(a, now);
   const what = e.upcoming ? `${e.upcoming.ep}-я серия: ${whenShort(e.upcoming.at, now, tz)}` : a.src_status === "FINISHED" ? "всё уже вышло" : "дата следующей серии пока не объявлена";
   const v = voiceLine(a);
-  return `**${clip(a.title_ru, 60)}** — ${what}.${v ? `\n${v[0].toUpperCase()}${v.slice(1)}.` : ""}`;
+  return `**${clip(a.title_ru, 60)}** — ${what}.${v ? `\n${v[0].toUpperCase()}${v.slice(1)}.` : ""}${ruNextLines(ru, now, tz).map((l) => `\n${l}`).join("")}`;
 }
 
-/** «Когда новая серия [Название]»: у одного тайтла из списка — его серия (и озвучка, если знаем); без названия — ближайшие из «Смотрю». */
-export function animeNextText(rows: Anime[], query: string | null, now: number, tz: string): string {
+/** «Когда новая серия [Название]»: у одного тайтла из списка — его серия (и озвучка, и что вышло по-русски, если знаем); без названия — ближайшие из «Смотрю». */
+export function animeNextText(rows: Anime[], query: string | null, now: number, tz: string, ru?: Map<number, RuRow> | null): string {
   if (query) {
     const q = norm(query);
     const a = findOwnSeason(rows, query, null);
-    if (a) return nextLine(a, now, tz);
+    if (a) return nextLine(a, now, tz, ru?.get(a.id));
     const hits = rows.filter((x) => norm(x.title_ru).includes(q) || norm(x.title_orig ?? "").includes(q));
     if (hits.length > 1) return `Подходит несколько: ${hits.slice(0, 4).map((h) => `«${clip(h.title_ru, 40)}»`).join(", ")}. Напишите название точнее.`;
     return `«${clip(query, 40)}» в вашем списке нет. Добавить: «бот смотрю ${clip(query, 40)}».`;

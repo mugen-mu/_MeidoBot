@@ -31,6 +31,9 @@ export class World {
   /** лента Укрэнерго (html страницы t.me/s/Ukrenergo); null — не отвечает */
   ukr: string | null = null;
   ukrFetches = 0;
+  /** телеграм-каналы озвучек аниме (src/anime/tgReleases.ts): html страницы t.me/s/<канал>; null — не отвечает; какие каналы читали — в tgFetches */
+  tg: Record<string, string | null> = { animevost: null, anidub: null, anilibria_tv: null, AnimeMediaNews: null };
+  tgFetches: string[] = [];
   /** Shikimori: ответ на поиск (массив) и на «один тайтл» по номеру; null — не отвечает */
   shikiSearch: unknown[] | null = [];
   shikiById: Record<number, unknown> = {};
@@ -85,6 +88,13 @@ export class World {
     const repo = this.repo(limit);
     const api = countedApi(this.discord, repo.counter);
     const fetchFn = (async (input: unknown) => {
+      // телеграм-каналы озвучек раньше остальных: в их ссылках бывает «anilibria»
+      const tgUrl = String(typeof input === "string" ? input : (input as { url?: string; href?: string })?.url ?? (input as { href?: string })?.href);
+      const tgCh = /t\.me\/s\/([^/?#]+)/.exec(tgUrl)?.[1] ?? "";
+      if (tgCh in this.tg) {
+        this.tgFetches.push(tgCh);
+        return this.tg[tgCh] === null ? new Response("down", { status: 503 }) : new Response(this.tg[tgCh]);
+      }
       if (String(typeof input === "string" ? input : (input as { url?: string; href?: string })?.url ?? (input as { href?: string })?.href).includes("vodokanal")) {
         this.waterFetches++;
         return this.water === null ? new Response("down", { status: 503 }) : Response.json(this.water);
