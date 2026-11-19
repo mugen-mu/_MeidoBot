@@ -31,6 +31,7 @@ import { type RecCtx, runRecommend } from "./recommendRun.ts";
 import type { AnimeAsk, SayPhrase } from "./say.ts";
 import { type Candidate, type FetchFn, getShikiFull, searchShiki } from "./sources.ts";
 import { deleteOp, getAnime, listAnime, patchOp, upsertOp } from "./store.ts";
+import { listRu } from "./tgReleasesRun.ts";
 import {
   NOT_FOUND_TEXT,
   SOURCE_DOWN_TEXT,
@@ -150,7 +151,9 @@ export async function handleAnimeAsk(c: AnimeCtx, q: AnimeAsk | AnimeDid): Promi
     return said !== null ? text(said) : q.sure ? text(animeNotInList(q.query)) : null;
   }
   if (q.kind === "watching" || q.kind === "planned") return animeListMessage(rows, q.kind, 0, c.now, c.tz, c.character, c.rand);
-  return text(q.kind === "news" ? animeNewsText(rows, c.now, c.tz) : animeNextText(rows, q.query, c.now, c.tz));
+  // что вышло по-русски (телеграм-каналы озвучек): один дополнительный запрос, нет таблицы или запаса — ответ как раньше, без этих строк
+  const ru = c.repo.counter.can(3) ? await listRu(c.repo) : null;
+  return text(q.kind === "news" ? animeNewsText(rows, c.now, c.tz, ru) : animeNextText(rows, q.query, c.now, c.tz, ru));
 }
 
 /**

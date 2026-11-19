@@ -4,6 +4,7 @@ import { BudgetExceeded, type Repo, deleteMeta, event, setMeta } from "../db/rep
 import type { Op } from "../db/types.ts";
 import type { DiscordApi } from "../discord/types.ts";
 import type { AppSettings } from "../settings.ts";
+import type { SourceId } from "../sources.ts";
 import { localDate, wallOf } from "../time/tz.ts";
 import {
   type Anime,
@@ -25,6 +26,7 @@ import { WARN_GENRES } from "./pickGenres.ts";
 import { pickDue, runSaturdayPick } from "./pickCron.ts";
 import { type FetchFn, fetchSchedules, fetchSequels, fetchVoice } from "./sources.ts";
 import { listAnime, patchOp, scheduleOp, seqMarkOp, voiceOp, weekMarkOp } from "./store.ts";
+import { runTgReleases } from "./tgReleasesRun.ts";
 import { type AskItem, type WeekAsk, askMessage, askPauseMessage, seasonStartMessage, weekExpiredBody, weekQuestion } from "./ui.ts";
 import { MINUTE } from "../time/tz.ts";
 
@@ -44,8 +46,8 @@ export interface AnimeCronArgs {
   /** хватит ли подзапросов на n действий (как room2 в cron) */
   room: (n: number) => boolean;
   spend: (n: number) => void;
-  /** паспорт источников (этап 4): итог чтения Shikimori / AniLibria */
-  note?: (id: "shikimori" | "anilibria", ok: boolean) => void;
+  /** паспорт источников (этап 4): итог чтения Shikimori / AniLibria / телеграм-каналов озвучек */
+  note?: (id: SourceId, ok: boolean) => void;
   /** строка Хару перед сообщением о сломанном источнике (null — без неё) */
   voice?: () => Promise<string | null>;
 }
@@ -275,5 +277,11 @@ ${FAIL_NOTICE}` : FAIL_NOTICE, allowed_mentions: { parse: [] } });
     notes.push(...r.notes);
     if (!r.healthy) healthy = false;
   }
+
+  // ---------- выходы серий по-русски из телеграм-каналов озвучек (src/anime/tgReleases.ts): один канал за запуск, без тайтлов — без чтения ----------
+  const tg = await runTgReleases(a, rows);
+  ops.push(...tg.ops);
+  notes.push(...tg.notes);
+  if (!tg.healthy) healthy = false;
   return { ops, notes, healthy };
 }

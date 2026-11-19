@@ -6,7 +6,7 @@ import { groupsFor, hasSchedule, lightLines } from "./light.ts";
 import { formatDate, usDate } from "./time/format.ts";
 import { fmtHHMM, wallOf } from "./time/tz.ts";
 
-export type SourceId = "light" | "water" | "gas" | "shikimori" | "anilibria" | "weather" | "rain" | "ukrenergo";
+export type SourceId = "light" | "water" | "gas" | "shikimori" | "anilibria" | "animetg" | "weather" | "rain" | "ukrenergo";
 
 export interface SourceInfo {
   id: SourceId;
@@ -22,6 +22,7 @@ export const SOURCES: SourceInfo[] = [
   { id: "gas", name: "Газ (газовики)", icon: "🔥" },
   { id: "shikimori", name: "Аниме: расписание (Shikimori)", icon: "🎬" },
   { id: "anilibria", name: "Аниме: озвучка (AniLibria)", icon: "🎧" },
+  { id: "animetg", name: "Аниме: выходы серий (Telegram-каналы озвучек)", icon: "📣" },
   { id: "weather", name: "Погода", icon: "⛅" },
   { id: "rain", name: "Дождь (Open-Meteo)", icon: "🌧" },
 ];
