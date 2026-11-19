@@ -4,8 +4,8 @@
 // остальное (планы по регионам без названий, новости компании) молча пропускаем: график опубликует Yasno.
 // Бот ничего не пересказывает моделью: короткая выдержка из поста и ссылка на него (как у воды).
 // Публичная страница читается без входа; запрос раз в 10 минут, один подзапрос. Сломался источник — виден на экране «Состояние».
-import { decode } from "./water.ts";
 import { whenText } from "./sources.ts";
+import { type TgPost, fetchTgChannel, parseTgChannel } from "./tgChannel.ts";
 import { HOUR, MINUTE } from "./time/tz.ts";
 
 export const UKR_URL = "https://t.me/s/Ukrenergo";
@@ -24,67 +24,14 @@ const EXCERPT_MAX = 450;
 const OUTAGE_EXCERPT_MAX = 240;
 
 // ---------- разбор страницы ----------
+// Чтение и разбор ленты вынесены в `tgChannel.ts` (общий кирпич для всех Telegram-каналов); здесь прежние имена.
 
-export interface UkrPost {
-  /** номер поста в канале: растёт со временем */
-  id: number;
-  /** момент публикации, мс UTC */
-  at: number;
-  text: string;
-  link: string;
-}
+export type UkrPost = TgPost;
 
-function cleanText(html: string): string {
-  const text = decode(html.replace(/<br\s*\/?>/gi, "\n").replace(/<[^>]*>/g, ""))
-    // невидимые знаки Telegram («•⁠ ⁠» у маркеров списка)
-    .replace(/[⁠​­]/g, "")
-    .replace(/[ \t ]+/g, " ")
-    .split("\n")
-    .map((l) => l.trim())
-    .join("\n")
-    .replace(/\n{3,}/g, "\n\n");
-  return text.trim();
-}
-
-/**
- * Страница t.me/s/<канал> -> посты с текстом. Разбор по `indexOf`, а не регулярками по всей странице (≈ 115 КБ):
- * на бесплатном плане процессорного времени на запуск мало. Посты без текста (одни картинки) пропускаются.
- */
-export function parseUkrenergo(html: string): UkrPost[] {
-  const out: UkrPost[] = [];
-  const parts = html.split('data-post="');
-  for (let i = 1; i < parts.length; i++) {
-    const c = parts[i];
-    const ref = c.slice(0, Math.max(0, c.indexOf('"')));
-    const m = /^([A-Za-z0-9_]+)\/(\d+)$/.exec(ref);
-    if (!m) continue;
-    const at = (() => {
-      const t = c.indexOf('datetime="');
-      if (t < 0) return NaN;
-      return Date.parse(c.slice(t + 10, c.indexOf('"', t + 10)));
-    })();
-    const marker = c.indexOf("js-message_text");
-    if (marker < 0 || !Number.isFinite(at)) continue;
-    const start = c.indexOf(">", marker);
-    const end = c.indexOf("</div>", start);
-    if (start < 0 || end < 0) continue;
-    const text = cleanText(c.slice(start + 1, end));
-    if (text) out.push({ id: Number(m[2]), at, text, link: `https://t.me/${ref}` });
-  }
-  return out;
-}
+export const parseUkrenergo = parseTgChannel;
 
 /** Чтение ленты. null — не ответила или страница не разобралась (источник «сломан»). */
-export async function fetchUkrenergo(fetchFn: typeof fetch = fetch): Promise<UkrPost[] | null> {
-  try {
-    const res = await fetchFn(UKR_URL, { headers: { accept: "text/html", "user-agent": "MeidoBot (personal, 0.1)" }, signal: AbortSignal.timeout(6000) });
-    if (!res.ok) return null;
-    const posts = parseUkrenergo(await res.text());
-    return posts.length ? posts : null;
-  } catch {
-    return null;
-  }
-}
+export const fetchUkrenergo = (fetchFn: typeof fetch = fetch): Promise<UkrPost[] | null> => fetchTgChannel("Ukrenergo", fetchFn);
 
 // ---------- что подходит ----------
 
