@@ -26,7 +26,7 @@ import { weightOf } from "./personality/weight.ts";
 import { detectUserWord } from "./personality/userWords.ts";
 import { announceOutage } from "./power.ts";
 import { outageLinesFor } from "./outages.ts";
-import { UKR_CHECK_EVERY, UKR_LAST_KEY, UKR_NEXT_KEY, UKR_OUTBOX_KEY, UKR_STATE_KEY, fetchUkrenergo, parseUkrLast, parseUkrState, planUkrenergo, type UkrNotice } from "./ukrenergo.ts";
+import { AVARIA_CHECK_EVERY, AVARIA_LAST_KEY, AVARIA_NEXT_KEY, AVARIA_OLD_KEYS, AVARIA_OUTBOX_KEY, AVARIA_STATE_KEY, avariaOn, fetchAvaria, parseAvariaLast, parseAvariaState, planAvaria, type AvariaNotice } from "./avaria.ts";
 import { parseAnimePhrase } from "./anime/core.ts";
 import { runAnime } from "./anime/cron.ts";
 import { handleAnimeAsk, handleMark, handlePhrase, handleRecommend, handleSay } from "./anime/handlers.ts";
@@ -346,7 +346,7 @@ export async function runCron(d: CronDeps): Promise<CronReport> {
     return line ? { ...n, text: `${line}
 ${n.text}` } : n;
   };
-  const enabledSources = { light: !!s.lightGroup, ukrenergo: !!s.lightGroup, water: s.waterWords.length > 0, gas: s.gasWords.length > 0, rain: s.rainOn };
+  const enabledSources = { light: !!s.lightGroup, avaria: avariaOn(s), water: s.waterWords.length > 0, gas: s.gasWords.length > 0, rain: s.rainOn };
   /** Реакция-эмодзи по настроению на сообщение хозяина (этап Х3): редко, на серьёзные темы — никогда; сбой реакции не страшен. */
   const react = async (ch: string, messageId: string, always: boolean, text = ""): Promise<void> => {
     if (!mood?.loaded || mood.silent || !room2(1) || isSeriousTopic(text)) return;
@@ -1181,13 +1181,13 @@ ${n.text}` } : n;
       }
     }
 
-    // 2б4а. Укрэнерго: раз в 10 минут лента канала; посты про нашу область (аварийные отключения, последствия атак) — в «почту»
-    // выдержкой и ссылкой. Читается вместе с графиком света (отдельной кнопки в настройках нет, правило кнопок). Очередь, как у воды:
-    // сбой Discord не теряет сообщение. Первое чтение только запоминает, до какого поста дошли.
-    if (s.lightGroup && owner && s.chRemind) {
-      let outbox: UkrNotice[] = [];
+    // 2б4а. Канал аварийной службы Днепра (src/avaria.ts): раз в 10 минут лента; только свет хозяина (очередь из «Свет: группа»)
+    // и вода по его словам места — в «почту» выдержкой и ссылкой. Отдельной кнопки в настройках нет (правило кнопок): читается,
+    // пока включён свет или вода. Очередь, как у воды: сбой Discord не теряет сообщение. Первое чтение только запоминает, до какого поста дошли.
+    if (avariaOn(s) && owner && s.chRemind) {
+      let outbox: AvariaNotice[] = [];
       try {
-        const v = JSON.parse(meta.get(UKR_OUTBOX_KEY) ?? "[]");
+        const v = JSON.parse(meta.get(AVARIA_OUTBOX_KEY) ?? "[]");
         if (Array.isArray(v)) outbox = v;
       } catch {
         /* повреждено: пусто */
@@ -1196,28 +1196,31 @@ ${n.text}` } : n;
       let stateRaw: string | null = null;
       let lastRaw: string | null = null;
       let next: string | null = null;
-      if (now >= (Number(meta.get(UKR_NEXT_KEY) ?? 0) || 0) && room2(5)) {
+      if (now >= (Number(meta.get(AVARIA_NEXT_KEY) ?? 0) || 0) && room2(5)) {
         repo.counter.spend(1);
-        const posts = await fetchUkrenergo(d.fetchFn ?? fetch);
-        next = String(now + UKR_CHECK_EVERY);
+        const posts = await fetchAvaria(d.fetchFn ?? fetch);
+        next = String(now + AVARIA_CHECK_EVERY);
         if (posts) {
-          const r = planUkrenergo(parseUkrState(meta.get(UKR_STATE_KEY)), posts, now, s.tz, parseUkrLast(meta.get(UKR_LAST_KEY)));
+          const cfg = { group: s.lightGroup, words: s.waterWords, tz: s.tz, waterAlerts: parseWaterState(meta.get("water_state")).alerts };
+          const r = planAvaria(parseAvariaState(meta.get(AVARIA_STATE_KEY)), posts, now, cfg, parseAvariaLast(meta.get(AVARIA_LAST_KEY)));
           outbox.push(...r.notices);
           stateRaw = JSON.stringify(r.state);
           if (r.last) lastRaw = JSON.stringify(r.last);
-          note("ukrenergo", true);
-          if (r.notices.length) report.notes.push(`Укрэнерго: новых сообщений ${r.notices.length}`);
+          note("avaria", true);
+          if (r.notices.length) report.notes.push(`канал аварийной службы: новых сообщений ${r.notices.length}`);
         } else {
-          note("ukrenergo", false);
-          report.notes.push("Укрэнерго: лента не прочиталась");
+          note("avaria", false);
+          report.notes.push("канал аварийной службы: лента не прочиталась");
         }
       }
-      outbox = (await flushOutbox(outbox, "ukrenergo")).slice(-4);
-      if (next) ops2.push(setMeta(UKR_NEXT_KEY, next));
-      if (stateRaw && stateRaw !== meta.get(UKR_STATE_KEY)) ops2.push(setMeta(UKR_STATE_KEY, stateRaw));
-      if (lastRaw && lastRaw !== meta.get(UKR_LAST_KEY)) ops2.push(setMeta(UKR_LAST_KEY, lastRaw));
-      if (JSON.stringify(outbox) !== before) ops2.push(outbox.length ? setMeta(UKR_OUTBOX_KEY, JSON.stringify(outbox)) : deleteMeta(UKR_OUTBOX_KEY));
+      outbox = (await flushOutbox(outbox, "avaria")).slice(-4);
+      if (next) ops2.push(setMeta(AVARIA_NEXT_KEY, next));
+      if (stateRaw && stateRaw !== meta.get(AVARIA_STATE_KEY)) ops2.push(setMeta(AVARIA_STATE_KEY, stateRaw));
+      if (lastRaw && lastRaw !== meta.get(AVARIA_LAST_KEY)) ops2.push(setMeta(AVARIA_LAST_KEY, lastRaw));
+      if (JSON.stringify(outbox) !== before) ops2.push(outbox.length ? setMeta(AVARIA_OUTBOX_KEY, JSON.stringify(outbox)) : deleteMeta(AVARIA_OUTBOX_KEY));
     }
+    // ключи прежней пересылки Укрэнерго больше не нужны: убираем (одна запись в запуске, только пока они есть)
+    for (const k of AVARIA_OLD_KEYS) if (meta.has(k)) ops2.push(deleteMeta(k));
 
     // 2б5. газ: раз в час главная страница газовиков (файл с графиком — только когда ссылка новая и раз в сутки);
     // напоминания «накануне вечером» и «утром в день работ» — каждую минуту без запросов; очередь как у воды

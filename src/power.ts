@@ -11,7 +11,7 @@ import { QUIET_META_KEY, isQuietNow } from "./personality/day.ts";
 import { MoodSession, makeCtx } from "./personality/director.ts";
 import type { Situation } from "./personality/phrases.ts";
 import { MINUTE, fmtHHMM, wallOf } from "./time/tz.ts";
-import { UKR_LAST_KEY, ukrAnnounceLine } from "./ukrenergo.ts";
+import { AVARIA_LAST_KEY, avariaAnnounceLine } from "./avaria.ts";
 
 /** Моргание короче этого времени в канал не пишется: сообщение «пропал» уходит, только если света нет дольше. */
 export const BLINK_MS = 60_000;
@@ -200,10 +200,10 @@ export async function announceOutage(d: PowerDeps & { meta: Map<string, string>;
   }
   const line = await powerLine({ repo: d.repo, now: d.now, ownerId: d.ownerId, s: d.s, meta: d.meta }, "power_off");
   const sched = scheduleInfo(p.since, d.s, data);
-  // свежее сообщение Укрэнерго про область (аварийные отключения, последствия атак): причина и масштаб, которых нет ни у Yasno, ни у датчика
-  const ukr = ukrAnnounceLine(d.meta.get(UKR_LAST_KEY), d.now, d.s.tz);
+  // свежий пост канала аварийной службы про свет (до 6 часов): причина и масштаб, которых нет ни у Yasno, ни у датчика
+  const avaria = avariaAnnounceLine(d.meta.get(AVARIA_LAST_KEY), d.now, d.s.tz);
   await d.api.postMessage(d.s.chRemind, {
-    content: withPhrase(offMessage({ ownerId: d.ownerId, since: p.since, tz: d.s.tz, schedule: sched.note }), d.ownerId, line) + (ukr ? `\n${ukr}` : ""),
+    content: withPhrase(offMessage({ ownerId: d.ownerId, since: p.since, tz: d.s.tz, schedule: sched.note }), d.ownerId, line) + (avaria ? `\n${avaria}` : ""),
     allowed_mentions: { users: [d.ownerId] },
   });
   // отметка «сообщили» ставится, только пока свет всё ещё считается пропавшим (гонка с запросом «появился»)
