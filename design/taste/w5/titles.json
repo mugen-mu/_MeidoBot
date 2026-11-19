@@ -1,0 +1,7213 @@
+{
+ "source": "shikimori.io",
+ "fetched": "2026-11-19",
+ "lists": [
+  {
+   "id": "g-rom",
+   "t": "Романтика и школа (ещё)",
+   "sub": "",
+   "items": [
+    {
+     "id": 52865,
+     "ru": "Романтический убийца",
+     "orig": "Romantic Killer",
+     "year": 2022,
+     "episodes": 12,
+     "tag": "ONA"
+    },
+    {
+     "id": 44516,
+     "ru": "Убивающая любовь",
+     "orig": "Koroshi Ai",
+     "year": 2022,
+     "episodes": 12
+    },
+    {
+     "id": 50220,
+     "ru": "Призванный в другой мир во второй раз",
+     "orig": "Isekai Shoukan wa Nidome desu",
+     "year": 2023,
+     "episodes": 12
+    },
+    {
+     "id": 51705,
+     "ru": "Галактика по соседству",
+     "orig": "Otonari ni Ginga",
+     "year": 2023,
+     "episodes": 12
+    },
+    {
+     "id": 45653,
+     "ru": "Аюму всё равно станет ближе",
+     "orig": "Soredemo Ayumu wa Yosetekuru",
+     "year": 2022,
+     "episodes": 12
+    },
+    {
+     "id": 51403,
+     "ru": "Любовные неудачи",
+     "orig": "Renai Flops",
+     "year": 2022,
+     "episodes": 12
+    },
+    {
+     "id": 56734,
+     "ru": "Я подружился со второй самой симпатичной девушкой в классе",
+     "orig": "Class de 2-banme ni Kawaii Onnanoko to Tomodachi ni Natta",
+     "year": 2026,
+     "episodes": 12
+    },
+    {
+     "id": 45055,
+     "ru": "Сказка о девушке эпохи Тайсё",
+     "orig": "Taishou Otome Otogibanashi",
+     "year": 2021,
+     "episodes": 12
+    },
+    {
+     "id": 52973,
+     "ru": "Терраса кафе богинь",
+     "orig": "Megami no Cafe Terrace",
+     "year": 2023,
+     "episodes": 12
+    },
+    {
+     "id": 10397,
+     "ru": "Белоснежная симфония: Цвет влюблённых",
+     "orig": "Mashiro-iro Symphony: The Color of Lovers",
+     "year": 2011,
+     "episodes": 12
+    },
+    {
+     "id": 52709,
+     "ru": "Может ли существовать дружба между мужчиной и женщиной? (Нет, это не так!)",
+     "orig": "Danjo no Yuujou wa Seiritsu suru? (Iya, Shinai!!)",
+     "year": 2025,
+     "episodes": 12
+    },
+    {
+     "id": 53835,
+     "ru": "Безымянная память",
+     "orig": "Unnamed Memory",
+     "year": 2024,
+     "episodes": 12
+    },
+    {
+     "id": 17741,
+     "ru": "Город, в котором ты живёшь",
+     "orig": "Kimi no Iru Machi",
+     "year": 2013,
+     "episodes": 12
+    },
+    {
+     "id": 49980,
+     "ru": "Сказка о сахарном яблоке",
+     "orig": "Sugar Apple Fairy Tale",
+     "year": 2023,
+     "episodes": 12
+    },
+    {
+     "id": 9736,
+     "ru": "Игрушка Астаротты",
+     "orig": "Astarotte no Omocha!",
+     "year": 2011,
+     "episodes": 12
+    },
+    {
+     "id": 21563,
+     "ru": "Забавы богов",
+     "orig": "Kamigami no Asobi",
+     "year": 2014,
+     "episodes": 12
+    },
+    {
+     "id": 56230,
+     "ru": "История о дедушке и бабушке, которые снова стали молодыми",
+     "orig": "Jiisan Baasan Wakagaeru",
+     "year": 2024,
+     "episodes": 11
+    },
+    {
+     "id": 19151,
+     "ru": "Романтика Валькирий",
+     "orig": "Walkure Romanze",
+     "year": 2013,
+     "episodes": 12
+    },
+    {
+     "id": 38735,
+     "ru": "7 семян",
+     "orig": "7 Seeds",
+     "year": 2019,
+     "episodes": 12,
+     "tag": "ONA"
+    },
+    {
+     "id": 54265,
+     "ru": "Сказание об обручальных кольцах",
+     "orig": "Kekkon Yubiwa Monogatari",
+     "year": 2024,
+     "episodes": 12
+    },
+    {
+     "id": 53379,
+     "ru": "Маленькая сэмпай с моей работы",
+     "orig": "Uchi no Kaisha no Chiisai Senpai no Hanashi",
+     "year": 2023,
+     "episodes": 12
+    },
+    {
+     "id": 7590,
+     "ru": "Нашествие бродячих кошек!",
+     "orig": "Mayoi Neko Overrun!",
+     "year": 2010,
+     "episodes": 13
+    },
+    {
+     "id": 17827,
+     "ru": "Прекрасный библиотекарь",
+     "orig": "Daitoshokan no Hitsujikai",
+     "year": 2014,
+     "episodes": 12
+    },
+    {
+     "id": 55597,
+     "ru": "Любовная болезнь Хананои",
+     "orig": "Hananoi-kun to Koi no Yamai",
+     "year": 2024,
+     "episodes": 12
+    },
+    {
+     "id": 38409,
+     "ru": "Седьмой киллер",
+     "orig": "Cike Wu Liuqi",
+     "year": 2018,
+     "episodes": 10,
+     "tag": "ONA"
+    },
+    {
+     "id": 52934,
+     "ru": "Я прибрал к рукам девушку, которая потеряла своего жениха, и теперь я учу её всяким плохим вещам",
+     "orig": "Konyaku Haki sareta Reijou wo Hirotta Ore ga, Ikenai Koto wo Oshiekomu",
+     "year": 2023,
+     "episodes": 12
+    },
+    {
+     "id": 56228,
+     "ru": "Я стану злодейкой, которая войдёт в историю",
+     "orig": "Rekishi ni Nokoru Akujo ni Naru zo",
+     "year": 2024,
+     "episodes": 13
+    },
+    {
+     "id": 9750,
+     "ru": "Семь жизней чёрного кролика",
+     "orig": "Itsuka Tenma no Kuro Usagi",
+     "year": 2011,
+     "episodes": 12
+    },
+    {
+     "id": 16397,
+     "ru": "Сними меня",
+     "orig": "Photokano",
+     "year": 2013,
+     "episodes": 13
+    },
+    {
+     "id": 8426,
+     "ru": "Блудный сын",
+     "orig": "Hourou Musuko",
+     "year": 2011,
+     "episodes": 11
+    },
+    {
+     "id": 4551,
+     "ru": "Граф и фейри",
+     "orig": "Hakushaku to Yousei",
+     "year": 2008,
+     "episodes": 12
+    },
+    {
+     "id": 5941,
+     "ru": "Перекрёстная игра",
+     "orig": "Cross Game",
+     "year": 2009,
+     "episodes": 50
+    },
+    {
+     "id": 8476,
+     "ru": "Девушка-демон Дзакуро",
+     "orig": "Otome Youkai Zakuro",
+     "year": 2010,
+     "episodes": 13
+    },
+    {
+     "id": 55887,
+     "ru": "Вы правда женитесь?",
+     "orig": "Kekkon suru tte, Hontou desu ka",
+     "year": 2024,
+     "episodes": 12
+    },
+    {
+     "id": 5112,
+     "ru": "Пустая банка",
+     "orig": "Akikan!",
+     "year": 2009,
+     "episodes": 12
+    },
+    {
+     "id": 54275,
+     "ru": "Храм: Никто не может жить в одиночестве",
+     "orig": "Temple",
+     "year": 2023,
+     "episodes": 12
+    },
+    {
+     "id": 8536,
+     "ru": "Развилка фортуны",
+     "orig": "Fortune Arterial: Akai Yakusoku",
+     "year": 2010,
+     "episodes": 12
+    },
+    {
+     "id": 54632,
+     "ru": "Королева со скальпелем",
+     "orig": "Gekai Elise",
+     "year": 2024,
+     "episodes": 12
+    },
+    {
+     "id": 14921,
+     "ru": "Девушка из красной книги",
+     "orig": "RDG: Red Data Girl",
+     "year": 2013,
+     "episodes": 12
+    },
+    {
+     "id": 12461,
+     "ru": "Багровые осколки",
+     "orig": "Hiiro no Kakera",
+     "year": 2012,
+     "episodes": 13
+    },
+    {
+     "id": 710,
+     "ru": "Запись",
+     "orig": "Rec",
+     "year": 2006,
+     "episodes": 9
+    },
+    {
+     "id": 47158,
+     "ru": "Младшая сестра моего друга досаждает",
+     "orig": "Tomodachi no Imouto ga Ore ni dake Uzai",
+     "year": 2025,
+     "episodes": 12
+    },
+    {
+     "id": 16355,
+     "ru": "Отсекающие и разделяющие преступные лезвия",
+     "orig": "Dansai Bunri no Crime Edge",
+     "year": 2013,
+     "episodes": 13
+    },
+    {
+     "id": 55071,
+     "ru": "Брачные узы с семьёй Амагами",
+     "orig": "Amagami-san Chi no Enmusubi",
+     "year": 2024,
+     "episodes": 24
+    },
+    {
+     "id": 30014,
+     "ru": "Момокури",
+     "orig": "Momokuri",
+     "year": 2015,
+     "episodes": 26,
+     "tag": "ONA"
+    },
+    {
+     "id": 55150,
+     "ru": "На этот раз одержи победу над императором драконов, благородная девушка!",
+     "orig": "Yarinaoshi Reijou wa Ryuutei Heika wo Kouryakuchuu",
+     "year": 2024,
+     "episodes": 12
+    },
+    {
+     "id": 1722,
+     "ru": "Унесённый на остров Айран",
+     "orig": "Nagasarete Airantou",
+     "year": 2007,
+     "episodes": 26
+    },
+    {
+     "id": 5150,
+     "ru": "Предел первой любви",
+     "orig": "Hatsukoi Limited.",
+     "year": 2009,
+     "episodes": 12
+    },
+    {
+     "id": 57217,
+     "ru": "Волшебница и злой офицер",
+     "orig": "Katsute Mahou Shoujo to Aku wa Tekitai shiteita.",
+     "year": 2024,
+     "episodes": 12
+    },
+    {
+     "id": 37716,
+     "ru": "Как госпожа Вельзевул пожелает",
+     "orig": "Beelzebub-jou no Okinimesu mama.",
+     "year": 2018,
+     "episodes": 12
+    },
+    {
+     "id": 35434,
+     "ru": "Парни из магазинчика",
+     "orig": "Konbini Kareshi",
+     "year": 2017,
+     "episodes": 12
+    },
+    {
+     "id": 39799,
+     "ru": "Валькирия и любовь",
+     "orig": "Val x Love",
+     "year": 2019,
+     "episodes": 12
+    },
+    {
+     "id": 957,
+     "ru": "Повесть о стране цветных облаков",
+     "orig": "Saiunkoku Monogatari",
+     "year": 2006,
+     "episodes": 39
+    },
+    {
+     "id": 32323,
+     "ru": "Шоколад Купидона",
+     "orig": "Aishen Qiaokeli-ing...",
+     "year": 2015,
+     "episodes": 15,
+     "tag": "ONA"
+    },
+    {
+     "id": 587,
+     "ru": "Глядя на полумесяц",
+     "orig": "Hanbun no Tsuki ga Noboru Sora",
+     "year": 2006,
+     "episodes": 6
+    },
+    {
+     "id": 52082,
+     "ru": "Святая Сесилия и пастор Лоуренс",
+     "orig": "Shiro Seijo to Kuro Bokushi",
+     "year": 2023,
+     "episodes": 12
+    },
+    {
+     "id": 1965,
+     "ru": "Небо",
+     "orig": "Sola",
+     "year": 2007,
+     "episodes": 13
+    },
+    {
+     "id": 19117,
+     "ru": "Любовная песня одного пилота",
+     "orig": "Toaru Hikuushi e no Koiuta",
+     "year": 2014,
+     "episodes": 13
+    },
+    {
+     "id": 46422,
+     "ru": "Принесённая в жертву Принцесса и Царь зверей",
+     "orig": "Niehime to Kemono no Ou",
+     "year": 2023,
+     "episodes": 24
+    },
+    {
+     "id": 1546,
+     "ru": "Нэгима?!",
+     "orig": "Negima!?",
+     "year": 2006,
+     "episodes": 26
+    },
+    {
+     "id": 36510,
+     "ru": "Улисс: Жанна д'Арк и рыцарь-алхимик",
+     "orig": "Ulysses: Jehanne Darc to Renkin no Kishi",
+     "year": 2018,
+     "episodes": 12
+    },
+    {
+     "id": 1579,
+     "ru": "Золотая струна",
+     "orig": "Kiniro no Corda: Primo Passo",
+     "year": 2006,
+     "episodes": 25
+    },
+    {
+     "id": 3299,
+     "ru": "H2O: Следы на песке",
+     "orig": "H2O: Footprints in the Sand",
+     "year": 2008,
+     "episodes": 12
+    },
+    {
+     "id": 30895,
+     "ru": "ХаруЧика: Юность Харуты и Чики",
+     "orig": "HaruChika: Haruta to Chika wa Seishun suru",
+     "year": 2016,
+     "episodes": 12
+    },
+    {
+     "id": 21845,
+     "ru": "В поисках потерянного будущего",
+     "orig": "Ushinawareta Mirai wo Motomete",
+     "year": 2014,
+     "episodes": 12
+    },
+    {
+     "id": 9587,
+     "ru": "Я вовсе не люблю своего старшего брата!",
+     "orig": "Oniichan no Koto nanka Zenzen Suki ja Nai n da kara ne!!",
+     "year": 2011,
+     "episodes": 12
+    },
+    {
+     "id": 56838,
+     "ru": "Одна комната, солнечный свет, ангел",
+     "orig": "One Room, Hiatari Futsuu, Tenshi-tsuki.",
+     "year": 2024,
+     "episodes": 12
+    },
+    {
+     "id": 9922,
+     "ru": "Мы — бескрылые: Под невинным небом",
+     "orig": "Oretachi ni Tsubasa wa Nai: Under the Innocent Sky.",
+     "year": 2011,
+     "episodes": 12
+    },
+    {
+     "id": 2927,
+     "ru": "Первый поцелуй",
+     "orig": "KimiKiss Pure Rouge",
+     "year": 2007,
+     "episodes": 24
+    },
+    {
+     "id": 31452,
+     "ru": "Норн9: Норн + Нонет",
+     "orig": "Norn9: Norn+Nonet",
+     "year": 2016,
+     "episodes": 12
+    },
+    {
+     "id": 38814,
+     "ru": "Юная невеста Нобунаги",
+     "orig": "Nobunaga-sensei no Osanazuma",
+     "year": 2019,
+     "episodes": 12
+    },
+    {
+     "id": 50923,
+     "ru": "Принцесса-библиофил",
+     "orig": "Mushikaburi-hime",
+     "year": 2022,
+     "episodes": 12
+    },
+    {
+     "id": 53300,
+     "ru": "Мой телохранитель",
+     "orig": "Ojou to Banken-kun",
+     "year": 2023,
+     "episodes": 13
+    },
+    {
+     "id": 13585,
+     "ru": "Встреча под летним снегом",
+     "orig": "Natsuyuki Rendezvous",
+     "year": 2012,
+     "episodes": 11
+    },
+    {
+     "id": 50606,
+     "ru": "Треугольник Аякаси",
+     "orig": "Ayakashi Triangle",
+     "year": 2023,
+     "episodes": 12
+    },
+    {
+     "id": 14515,
+     "ru": "Сасами-сан@Лентяйничество",
+     "orig": "Sasami-san@Ganbaranai",
+     "year": 2013,
+     "episodes": 12
+    },
+    {
+     "id": 53128,
+     "ru": "Атри: Мои дорогие моменты",
+     "orig": "Atri: My Dear Moments",
+     "year": 2024,
+     "episodes": 13
+    },
+    {
+     "id": 3613,
+     "ru": "Библиотечная война",
+     "orig": "Toshokan Sensou",
+     "year": 2008,
+     "episodes": 12
+    },
+    {
+     "id": 55842,
+     "ru": "Девушка, в которую я влюбился на Окинаве, говорит на диалекте, и с ней трудно иметь дело",
+     "orig": "Okinawa de Suki ni Natta Ko ga Hougen Sugite Tsurasugiru",
+     "year": 2025,
+     "episodes": 12
+    },
+    {
+     "id": 55996,
+     "ru": "Любовь неделима между близнецами",
+     "orig": "Koi wa Futago de Warikirenai",
+     "year": 2024,
+     "episodes": 12
+    },
+    {
+     "id": 56843,
+     "ru": "История о том, как я пришёл на вечеринку, а там не было ни одной женщины",
+     "orig": "Goukon ni Ittara Onna ga Inakatta Hanashi",
+     "year": 2024,
+     "episodes": 12
+    },
+    {
+     "id": 5734,
+     "ru": "Таютама: Поцелуй мою богиню",
+     "orig": "Tayutama: Kiss on My Deity",
+     "year": 2009,
+     "episodes": 12
+    },
+    {
+     "id": 56735,
+     "ru": "Аккуратная и симпатичная девочка в моей новой школе — подруга детства, с которой я играл, думая, что она мальчик",
+     "orig": "Tenkou-saki no Seiso Karen na Bishoujo ga, Mukashi Danshi to Omotte Issho ni Asonda Osananajimi Datta Ken",
+     "year": 2026,
+     "episodes": 12
+    },
+    {
+     "id": 5835,
+     "ru": "Цветущая юность",
+     "orig": "Hanasakeru Seishounen",
+     "year": 2009,
+     "episodes": 39
+    },
+    {
+     "id": 1568,
+     "ru": "Момомо Сумомомо: Сильнейшая невеста на планете",
+     "orig": "Sumomomo Momomo: Chijou Saikyou no Yome",
+     "year": 2006,
+     "episodes": 22
+    },
+    {
+     "id": 57362,
+     "ru": "Нина в королевстве звёзд",
+     "orig": "Hoshifuru Oukoku no Nina",
+     "year": 2024,
+     "episodes": 12
+    },
+    {
+     "id": 940,
+     "ru": "Инуками!",
+     "orig": "Inukami!",
+     "year": 2006,
+     "episodes": 26
+    },
+    {
+     "id": 54726,
+     "ru": "Если бы моя жена стала младшеклассницей",
+     "orig": "Tsuma, Shougakusei ni Naru.",
+     "year": 2024,
+     "episodes": 12
+    },
+    {
+     "id": 40075,
+     "ru": "Любовь и продюсер",
+     "orig": "Koi to Producer: EVOLxLOVE",
+     "year": 2020,
+     "episodes": 12
+    },
+    {
+     "id": 9624,
+     "ru": "Половое и нравственное воспитание для тридцатилетних",
+     "orig": "30-sai no Hoken Taiiku",
+     "year": 2011,
+     "episodes": 12
+    },
+    {
+     "id": 1569,
+     "ru": "Девушка влюбилась в старшую сестру",
+     "orig": "Otome wa Boku ni Koishiteru",
+     "year": 2006,
+     "episodes": 12
+    },
+    {
+     "id": 54259,
+     "ru": "Плохие девчонки Рокудо",
+     "orig": "Rokudou no Onna-tachi",
+     "year": 2023,
+     "episodes": 12
+    },
+    {
+     "id": 34209,
+     "ru": "Любовь эпохи Мэйдзи",
+     "orig": "Meiji Tokyo Renka",
+     "year": 2019,
+     "episodes": 12
+    },
+    {
+     "id": 25839,
+     "ru": "Здравствуй, выпечка со вкусом любви",
+     "orig": "Bonjour♪Koiaji Pâtisserie",
+     "year": 2014,
+     "episodes": 24,
+     "tag": "ONA"
+    },
+    {
+     "id": 33299,
+     "ru": "Волшебство: Ренессанс",
+     "orig": "Magic-Kyun! Renaissance",
+     "year": 2016,
+     "episodes": 13
+    },
+    {
+     "id": 24135,
+     "ru": "Концерт Нобунаги",
+     "orig": "Nobunaga Concerto",
+     "year": 2014,
+     "episodes": 10
+    },
+    {
+     "id": 38917,
+     "ru": "Императорская наложница",
+     "orig": "Tong Ling Fei",
+     "year": 2018,
+     "episodes": 16,
+     "tag": "ONA"
+    },
+    {
+     "id": 55998,
+     "ru": "Принц демонов дома Момоти",
+     "orig": "Momochi-san Chi no Ayakashi Ouji",
+     "year": 2024,
+     "episodes": 12
+    },
+    {
+     "id": 5597,
+     "ru": "Летняя буря!",
+     "orig": "Natsu no Arashi!",
+     "year": 2009,
+     "episodes": 13
+    },
+    {
+     "id": 57031,
+     "ru": "Вампирское общежитие",
+     "orig": "Vampire Dormitory",
+     "year": 2024,
+     "episodes": 12
+    }
+   ]
+  },
+  {
+   "id": "g-fan",
+   "t": "Фэнтези и исэкай (ещё)",
+   "sub": "",
+   "items": [
+    {
+     "id": 41094,
+     "ru": "Повседневная жизнь бессмертного короля",
+     "orig": "Xian Wang de Richang Shenghuo",
+     "year": 2020,
+     "episodes": 15,
+     "tag": "ONA"
+    },
+    {
+     "id": 44942,
+     "ru": "Повесть о конце света",
+     "orig": "Shuumatsu no Walküre",
+     "year": 2021,
+     "episodes": 12,
+     "tag": "ONA"
+    },
+    {
+     "id": 37208,
+     "ru": "Магистр дьявольского культа",
+     "orig": "Mo Dao Zu Shi",
+     "year": 2018,
+     "episodes": 15,
+     "tag": "ONA"
+    },
+    {
+     "id": 53730,
+     "ru": "Другой мир не может противостоять силе мгновенной смерти",
+     "orig": "Sokushi Cheat ga Saikyou sugite, Isekai no Yatsura ga Marude Aite ni Naranai n desu ga.",
+     "year": 2024,
+     "episodes": 12
+    },
+    {
+     "id": 52816,
+     "ru": "Ведьма и чудовище",
+     "orig": "Majo to Yajuu",
+     "year": 2024,
+     "episodes": 12
+    },
+    {
+     "id": 52446,
+     "ru": "Неспешная жизнь уволенного тёмного солдата (тридцати лет)",
+     "orig": "Kaiko sareta Ankoku Heishi (30-dai) no Slow na Second Life",
+     "year": 2023,
+     "episodes": 12
+    },
+    {
+     "id": 47162,
+     "ru": "Жизнь девушки-карателя",
+     "orig": "Shokei Shoujo no Virgin Road",
+     "year": 2022,
+     "episodes": 12
+    },
+    {
+     "id": 56690,
+     "ru": "Перерождение: Монстр",
+     "orig": "Re:Monster",
+     "year": 2024,
+     "episodes": 12
+    },
+    {
+     "id": 50582,
+     "ru": "Семь главенствующих мечей",
+     "orig": "Nanatsu no Maken ga Shihai suru",
+     "year": 2023,
+     "episodes": 15
+    },
+    {
+     "id": 48239,
+     "ru": "Мир Лидейл",
+     "orig": "Leadale no Daichi nite",
+     "year": 2022,
+     "episodes": 12
+    },
+    {
+     "id": 52619,
+     "ru": "Я переродился торговым автоматом и скитаюсь по лабиринту",
+     "orig": "Jidou Hanbaiki ni Umarekawatta Ore wa Meikyuu wo Samayou",
+     "year": 2023,
+     "episodes": 12
+    },
+    {
+     "id": 54790,
+     "ru": "Фарс из убийства девушки-нежити",
+     "orig": "Undead Girl Murder Farce",
+     "year": 2023,
+     "episodes": 13
+    },
+    {
+     "id": 54852,
+     "ru": "Магия вернувшегося должна быть особенной",
+     "orig": "Kikansha no Mahou wa Tokubetsu desu",
+     "year": 2023,
+     "episodes": 12
+    },
+    {
+     "id": 50184,
+     "ru": "Мастер демонического клинка из академии святого меча",
+     "orig": "Seiken Gakuin no Makentsukai",
+     "year": 2023,
+     "episodes": 12
+    },
+    {
+     "id": 50481,
+     "ru": "Перевоплотившийся король-герой, ставший самой сильной ученицей рыцаря",
+     "orig": "Eiyuuou, Bu wo Kiwameru Tame Tenseisu: Soshite, Sekai Saikyou no Minarai Kishi♀",
+     "year": 2023,
+     "episodes": 12
+    },
+    {
+     "id": 40730,
+     "ru": "Благословение небожителей",
+     "orig": "Tian Guan Cifu",
+     "year": 2020,
+     "episodes": 11,
+     "tag": "ONA"
+    },
+    {
+     "id": 51128,
+     "ru": "Каким-то образом я стал сильнейшим, прокачивая фермерские навыки",
+     "orig": "Noumin Kanren no Skill bakka Agetetara Nazeka Tsuyoku Natta.",
+     "year": 2022,
+     "episodes": 12
+    },
+    {
+     "id": 40960,
+     "ru": "Размеренная жизнь чит-фармацевта: Создание аптеки в альтернативном мире",
+     "orig": "Cheat Kusushi no Slow Life: Isekai ni Tsukurou Drugstore",
+     "year": 2021,
+     "episodes": 12
+    },
+    {
+     "id": 25519,
+     "ru": "Герой Юна Юки",
+     "orig": "Yuuki Yuuna wa Yuusha de Aru",
+     "year": 2014,
+     "episodes": 12
+    },
+    {
+     "id": 51764,
+     "ru": "Хотя я только первого уровня, но с этим уникальным навыком я стану сильнейшим",
+     "orig": "Level 1 dakedo Unique Skill de Saikyou desu",
+     "year": 2023,
+     "episodes": 12
+    },
+    {
+     "id": 57891,
+     "ru": "Нападение одиночки на иной мир",
+     "orig": "Hitoribocchi no Isekai Kouryaku",
+     "year": 2024,
+     "episodes": 12
+    },
+    {
+     "id": 51706,
+     "ru": "Герой мёртв!",
+     "orig": "Yuusha ga Shinda!",
+     "year": 2023,
+     "episodes": 12
+    },
+    {
+     "id": 16157,
+     "ru": "Альтернативная игра богов",
+     "orig": "Choujigen Game Neptune The Animation",
+     "year": 2013,
+     "episodes": 12
+    },
+    {
+     "id": 57100,
+     "ru": "Новые врата",
+     "orig": "The New Gate",
+     "year": 2024,
+     "episodes": 12
+    },
+    {
+     "id": 57876,
+     "ru": "Самый сильный волшебник армии повелителя демонов оказался человеком",
+     "orig": "Maougun Saikyou no Majutsushi wa Ningen datta",
+     "year": 2024,
+     "episodes": 12
+    },
+    {
+     "id": 34300,
+     "ru": "Маг на полную ставку",
+     "orig": "Quanzhi Fashi",
+     "year": 2016,
+     "episodes": 12,
+     "tag": "ONA"
+    },
+    {
+     "id": 53263,
+     "ru": "Непобедимый святой: Путь, которым я иду, чтобы выжить в другом мире",
+     "orig": "Seija Musou: Salaryman, Isekai de Ikinokoru Tame ni Ayumu Michi",
+     "year": 2023,
+     "episodes": 12
+    },
+    {
+     "id": 55997,
+     "ru": "Я секретарь гильдии, но я не люблю сверхурочную работу, поэтому я собираюсь подчинить босса в одиночку",
+     "orig": "Guild no Uketsukejou desu ga, Zangyou wa Iya nanode Boss wo Solo Toubatsu Shiyou to Omoimasu",
+     "year": 2025,
+     "episodes": 12
+    },
+    {
+     "id": 20973,
+     "ru": "Завоеватели мира: Операция «Звезда»",
+     "orig": "Sekai Seifuku: Bouryaku no Zvezda",
+     "year": 2014,
+     "episodes": 12
+    },
+    {
+     "id": 23311,
+     "ru": "Гаро: Печать пламени",
+     "orig": "Garo: Honoo no Kokuin",
+     "year": 2014,
+     "episodes": 24
+    },
+    {
+     "id": 49894,
+     "ru": "Класс для героев",
+     "orig": "Eiyuu Kyoushitsu",
+     "year": 2023,
+     "episodes": 12
+    },
+    {
+     "id": 53590,
+     "ru": "Слабейшая укротительница в путешествии по сбору питомцев",
+     "orig": "Saijaku Tamer wa Gomi Hiroi no Tabi wo Hajimemashita.",
+     "year": 2024,
+     "episodes": 12
+    },
+    {
+     "id": 42072,
+     "ru": "Она представилась как ученик мудреца",
+     "orig": "Kenja no Deshi wo Nanoru Kenja",
+     "year": 2022,
+     "episodes": 12
+    },
+    {
+     "id": 56062,
+     "ru": "Почему все забыли мой мир?",
+     "orig": "Naze Boku no Sekai wo Daremo Oboeteinai no ka?",
+     "year": 2024,
+     "episodes": 12
+    },
+    {
+     "id": 54853,
+     "ru": "Повелитель демонов 2099",
+     "orig": "Maou 2099",
+     "year": 2024,
+     "episodes": 12
+    },
+    {
+     "id": 49154,
+     "ru": "Старшая карта",
+     "orig": "High Card",
+     "year": 2023,
+     "episodes": 12
+    },
+    {
+     "id": 10033,
+     "ru": "Торико",
+     "orig": "Toriko",
+     "year": 2011,
+     "episodes": 147
+    },
+    {
+     "id": 20431,
+     "ru": "Хладнокровный Хозуки",
+     "orig": "Hoozuki no Reitetsu",
+     "year": 2014,
+     "episodes": 13
+    },
+    {
+     "id": 53438,
+     "ru": "Королева, ставшая причиной трагедии, сделает для народа всё, что в её силах",
+     "orig": "Higeki no Genkyou to Naru Saikyou Gedou Last Boss Joou wa Tami no Tame ni Tsukushimasu.",
+     "year": 2023,
+     "episodes": 12
+    },
+    {
+     "id": 54103,
+     "ru": "Заботы запертой принцессы вампиров",
+     "orig": "Hikikomari Kyuuketsuki no Monmon",
+     "year": 2023,
+     "episodes": 12
+    },
+    {
+     "id": 54449,
+     "ru": "Исюра",
+     "orig": "Ishura",
+     "year": 2024,
+     "episodes": 12
+    },
+    {
+     "id": 41392,
+     "ru": "Пикник в Потусторонье",
+     "orig": "Urasekai Picnic",
+     "year": 2021,
+     "episodes": 12
+    },
+    {
+     "id": 45560,
+     "ru": "Ориент",
+     "orig": "Orient",
+     "year": 2022,
+     "episodes": 12
+    },
+    {
+     "id": 51212,
+     "ru": "Развращённая гильдия",
+     "orig": "Futoku no Guild",
+     "year": 2022,
+     "episodes": 12
+    },
+    {
+     "id": 51219,
+     "ru": "Другой мир и сестра, которая убивает с одного удара",
+     "orig": "Isekai One Turn Kill Neesan: Ane Douhan no Isekai Seikatsu Hajimemashita",
+     "year": 2023,
+     "episodes": 12
+    },
+    {
+     "id": 50205,
+     "ru": "Аркнайтс: Прелюдия к рассвету",
+     "orig": "Arknights: Prelude to Dawn",
+     "year": 2022,
+     "episodes": 8
+    },
+    {
+     "id": 6444,
+     "ru": "Почтовая пчела",
+     "orig": "Tegamibachi",
+     "year": 2009,
+     "episodes": 25
+    },
+    {
+     "id": 50590,
+     "ru": "Ворона в гареме",
+     "orig": "Koukyuu no Karasu",
+     "year": 2022,
+     "episodes": 13
+    },
+    {
+     "id": 22547,
+     "ru": "Клинок и душа",
+     "orig": "Blade & Soul",
+     "year": 2014,
+     "episodes": 13
+    },
+    {
+     "id": 49778,
+     "ru": "Хроники людей и демонов",
+     "orig": "Kijin Gentoushou",
+     "year": 2025,
+     "episodes": 24
+    },
+    {
+     "id": 3230,
+     "ru": "Башня Друаги: Герои Урука",
+     "orig": "Druaga no Tou: The Aegis of Uruk",
+     "year": 2008,
+     "episodes": 12
+    },
+    {
+     "id": 52482,
+     "ru": "Сасаки и Пи",
+     "orig": "Sasaki to Pii-chan",
+     "year": 2024,
+     "episodes": 12
+    },
+    {
+     "id": 51020,
+     "ru": "Хельк",
+     "orig": "Helck",
+     "year": 2023,
+     "episodes": 24
+    },
+    {
+     "id": 16890,
+     "ru": "Принц преисподней: Демоны и реалист",
+     "orig": "Makai Ouji: Devils and Realist",
+     "year": 2013,
+     "episodes": 12
+    },
+    {
+     "id": 14765,
+     "ru": "Иксион-сага: Другое измерение",
+     "orig": "Ixion Saga DT",
+     "year": 2012,
+     "episodes": 25
+    },
+    {
+     "id": 24211,
+     "ru": "Хаос в ванной",
+     "orig": "Orenchi no Furo Jijou",
+     "year": 2014,
+     "episodes": 13
+    },
+    {
+     "id": 52461,
+     "ru": "Сбережение восьмидесяти тысяч золотых монет в другом мире к моей старости",
+     "orig": "Rougo ni Sonaete Isekai de 8-manmai no Kinka wo Tamemasu",
+     "year": 2023,
+     "episodes": 12
+    },
+    {
+     "id": 15751,
+     "ru": "Доблесть",
+     "orig": "Senyuu.",
+     "year": 2013,
+     "episodes": 13
+    },
+    {
+     "id": 15613,
+     "ru": "Хаккэндэн: Легенда о восьми псах востока",
+     "orig": "Hakkenden: Touhou Hakken Ibun",
+     "year": 2013,
+     "episodes": 13
+    },
+    {
+     "id": 2156,
+     "ru": "Отчаянные бойцы Бакуган",
+     "orig": "Bakugan Battle Brawlers",
+     "year": 2007,
+     "episodes": 52
+    },
+    {
+     "id": 44406,
+     "ru": "Пощади меня, великий господин!",
+     "orig": "Da Wang Rao Ming",
+     "year": 2021,
+     "episodes": 12,
+     "tag": "ONA"
+    },
+    {
+     "id": 55358,
+     "ru": "Буттигири?!",
+     "orig": "Bucchigiri?!",
+     "year": 2024,
+     "episodes": 12
+    },
+    {
+     "id": 15109,
+     "ru": "Детектив-оборотень Инаба",
+     "orig": "Cuticle Tantei Inaba",
+     "year": 2013,
+     "episodes": 12
+    },
+    {
+     "id": 52611,
+     "ru": "Сладкое перевоплощение",
+     "orig": "Okashi na Tensei",
+     "year": 2023,
+     "episodes": 12
+    },
+    {
+     "id": 23209,
+     "ru": "Метод небес",
+     "orig": "Sora no Method",
+     "year": 2014,
+     "episodes": 13
+    },
+    {
+     "id": 4719,
+     "ru": "Клинок королевы: Странствующая воительница",
+     "orig": "Queen's Blade: Rurou no Senshi",
+     "year": 2009,
+     "episodes": 12
+    },
+    {
+     "id": 38843,
+     "ru": "Проект «Белая Кошка»",
+     "orig": "Shironeko Project: Zero Chronicle",
+     "year": 2020,
+     "episodes": 12
+    },
+    {
+     "id": 57719,
+     "ru": "Перерождение мужчины средних лет в дочь дворянина",
+     "orig": "Akuyaku Reijou Tensei Ojisan",
+     "year": 2025,
+     "episodes": 12
+    },
+    {
+     "id": 32595,
+     "ru": "Святой воин Цербер: Бедствия эпохи дракона",
+     "orig": "Seisen Cerberus: Ryuukoku no Fatalites",
+     "year": 2016,
+     "episodes": 13
+    },
+    {
+     "id": 54431,
+     "ru": "Обычный мужчина средних лет и его журнал активности в VRMMO",
+     "orig": "Toaru Ossan no VRMMO Katsudouki",
+     "year": 2023,
+     "episodes": 12
+    },
+    {
+     "id": 53494,
+     "ru": "Моя дочь, отправившаяся в столицу, захотев стать авантюристом, достигла S-ранга",
+     "orig": "Boukensha ni Naritai to Miyako ni Deteitta Musume ga S-Rank ni Natteta",
+     "year": 2023,
+     "episodes": 13
+    },
+    {
+     "id": 1498,
+     "ru": "Братство чёрной крови",
+     "orig": "Black Blood Brothers",
+     "year": 2006,
+     "episodes": 12
+    },
+    {
+     "id": 50869,
+     "ru": "Богиня жаждет игр",
+     "orig": "Kami wa Game ni Ueteiru.",
+     "year": 2024,
+     "episodes": 13
+    },
+    {
+     "id": 56845,
+     "ru": "Невероятный танк проходит подземелья: Танк, обладающий редким навыком выносливости 9999, был изгнан из геройской группы",
+     "orig": "Saikyou Tank no Meikyuu Kouryaku: Tairyoku 9999 no Rare Skill-mochi Tank, Yuusha Party wo Tsuihou sareru",
+     "year": 2024,
+     "episodes": 12
+    },
+    {
+     "id": 56854,
+     "ru": "Бесклассовый герой: Да мне всё равно не нужны эти ваши умения",
+     "orig": "Mushoku no Eiyuu: Betsu ni Skill Nanka Iranakatta n da ga",
+     "year": 2025,
+     "episodes": 12
+    },
+    {
+     "id": 2494,
+     "ru": "Примите наши соболезнования, Ниномия",
+     "orig": "Goshuushou-sama Ninomiya-kun",
+     "year": 2007,
+     "episodes": 12
+    },
+    {
+     "id": 47250,
+     "ru": "Смута: Принцесса снега и крови",
+     "orig": "Jouran: The Princess of Snow and Blood",
+     "year": 2021,
+     "episodes": 12
+    },
+    {
+     "id": 52962,
+     "ru": "История империи Тирмун",
+     "orig": "Tearmoon Teikoku Monogatari: Dantoudai kara Hajimaru, Hime no Tensei Gyakuten Story",
+     "year": 2023,
+     "episodes": 12
+    },
+    {
+     "id": 30782,
+     "ru": "Бикини-воины",
+     "orig": "Bikini Warriors",
+     "year": 2015,
+     "episodes": 12
+    },
+    {
+     "id": 57944,
+     "ru": "Целитель, которого исключили из группы, оказался сильнейшим!",
+     "orig": "Party kara Tsuihou sareta Sono Chiyushi, Jitsu wa Saikyou ni Tsuki",
+     "year": 2024,
+     "episodes": 12
+    },
+    {
+     "id": 32094,
+     "ru": "Гора Священного меча: Банкет Звёздной пыли",
+     "orig": "Reikenzan: Hoshikuzu-tachi no Utage",
+     "year": 2016,
+     "episodes": 12
+    },
+    {
+     "id": 3420,
+     "ru": "Сигофуми: Письма с того света",
+     "orig": "Shigofumi",
+     "year": 2008,
+     "episodes": 12
+    },
+    {
+     "id": 55717,
+     "ru": "Бывший герой, которого прозвали неудачником и выгнали из дома, решил жить самостоятельно",
+     "orig": "Dekisokonai to Yobareta Motoeiyuu wa Jikka kara Tsuihou sareta node Sukikatte ni Ikiru Koto ni Shita",
+     "year": 2024,
+     "episodes": 12
+    },
+    {
+     "id": 37979,
+     "ru": "Девочки-волшебницы: Специальная операция",
+     "orig": "Mahou Shoujo Tokushusen Asuka",
+     "year": 2019,
+     "episodes": 12
+    },
+    {
+     "id": 51458,
+     "ru": "Однушка лорда демонов и героя",
+     "orig": "Lv1 Maou to One Room Yuusha",
+     "year": 2023,
+     "episodes": 12
+    },
+    {
+     "id": 17505,
+     "ru": "Истребители насекомых",
+     "orig": "Mushibugyou",
+     "year": 2013,
+     "episodes": 26
+    },
+    {
+     "id": 40550,
+     "ru": "Штурм Лили: Букет",
+     "orig": "Assault Lily: Bouquet",
+     "year": 2020,
+     "episodes": 12
+    },
+    {
+     "id": 31147,
+     "ru": "Бетонная революция: Сверхчеловеческая фантазия",
+     "orig": "Concrete Revolutio: Choujin Gensou",
+     "year": 2015,
+     "episodes": 13
+    },
+    {
+     "id": 18767,
+     "ru": "Лазурный гримуар: Другие воспоминания",
+     "orig": "BlazBlue: Alter Memory",
+     "year": 2013,
+     "episodes": 12
+    },
+    {
+     "id": 43697,
+     "ru": "Ясукэ",
+     "orig": "Yasuke",
+     "year": 2021,
+     "episodes": 6,
+     "tag": "ONA"
+    },
+    {
+     "id": 36884,
+     "ru": "Хисонэ и Масотан",
+     "orig": "Hisone to Maso-tan",
+     "year": 2018,
+     "episodes": 12
+    },
+    {
+     "id": 53397,
+     "ru": "Стать сильнее! Новая сага",
+     "orig": "Tsuyokute New Saga",
+     "year": 2025,
+     "episodes": 12
+    },
+    {
+     "id": 55774,
+     "ru": "Время пыток, принцесса!",
+     "orig": "Himesama \"Goumon\" no Jikan desu",
+     "year": 2024,
+     "episodes": 12
+    },
+    {
+     "id": 36902,
+     "ru": "Я — мальчик-волшебница",
+     "orig": "Mahou Shoujo Ore",
+     "year": 2018,
+     "episodes": 12
+    },
+    {
+     "id": 41762,
+     "ru": "Небесный отдел дизайна",
+     "orig": "Tenchi Souzou Design-bu",
+     "year": 2021,
+     "episodes": 12
+    },
+    {
+     "id": 9314,
+     "ru": "Фрактал",
+     "orig": "Fractale",
+     "year": 2011,
+     "episodes": 11
+    },
+    {
+     "id": 33089,
+     "ru": "Друзья-зверушки",
+     "orig": "Kemono Friends",
+     "year": 2017,
+     "episodes": 12
+    },
+    {
+     "id": 57646,
+     "ru": "От простого человека до героя-разведчика",
+     "orig": "Mob kara Hajimaru Tansaku Eiyuutan",
+     "year": 2024,
+     "episodes": 12
+    },
+    {
+     "id": 48981,
+     "ru": "Девочки-волшебницы: Волшебные разрушительницы",
+     "orig": "Mahou Shoujo Magical Destroyers",
+     "year": 2023,
+     "episodes": 12
+    },
+    {
+     "id": 35589,
+     "ru": "Жрицы с мечами",
+     "orig": "Toji no Miko",
+     "year": 2018,
+     "episodes": 24
+    }
+   ]
+  },
+  {
+   "id": "g-ecchi",
+   "t": "Этти и гарем (ещё)",
+   "sub": "",
+   "items": [
+    {
+     "id": 34213,
+     "ru": "Загруженный понедельник",
+     "orig": "Getsuyoubi no Tawawa",
+     "year": 2016,
+     "episodes": 12,
+     "tag": "ONA"
+    },
+    {
+     "id": 53802,
+     "ru": "Соблазн 2,5-мерного измерения",
+     "orig": "2.5-jigen no Ririsa",
+     "year": 2024,
+     "episodes": 24
+    },
+    {
+     "id": 15119,
+     "ru": "Секретное назначение девушек-ниндзя",
+     "orig": "Senran Kagura",
+     "year": 2013,
+     "episodes": 12
+    },
+    {
+     "id": 51265,
+     "ru": "Стать любимой собачкой",
+     "orig": "Inu ni Nattara Suki na Hito ni Hirowareta.",
+     "year": 2023,
+     "episodes": 12
+    },
+    {
+     "id": 22835,
+     "ru": "Секрет госпожи",
+     "orig": "Himegoto",
+     "year": 2014,
+     "episodes": 13
+    },
+    {
+     "id": 38935,
+     "ru": "Созерцая колготки",
+     "orig": "Miru Tights",
+     "year": 2019,
+     "episodes": 12,
+     "tag": "ONA"
+    },
+    {
+     "id": 49605,
+     "ru": "Доки, ты справишься!",
+     "orig": "Ganbare Douki-chan",
+     "year": 2021,
+     "episodes": 12,
+     "tag": "ONA"
+    },
+    {
+     "id": 2403,
+     "ru": "Детское время",
+     "orig": "Kodomo no Jikan (TV)",
+     "year": 2007,
+     "episodes": 12
+    },
+    {
+     "id": 37021,
+     "ru": "Изобрази отвращение и покажи мне свои трусики",
+     "orig": "Iya na Kao sare nagara Opantsu Misete Moraitai",
+     "year": 2018,
+     "episodes": 6,
+     "tag": "ONA"
+    },
+    {
+     "id": 10465,
+     "ru": "Клинок Маню",
+     "orig": "Manyuu Hikenchou",
+     "year": 2011,
+     "episodes": 12
+    },
+    {
+     "id": 41915,
+     "ru": "Последний призыватель",
+     "orig": "Zuihou de Zhaohuan Shi",
+     "year": 2022,
+     "episodes": 12,
+     "tag": "ONA"
+    },
+    {
+     "id": 10572,
+     "ru": "Баскетбольный клуб!",
+     "orig": "Ro-Kyu-Bu!",
+     "year": 2011,
+     "episodes": 12
+    },
+    {
+     "id": 50953,
+     "ru": "Ублюдок!! Сокрушитель тьмы ONA",
+     "orig": "Bastard!! Ankoku no Hakaishin (ONA)",
+     "year": 2022,
+     "episodes": 13,
+     "tag": "ONA"
+    },
+    {
+     "id": 42571,
+     "ru": "Я пытался уговорить её в догэдза",
+     "orig": "Dogeza de Tanondemita",
+     "year": 2020,
+     "episodes": 12
+    },
+    {
+     "id": 23945,
+     "ru": "Волшебница Рурумо",
+     "orig": "Majimoji Rurumo",
+     "year": 2014,
+     "episodes": 12
+    },
+    {
+     "id": 12317,
+     "ru": "Пострелушки!",
+     "orig": "Upotte!!",
+     "year": 2012,
+     "episodes": 10,
+     "tag": "ONA"
+    },
+    {
+     "id": 886,
+     "ru": "Не приставай ко мне!! Хуже будет!!",
+     "orig": "Amaenaide yo!! Katsu!!",
+     "year": 2006,
+     "episodes": 12
+    },
+    {
+     "id": 13203,
+     "ru": "Люпен III: Женщина по имени Фудзико Минэ",
+     "orig": "Lupin the Third: Mine Fujiko to Iu Onna",
+     "year": 2012,
+     "episodes": 13
+    },
+    {
+     "id": 1555,
+     "ru": "Трепещущие воспоминания",
+     "orig": "Tokimeki Memorial: Only Love",
+     "year": 2006,
+     "episodes": 25
+    },
+    {
+     "id": 14283,
+     "ru": "Ярко-красная операция",
+     "orig": "Vividred Operation",
+     "year": 2013,
+     "episodes": 12
+    },
+    {
+     "id": 1570,
+     "ru": "Счастье!",
+     "orig": "Happiness!",
+     "year": 2006,
+     "episodes": 12
+    },
+    {
+     "id": 11763,
+     "ru": "Хочу стать самой сильной в мире!",
+     "orig": "Sekai de Ichiban Tsuyoku Naritai!",
+     "year": 2013,
+     "episodes": 12
+    },
+    {
+     "id": 576,
+     "ru": "Мэджикано",
+     "orig": "Magikano",
+     "year": 2006,
+     "episodes": 13
+    },
+    {
+     "id": 56733,
+     "ru": "Магический исследователь",
+     "orig": "Magical★Explorer",
+     "year": 2026,
+     "tag": "идёт сейчас"
+    },
+    {
+     "id": 36847,
+     "ru": "Семь небесных добродетелей",
+     "orig": "Nanatsu no Bitoku",
+     "year": 2018,
+     "episodes": 10
+    },
+    {
+     "id": 6979,
+     "ru": "Благословенная Кампанелла",
+     "orig": "Shukufuku no Campanella",
+     "year": 2010,
+     "episodes": 12
+    },
+    {
+     "id": 1581,
+     "ru": "Дар: Вечная радуга",
+     "orig": "Gift: Eternal Rainbow",
+     "year": 2006,
+     "episodes": 12
+    },
+    {
+     "id": 55578,
+     "ru": "Четыре рыцаря",
+     "orig": "Si Ge Yongzhe",
+     "year": 2023,
+     "episodes": 10,
+     "tag": "ONA"
+    },
+    {
+     "id": 2155,
+     "ru": "Обещание этому синему небу",
+     "orig": "Kono Aozora ni Yakusoku wo: Youkoso Tsugumi Ryou e",
+     "year": 2007,
+     "episodes": 13
+    },
+    {
+     "id": 33113,
+     "ru": "Всадники «Скаред Зекс»",
+     "orig": "Scared Rider Xechs",
+     "year": 2016,
+     "episodes": 12
+    },
+    {
+     "id": 15005,
+     "ru": "Сегодня Асука вам покажет",
+     "orig": "Kyou no Asuka Show",
+     "year": 2012,
+     "episodes": 20,
+     "tag": "ONA"
+    },
+    {
+     "id": 57845,
+     "ru": "Эльф не может сидеть на диете",
+     "orig": "Elf-san wa Yaserarenai.",
+     "year": 2024,
+     "episodes": 12
+    },
+    {
+     "id": 1218,
+     "ru": "Соседи!",
+     "orig": "Tonagura!",
+     "year": 2006,
+     "episodes": 13
+    },
+    {
+     "id": 6645,
+     "ru": "Тю-Бра!",
+     "orig": "Chuu Bra!!",
+     "year": 2010,
+     "episodes": 12
+    },
+    {
+     "id": 32214,
+     "ru": "Пандора в малиновой оболочке",
+     "orig": "Koukaku no Pandora",
+     "year": 2016,
+     "episodes": 12
+    },
+    {
+     "id": 40196,
+     "ru": "Кандагава: Девушки на гидроциклах",
+     "orig": "Kandagawa Jet Girls",
+     "year": 2019,
+     "episodes": 12
+    },
+    {
+     "id": 10187,
+     "ru": "Физиология извращенцев",
+     "orig": "HenSemi (TV)",
+     "year": 2011,
+     "episodes": 13
+    },
+    {
+     "id": 17397,
+     "ru": "Девушка-циклоп Сайпу",
+     "orig": "Cyclops Shoujo Saipuu",
+     "year": 2013,
+     "episodes": 12,
+     "tag": "ONA"
+    },
+    {
+     "id": 3654,
+     "ru": "Академия магии",
+     "orig": "Macademi Wasshoi!",
+     "year": 2008,
+     "episodes": 12
+    },
+    {
+     "id": 57315,
+     "ru": "История покорения знаменитого горячего источника в другом мире: Реинкарнация сорокалетнего любителя горячих источников в умиротворяющем курортном раю",
+     "orig": "Meitou \"Isekai no Yu\" Kaitakuki: Around 40 Onsen Mania no Tensei Saki wa, Nonbiri Onsen Tengoku deshita",
+     "year": 2024,
+     "episodes": 12
+    },
+    {
+     "id": 26085,
+     "ru": "Войска!",
+     "orig": "Military!",
+     "year": 2015,
+     "episodes": 12
+    },
+    {
+     "id": 8241,
+     "ru": "Рио: Радужные врата",
+     "orig": "Rio: Rainbow Gate!",
+     "year": 2011,
+     "episodes": 13
+    },
+    {
+     "id": 3464,
+     "ru": "Кэмэко Делюкс!",
+     "orig": "Kemeko Deluxe!",
+     "year": 2008,
+     "episodes": 12
+    },
+    {
+     "id": 3616,
+     "ru": "Горничный в маске",
+     "orig": "Kamen no Maid Guy",
+     "year": 2008,
+     "episodes": 12
+    },
+    {
+     "id": 32447,
+     "ru": "Нора, принцесса и бродячая кошка",
+     "orig": "Nora to Oujo to Noraneko Heart",
+     "year": 2017,
+     "episodes": 11
+    },
+    {
+     "id": 2602,
+     "ru": "Умисё",
+     "orig": "Kenkou Zenrakei Suiei-bu Umishou",
+     "year": 2007,
+     "episodes": 13
+    },
+    {
+     "id": 863,
+     "ru": "Старшеклассницы",
+     "orig": "Joshikousei: Girl's High",
+     "year": 2006,
+     "episodes": 12
+    },
+    {
+     "id": 5973,
+     "ru": "С первого удара — заряжай-ка!",
+     "orig": "Fight Ippatsu! Juuden-chan!!",
+     "year": 2009,
+     "episodes": 12
+    },
+    {
+     "id": 4903,
+     "ru": "Сегодня в 5-Б классе (2008)",
+     "orig": "Kyou no 5 no 2 (TV)",
+     "year": 2008,
+     "episodes": 13
+    },
+    {
+     "id": 941,
+     "ru": "Магический Покан",
+     "orig": "Renkin San-kyuu Magical? Pokaan",
+     "year": 2006,
+     "episodes": 12
+    },
+    {
+     "id": 22225,
+     "ru": "Мечница Момоко",
+     "orig": "Momo Kyun Sword",
+     "year": 2014,
+     "episodes": 12
+    },
+    {
+     "id": 6112,
+     "ru": "Настоящая несравненная принцесса любви",
+     "orig": "Shin Koihime†Musou",
+     "year": 2009,
+     "episodes": 12
+    },
+    {
+     "id": 2367,
+     "ru": "Моэтан",
+     "orig": "Moetan",
+     "year": 2007,
+     "episodes": 12
+    },
+    {
+     "id": 14073,
+     "ru": "Небеса: Астрономический клуб старшей школы Эбисугава",
+     "orig": "Ebiten: Kouritsu Ebisugawa Koukou Tenmonbu",
+     "year": 2012,
+     "episodes": 10,
+     "tag": "ONA"
+    },
+    {
+     "id": 41093,
+     "ru": "Руководство по семенам фей",
+     "orig": "Yao Jing Zhong Zhi Shou Ce",
+     "year": 2020,
+     "episodes": 14,
+     "tag": "ONA"
+    },
+    {
+     "id": 10109,
+     "ru": "Лёгкий теннис",
+     "orig": "Softenni",
+     "year": 2011,
+     "episodes": 12
+    },
+    {
+     "id": 1219,
+     "ru": "Тёко, сестрёнка",
+     "orig": "Chocotto Sister",
+     "year": 2006,
+     "episodes": 24
+    },
+    {
+     "id": 6425,
+     "ru": "Игра на выживание",
+     "orig": "Weiß Survive",
+     "year": 2009,
+     "episodes": 16
+    },
+    {
+     "id": 2105,
+     "ru": "Тока Гэттан",
+     "orig": "Touka Gettan",
+     "year": 2007,
+     "episodes": 26
+    },
+    {
+     "id": 36976,
+     "ru": "Вселенная милашки Хани",
+     "orig": "Cutie Honey Universe",
+     "year": 2018,
+     "episodes": 12
+    },
+    {
+     "id": 9493,
+     "ru": "Дьявольский принц Энма (2011)",
+     "orig": "Dororon Enma-kun Meeramera",
+     "year": 2011,
+     "episodes": 12
+    },
+    {
+     "id": 4136,
+     "ru": "Девочка-пингвин",
+     "orig": "Penguin Musume♥Heart",
+     "year": 2008,
+     "episodes": 22,
+     "tag": "ONA"
+    },
+    {
+     "id": 43779,
+     "ru": "Когда я проснулся, я стал бубликовой девочкой",
+     "orig": "Eoneu Nal Jameseo Kkaeeoboni Bagelyeoga Doeeo Isseotda",
+     "year": 2019,
+     "episodes": 15,
+     "tag": "ONA"
+    },
+    {
+     "id": 1865,
+     "ru": "Мина — оружие Луны",
+     "orig": "Getsumen to Heiki Mina",
+     "year": 2007,
+     "episodes": 11
+    },
+    {
+     "id": 2967,
+     "ru": "Кудзира: Последний экзамен",
+     "orig": "Saishuu Shiken Kujira",
+     "year": 2007,
+     "episodes": 12,
+     "tag": "ONA"
+    },
+    {
+     "id": 12237,
+     "ru": "Кой-Кэн: Кружок в поисках настоящей любви",
+     "orig": "Koi-ken!: Watashitachi Anime ni Nacchatta!",
+     "year": 2012,
+     "episodes": 12,
+     "tag": "ONA"
+    },
+    {
+     "id": 3112,
+     "ru": "Розовый Мотылёк, воительница в неглиже: Новый сезон",
+     "orig": "Papillon Rose",
+     "year": 2006,
+     "episodes": 6
+    },
+    {
+     "id": 34835,
+     "ru": "Карандаш Син-тяна: Убийца сёгуна",
+     "orig": "Crayon Shin-chan Gaiden: Kazokuzure Ookami",
+     "year": 2017,
+     "episodes": 13,
+     "tag": "ONA"
+    },
+    {
+     "id": 30954,
+     "ru": "Миллион Артуров",
+     "orig": "Jakusansei Million Arthur",
+     "year": 2015,
+     "episodes": 60,
+     "tag": "ONA"
+    },
+    {
+     "id": 20835,
+     "ru": "Школьница Нобунага",
+     "orig": "Joshikousei Nobunaga-chan!!",
+     "year": 2010,
+     "episodes": 10,
+     "tag": "ONA"
+    }
+   ]
+  },
+  {
+   "id": "g-com",
+   "t": "Комедия (ещё)",
+   "sub": "",
+   "items": [
+    {
+     "id": 5060,
+     "ru": "Хеталия и страны Оси",
+     "orig": "Hetalia Axis Powers",
+     "year": 2009,
+     "episodes": 52,
+     "tag": "ONA"
+    },
+    {
+     "id": 10711,
+     "ru": "Пластиковая сестрёнка",
+     "orig": "Plastic Neesan",
+     "year": 2011,
+     "episodes": 12,
+     "tag": "ONA"
+    },
+    {
+     "id": 49909,
+     "ru": "Котаро, который живёт сам по себе",
+     "orig": "Kotarou wa Hitorigurashi",
+     "year": 2022,
+     "episodes": 10,
+     "tag": "ONA"
+    },
+    {
+     "id": 52193,
+     "ru": "Война горничных Акибы",
+     "orig": "Akiba Meido Sensou",
+     "year": 2022,
+     "episodes": 12
+    },
+    {
+     "id": 51678,
+     "ru": "Мой братик теперь не братик!",
+     "orig": "Oniichan wa Oshimai!",
+     "year": 2023,
+     "episodes": 12
+    },
+    {
+     "id": 53879,
+     "ru": "Рон Камонохаси: Невменяемый детектив",
+     "orig": "Kamonohashi Ron no Kindan Suiri",
+     "year": 2023,
+     "episodes": 13
+    },
+    {
+     "id": 20709,
+     "ru": "Клуб игр по выживанию!",
+     "orig": "Sabage-bu!",
+     "year": 2014,
+     "episodes": 12
+    },
+    {
+     "id": 10278,
+     "ru": "Идолмастер",
+     "orig": "The iDOLM@STER",
+     "year": 2011,
+     "episodes": 25
+    },
+    {
+     "id": 17831,
+     "ru": "Пёс и ножницы",
+     "orig": "Inu to Hasami wa Tsukaiyou",
+     "year": 2013,
+     "episodes": 12
+    },
+    {
+     "id": 55129,
+     "ru": "Неразумный ангел в танце с демоном",
+     "orig": "Oroka na Tenshi wa Akuma to Odoru",
+     "year": 2024,
+     "episodes": 12
+    },
+    {
+     "id": 51837,
+     "ru": "Моя новая горничная очень подозрительна",
+     "orig": "Saikin Yatotta Maid ga Ayashii",
+     "year": 2022,
+     "episodes": 11
+    },
+    {
+     "id": 57611,
+     "ru": "Ты — горничная",
+     "orig": "Kimi wa Meido-sama.",
+     "year": 2024,
+     "episodes": 12
+    },
+    {
+     "id": 19365,
+     "ru": "Самурай Фламенко",
+     "orig": "Samurai Flamenco",
+     "year": 2013,
+     "episodes": 22
+    },
+    {
+     "id": 58131,
+     "ru": "Дети семьи Сиундзи",
+     "orig": "Shiunji-ke no Kodomotachi",
+     "year": 2025,
+     "episodes": 12
+    },
+    {
+     "id": 11079,
+     "ru": "Прикончи меня, детка",
+     "orig": "Kill Me Baby",
+     "year": 2012,
+     "episodes": 13
+    },
+    {
+     "id": 51916,
+     "ru": "Кот, мастер на все лапки, сегодня снова грустит",
+     "orig": "Dekiru Neko wa Kyou mo Yuuutsu",
+     "year": 2023,
+     "episodes": 13
+    },
+    {
+     "id": 7627,
+     "ru": "Отвязная троица",
+     "orig": "Mitsudomoe",
+     "year": 2010,
+     "episodes": 13
+    },
+    {
+     "id": 15911,
+     "ru": "Формула жизни",
+     "orig": "Yuyushiki",
+     "year": 2013,
+     "episodes": 12
+    },
+    {
+     "id": 55911,
+     "ru": "Басня",
+     "orig": "The Fable",
+     "year": 2024,
+     "episodes": 25
+    },
+    {
+     "id": 6974,
+     "ru": "Оккультная академия",
+     "orig": "Seikimatsu Occult Gakuin",
+     "year": 2010,
+     "episodes": 13
+    },
+    {
+     "id": 42395,
+     "ru": "Пылающий кабадди",
+     "orig": "Shakunetsu Kabaddi",
+     "year": 2021,
+     "episodes": 12
+    },
+    {
+     "id": 50586,
+     "ru": "Миги и Дали",
+     "orig": "Migi to Dali",
+     "year": 2023,
+     "episodes": 13
+    },
+    {
+     "id": 35015,
+     "ru": "Нет лекарства для моего брата!",
+     "orig": "Ani ni Tsukeru Kusuri wa Nai!",
+     "year": 2017,
+     "episodes": 12
+    },
+    {
+     "id": 9776,
+     "ru": "Канал А",
+     "orig": "A-Channel",
+     "year": 2011,
+     "episodes": 12
+    },
+    {
+     "id": 3974,
+     "ru": "Могучая Бёрди",
+     "orig": "Tetsuwan Birdy Decode",
+     "year": 2008,
+     "episodes": 13
+    },
+    {
+     "id": 41833,
+     "ru": "Этот вампир постоянно умирает",
+     "orig": "Kyuuketsuki Sugu Shinu",
+     "year": 2021,
+     "episodes": 12
+    },
+    {
+     "id": 57648,
+     "ru": "Добро пожаловать в Японию, госпожа эльф!",
+     "orig": "Nihon e Youkoso Elf-san.",
+     "year": 2025,
+     "episodes": 12
+    },
+    {
+     "id": 9834,
+     "ru": "Уровень Е",
+     "orig": "Level E",
+     "year": 2011,
+     "episodes": 13
+    },
+    {
+     "id": 40513,
+     "ru": "Волны, слушайте меня",
+     "orig": "Nami yo Kiitekure",
+     "year": 2020,
+     "episodes": 12
+    },
+    {
+     "id": 20555,
+     "ru": "Супер Сонико",
+     "orig": "SoniAni: Super Sonico The Animation",
+     "year": 2014,
+     "episodes": 12
+    },
+    {
+     "id": 3358,
+     "ru": "Курэнай",
+     "orig": "Kure-nai",
+     "year": 2008,
+     "episodes": 12
+    },
+    {
+     "id": 28423,
+     "ru": "Риннэ: Меж двух миров",
+     "orig": "Kyoukai no Rinne",
+     "year": 2015,
+     "episodes": 25
+    },
+    {
+     "id": 2986,
+     "ru": "Бамбуковый клинок",
+     "orig": "Bamboo Blade",
+     "year": 2007,
+     "episodes": 26
+    },
+    {
+     "id": 10216,
+     "ru": "Явись, Азазель!",
+     "orig": "Yondemasu yo, Azazel-san. (TV)",
+     "year": 2011,
+     "episodes": 13
+    },
+    {
+     "id": 35540,
+     "ru": "Медленный старт",
+     "orig": "Slow Start",
+     "year": 2018,
+     "episodes": 12
+    },
+    {
+     "id": 38161,
+     "ru": "Шерлок из Кабуки-тё",
+     "orig": "Kabukichou Sherlock",
+     "year": 2019,
+     "episodes": 24
+    },
+    {
+     "id": 27727,
+     "ru": "Красавцы из клуба защитников Земли",
+     "orig": "Binan Koukou Chikyuu Bouei-bu Love!",
+     "year": 2015,
+     "episodes": 12
+    },
+    {
+     "id": 31091,
+     "ru": "Безотказная Комори",
+     "orig": "Komori-san wa Kotowarenai!",
+     "year": 2015,
+     "episodes": 12
+    },
+    {
+     "id": 28221,
+     "ru": "История одной кошки",
+     "orig": "Etotama",
+     "year": 2015,
+     "episodes": 12
+    },
+    {
+     "id": 35427,
+     "ru": "Аниме-истории",
+     "orig": "Animegataris",
+     "year": 2017,
+     "episodes": 12
+    },
+    {
+     "id": 53621,
+     "ru": "Пустоголовый переведённый ученик",
+     "orig": "Jijou wo Shiranai Tenkousei ga Guigui Kuru.",
+     "year": 2023,
+     "episodes": 13
+    },
+    {
+     "id": 11697,
+     "ru": "Паладин на поле",
+     "orig": "Area no Kishi",
+     "year": 2012,
+     "episodes": 37
+    },
+    {
+     "id": 56693,
+     "ru": "Ватари на грани краха",
+     "orig": "Watari-kun no xx ga Houkai Sunzen",
+     "year": 2025,
+     "episodes": 26
+    },
+    {
+     "id": 3001,
+     "ru": "Сельскохозяйственные истории",
+     "orig": "Moyashimon",
+     "year": 2007,
+     "episodes": 11
+    },
+    {
+     "id": 54284,
+     "ru": "Витубер: Я стала популярной после того, как забыла выключить стрим",
+     "orig": "VTuber Nandaga Haishin Kiri Wasuretara Densetsu ni Natteta",
+     "year": 2024,
+     "episodes": 12
+    },
+    {
+     "id": 52081,
+     "ru": "Эльф Эдомаэ",
+     "orig": "Edomae Elf",
+     "year": 2023,
+     "episodes": 12
+    },
+    {
+     "id": 55310,
+     "ru": "Мой новый босс глупый",
+     "orig": "Atarashii Joushi wa Do Tennen",
+     "year": 2023,
+     "episodes": 12
+    },
+    {
+     "id": 33771,
+     "ru": "Искусство обмана",
+     "orig": "Cheating Craft",
+     "year": 2016,
+     "episodes": 12
+    },
+    {
+     "id": 40526,
+     "ru": "Дракон в поисках дома",
+     "orig": "Dragon, Ie wo Kau.",
+     "year": 2021,
+     "episodes": 12
+    },
+    {
+     "id": 55877,
+     "ru": "Салатник чудаков",
+     "orig": "Henjin no Salad Bowl",
+     "year": 2024,
+     "episodes": 12
+    },
+    {
+     "id": 34009,
+     "ru": "Быть героем",
+     "orig": "Tu Bian Yingxiong Baba",
+     "year": 2016,
+     "episodes": 12,
+     "tag": "ONA"
+    },
+    {
+     "id": 31848,
+     "ru": "Дядя и зефир",
+     "orig": "Ojisan to Marshmallow",
+     "year": 2016,
+     "episodes": 12
+    },
+    {
+     "id": 2985,
+     "ru": "Нейро Ногами — Детектив из Ада",
+     "orig": "Majin Tantei Nougami Neuro",
+     "year": 2007,
+     "episodes": 25
+    },
+    {
+     "id": 48742,
+     "ru": "Этот противный целитель!",
+     "orig": "Kono Healer, Mendokusai",
+     "year": 2022,
+     "episodes": 12
+    },
+    {
+     "id": 15125,
+     "ru": "Теннис",
+     "orig": "Teekyuu",
+     "year": 2012,
+     "episodes": 12
+    },
+    {
+     "id": 30795,
+     "ru": "Рёв байков!",
+     "orig": "Bakuon!!",
+     "year": 2016,
+     "episodes": 12
+    },
+    {
+     "id": 907,
+     "ru": "Принцесса, принцесса",
+     "orig": "Princess Princess",
+     "year": 2006,
+     "episodes": 12
+    },
+    {
+     "id": 52985,
+     "ru": "Семейная жизнь легкомысленной ведьмы",
+     "orig": "Dekoboko Majo no Oyako Jijou",
+     "year": 2023,
+     "episodes": 12
+    },
+    {
+     "id": 3841,
+     "ru": "Милый дом Чи",
+     "orig": "Chi's Sweet Home",
+     "year": 2008,
+     "episodes": 104
+    },
+    {
+     "id": 50338,
+     "ru": "В сердце куноити Цубаки",
+     "orig": "Kunoichi Tsubaki no Mune no Uchi",
+     "year": 2022,
+     "episodes": 13
+    },
+    {
+     "id": 31564,
+     "ru": "Трёхсторонний клевер",
+     "orig": "Sansha Sanyou",
+     "year": 2016,
+     "episodes": 12
+    },
+    {
+     "id": 38302,
+     "ru": "Мой одноклассник — тёмный бог разрушения",
+     "orig": "Boku no Tonari ni Ankoku Hakaishin ga Imasu.",
+     "year": 2020,
+     "episodes": 12
+    },
+    {
+     "id": 50891,
+     "ru": "Люцифер и Бисквитный Молот",
+     "orig": "Hoshi no Samidare",
+     "year": 2022,
+     "episodes": 24
+    },
+    {
+     "id": 25859,
+     "ru": "Ре-Кан!",
+     "orig": "Re-Kan!",
+     "year": 2015,
+     "episodes": 13
+    },
+    {
+     "id": 54041,
+     "ru": "Шестнадцатибитное ощущение: Другой уровень",
+     "orig": "16bit Sensation: Another Layer",
+     "year": 2023,
+     "episodes": 13
+    },
+    {
+     "id": 57947,
+     "ru": "Полуночный удар",
+     "orig": "Mayonaka Punch",
+     "year": 2024,
+     "episodes": 12
+    },
+    {
+     "id": 53262,
+     "ru": "Телепат звёздной пыли",
+     "orig": "Hoshikuzu Telepath",
+     "year": 2023,
+     "episodes": 12
+    },
+    {
+     "id": 53912,
+     "ru": "Две стороны сэйю радио",
+     "orig": "Seiyuu Radio no Uraomote",
+     "year": 2024,
+     "episodes": 12
+    },
+    {
+     "id": 2142,
+     "ru": "Синий дракон",
+     "orig": "Blue Dragon",
+     "year": 2007,
+     "episodes": 51
+    },
+    {
+     "id": 11491,
+     "ru": "Флейта в рюкзаке: До",
+     "orig": "Recorder to Randoseru Do♪",
+     "year": 2012,
+     "episodes": 13
+    },
+    {
+     "id": 49519,
+     "ru": "Контратака женщины-полицейского",
+     "orig": "Hakozume: Kouban Joshi no Gyakushuu",
+     "year": 2022,
+     "episodes": 13
+    },
+    {
+     "id": 29163,
+     "ru": "Это сэйю!",
+     "orig": "Sore ga Seiyuu!",
+     "year": 2015,
+     "episodes": 13
+    },
+    {
+     "id": 44042,
+     "ru": "Граффити Холо",
+     "orig": "Holo no Graffiti",
+     "year": 2019,
+     "tag": "ONA"
+    },
+    {
+     "id": 58082,
+     "ru": "Почему-то в моём доме поселилась куноити-отаку",
+     "orig": "NEET Kunoichi to Nazeka Dousei Hajimemashita",
+     "year": 2025,
+     "episodes": 24
+    },
+    {
+     "id": 1915,
+     "ru": "Лиричная волшебница Наноха: Искатели",
+     "orig": "Mahou Shoujo Lyrical Nanoha StrikerS",
+     "year": 2007,
+     "episodes": 26
+    },
+    {
+     "id": 1808,
+     "ru": "Маленькая богиня Карин",
+     "orig": "Kamichama Karin",
+     "year": 2007,
+     "episodes": 26
+    },
+    {
+     "id": 37992,
+     "ru": "Невеста нелюдя",
+     "orig": "Jingai-san no Yome",
+     "year": 2018,
+     "episodes": 12
+    },
+    {
+     "id": 34543,
+     "ru": "Погружение!!",
+     "orig": "Dive!!",
+     "year": 2017,
+     "episodes": 12
+    },
+    {
+     "id": 31540,
+     "ru": "Юноши из гипса",
+     "orig": "Sekkou Boys",
+     "year": 2016,
+     "episodes": 12
+    },
+    {
+     "id": 38276,
+     "ru": "Клуб настольных игр",
+     "orig": "Houkago Saikoro Club",
+     "year": 2019,
+     "episodes": 12
+    }
+   ]
+  },
+  {
+   "id": "g-sol",
+   "t": "Повседневность (ещё)",
+   "sub": "",
+   "items": [
+    {
+     "id": 3167,
+     "ru": "Время Евы ONA",
+     "orig": "Eve no Jikan",
+     "year": 2008,
+     "episodes": 6,
+     "tag": "ONA"
+    },
+    {
+     "id": 5671,
+     "ru": "Саки",
+     "orig": "Saki",
+     "year": 2009,
+     "episodes": 25
+    },
+    {
+     "id": 1852,
+     "ru": "Наброски Хидамари",
+     "orig": "Hidamari Sketch",
+     "year": 2007,
+     "episodes": 12
+    },
+    {
+     "id": 8726,
+     "ru": "А всё-таки город вертится",
+     "orig": "Soredemo Machi wa Mawatteiru",
+     "year": 2010,
+     "episodes": 12
+    },
+    {
+     "id": 45425,
+     "ru": "Медленная петля",
+     "orig": "Slow Loop",
+     "year": 2022,
+     "episodes": 12
+    },
+    {
+     "id": 9938,
+     "ru": "В лабиринте чужеземных перекрёстков",
+     "orig": "Ikoku Meiro no Croisee The Animation",
+     "year": 2011,
+     "episodes": 12
+    },
+    {
+     "id": 18411,
+     "ru": "Серебряный лис",
+     "orig": "Gingitsune",
+     "year": 2013,
+     "episodes": 12
+    },
+    {
+     "id": 10232,
+     "ru": "Тамаюра: Год спустя",
+     "orig": "Tamayura: Hitotose",
+     "year": 2011,
+     "episodes": 12
+    },
+    {
+     "id": 42568,
+     "ru": "Давайте тоже слепим кружку",
+     "orig": "Yaku nara Mug Cup mo",
+     "year": 2021,
+     "episodes": 12
+    },
+    {
+     "id": 36397,
+     "ru": "Семейка Франкенштейн",
+     "orig": "Shiyan Pin Jiating",
+     "year": 2018,
+     "episodes": 12,
+     "tag": "ONA"
+    },
+    {
+     "id": 15061,
+     "ru": "Айкацу!",
+     "orig": "Aikatsu!",
+     "year": 2012,
+     "episodes": 178
+    },
+    {
+     "id": 37188,
+     "ru": "Железнодорожный переезд",
+     "orig": "Fumikiri Jikan",
+     "year": 2018,
+     "episodes": 12
+    },
+    {
+     "id": 22189,
+     "ru": "Местные идолы",
+     "orig": "Futsuu no Joshikousei ga \"Locodol\" Yattemita.",
+     "year": 2014,
+     "episodes": 12
+    },
+    {
+     "id": 4550,
+     "ru": "Хьякко",
+     "orig": "Hyakko",
+     "year": 2008,
+     "episodes": 13
+    },
+    {
+     "id": 12119,
+     "ru": "Чудо в цвете лета",
+     "orig": "Natsu-iro Kiseki",
+     "year": 2012,
+     "episodes": 12
+    },
+    {
+     "id": 30355,
+     "ru": "Девочка Вакаба",
+     "orig": "Wakaba*Girl",
+     "year": 2015,
+     "episodes": 13
+    },
+    {
+     "id": 24855,
+     "ru": "Бета-девушка",
+     "orig": "Girlfriend (Kari)",
+     "year": 2014,
+     "episodes": 12
+    },
+    {
+     "id": 9441,
+     "ru": "Великолепный кондитер: Исключительный профессионал",
+     "orig": "Yume-iro Pâtissière SP Professional",
+     "year": 2010,
+     "episodes": 13
+    },
+    {
+     "id": 30437,
+     "ru": "Сакэ Вакако",
+     "orig": "Wakako-zake",
+     "year": 2015,
+     "episodes": 12
+    },
+    {
+     "id": 30705,
+     "ru": "Мальчики с подушками",
+     "orig": "Makura no Danshi",
+     "year": 2015,
+     "episodes": 12
+    },
+    {
+     "id": 39609,
+     "ru": "Отикоборэ: Фруктовый пирог",
+     "orig": "Ochikobore Fruit Tart",
+     "year": 2020,
+     "episodes": 12
+    },
+    {
+     "id": 55514,
+     "ru": "Это путешествие",
+     "orig": "Zatsu Tabi: That's Journey",
+     "year": 2025,
+     "episodes": 12
+    },
+    {
+     "id": 48858,
+     "ru": "Могу ли я сделать ваши уши счастливыми за сто восемьдесят секунд?",
+     "orig": "180-byou de Kimi no Mimi wo Shiawase ni Dekiru ka?",
+     "year": 2021,
+     "episodes": 12
+    },
+    {
+     "id": 36001,
+     "ru": "Алиса или Алиса: Брат-сисконщик и сёстры-близняшки",
+     "orig": "Alice or Alice",
+     "year": 2018,
+     "episodes": 12
+    },
+    {
+     "id": 50917,
+     "ru": "Прима-кукла",
+     "orig": "Prima Doll",
+     "year": 2022,
+     "episodes": 12
+    },
+    {
+     "id": 48857,
+     "ru": "Девушка-целитель",
+     "orig": "Healer Girl",
+     "year": 2022,
+     "episodes": 12
+    },
+    {
+     "id": 36513,
+     "ru": "Чайная «Рокуходо»",
+     "orig": "Rokuhou-dou Yotsuiro Biyori",
+     "year": 2018,
+     "episodes": 12
+    },
+    {
+     "id": 40358,
+     "ru": "Гяру и динозавр",
+     "orig": "Gal to Kyouryuu",
+     "year": 2020,
+     "episodes": 12
+    },
+    {
+     "id": 49505,
+     "ru": "Девушка встречает «дэдзи»",
+     "orig": "Deji Meets Girl",
+     "year": 2021,
+     "episodes": 12
+    },
+    {
+     "id": 2942,
+     "ru": "Альбом рисунков",
+     "orig": "Sketchbook: Full Color's",
+     "year": 2007,
+     "episodes": 13
+    },
+    {
+     "id": 14045,
+     "ru": "Мангачки!",
+     "orig": "Mangirl!",
+     "year": 2013,
+     "episodes": 13
+    },
+    {
+     "id": 31498,
+     "ru": "Мир через хлеб",
+     "orig": "Pan de Peace!",
+     "year": 2016,
+     "episodes": 13
+    },
+    {
+     "id": 37940,
+     "ru": "Дневник Ятогамэ",
+     "orig": "Yatogame-chan Kansatsu Nikki",
+     "year": 2019,
+     "episodes": 12
+    },
+    {
+     "id": 19841,
+     "ru": "Супербратья Сэйсюн",
+     "orig": "Super Seisyun Brothers",
+     "year": 2013,
+     "episodes": 14
+    },
+    {
+     "id": 1858,
+     "ru": "Непоседливая Манаби",
+     "orig": "Gakuen Utopia Manabi Straight!",
+     "year": 2007,
+     "episodes": 12
+    },
+    {
+     "id": 42632,
+     "ru": "До начала наших отношений",
+     "orig": "Yeon-ae Halujeon",
+     "year": 2018,
+     "episodes": 10,
+     "tag": "ONA"
+    },
+    {
+     "id": 48775,
+     "ru": "Кагинадо",
+     "orig": "Kaginado",
+     "year": 2021,
+     "episodes": 12
+    },
+    {
+     "id": 40958,
+     "ru": "Романская железная дорога",
+     "orig": "Rail Romanesque",
+     "year": 2020,
+     "episodes": 12
+    },
+    {
+     "id": 16169,
+     "ru": "Аи Маи Ми",
+     "orig": "Choboraunyopomi Gekijou Ai Mai Mii",
+     "year": 2013,
+     "episodes": 13
+    },
+    {
+     "id": 2166,
+     "ru": "Додзинси",
+     "orig": "Doujin Work",
+     "year": 2007,
+     "episodes": 12
+    },
+    {
+     "id": 4483,
+     "ru": "Нечто важное для мага: Летнее небо",
+     "orig": "Mahoutsukai ni Taisetsu na Koto: Natsu no Sora",
+     "year": 2008,
+     "episodes": 12
+    },
+    {
+     "id": 28981,
+     "ru": "Какао цвета дождя",
+     "orig": "Ame-iro Cocoa",
+     "year": 2015,
+     "episodes": 12
+    },
+    {
+     "id": 57859,
+     "ru": "Рабочее место, где вы не можете не улыбаться",
+     "orig": "Egao no Taenai Shokuba desu.",
+     "year": 2025,
+     "episodes": 13
+    },
+    {
+     "id": 45665,
+     "ru": "Фея Раммару: Я помогу твоему сердцу",
+     "orig": "Fairy Ranmaru: Anata no Kokoro Otasuke Shimasu",
+     "year": 2021,
+     "episodes": 12
+    },
+    {
+     "id": 49533,
+     "ru": "У моего мастера нет хвоста",
+     "orig": "Uchi no Shishou wa Shippo ga Nai",
+     "year": 2022,
+     "episodes": 13
+    },
+    {
+     "id": 9934,
+     "ru": "Кошачья богиня из Яоёродзу",
+     "orig": "Nekogami Yaoyorozu",
+     "year": 2011,
+     "episodes": 12
+    },
+    {
+     "id": 10671,
+     "ru": "Молчаливая Морита",
+     "orig": "Morita-san wa Mukuchi.",
+     "year": 2011,
+     "episodes": 13
+    },
+    {
+     "id": 39942,
+     "ru": "Тама: Откуда же он взялся?",
+     "orig": "Uchi Tama?! Uchi no Tama Shirimasen ka?",
+     "year": 2020,
+     "episodes": 11
+    },
+    {
+     "id": 40738,
+     "ru": "Свяжись со мной!",
+     "orig": "Natsunagu!",
+     "year": 2020,
+     "episodes": 12
+    },
+    {
+     "id": 23135,
+     "ru": "При Пара",
+     "orig": "PriPara",
+     "year": 2014,
+     "episodes": 140
+    }
+   ]
+  },
+  {
+   "id": "g-yuri",
+   "t": "Юри и девичьи истории",
+   "sub": "На сайте это жанры «Юри» и «Сёдзё-ай»: от нежного до откровенного без ужасов.",
+   "items": [
+    {
+     "id": 34382,
+     "ru": "Цитрус",
+     "orig": "Citrus",
+     "year": 2018,
+     "episodes": 12
+    },
+    {
+     "id": 30385,
+     "ru": "Импульс Валькирии: Русалка",
+     "orig": "Valkyrie Drive: Mermaid",
+     "year": 2015,
+     "episodes": 12
+    },
+    {
+     "id": 37786,
+     "ru": "В конечном счёте я стану твоей",
+     "orig": "Yagate Kimi ni Naru",
+     "year": 2018,
+     "episodes": 13
+    },
+    {
+     "id": 10495,
+     "ru": "Лилии на ветру",
+     "orig": "Yuru Yuri",
+     "year": 2011,
+     "episodes": 12
+    },
+    {
+     "id": 19429,
+     "ru": "Загадка дьявола",
+     "orig": "Akuma no Riddle",
+     "year": 2014,
+     "episodes": 12
+    },
+    {
+     "id": 20047,
+     "ru": "Проделки сакуры",
+     "orig": "Sakura Trick",
+     "year": 2014,
+     "episodes": 12
+    },
+    {
+     "id": 52736,
+     "ru": "Магическая революция перерождённой принцессы и гениальной юной леди",
+     "orig": "Tensei Oujo to Tensai Reijou no Mahou Kakumei",
+     "year": 2023,
+     "episodes": 12
+    },
+    {
+     "id": 39790,
+     "ru": "Адати и Симамура",
+     "orig": "Adachi to Shimamura",
+     "year": 2020,
+     "episodes": 12
+    },
+    {
+     "id": 54722,
+     "ru": "Становясь волшебницей",
+     "orig": "Mahou Shoujo ni Akogarete",
+     "year": 2024,
+     "episodes": 13
+    },
+    {
+     "id": 5030,
+     "ru": "Мария Холик",
+     "orig": "Maria†Holic",
+     "year": 2009,
+     "episodes": 12
+    },
+    {
+     "id": 34383,
+     "ru": "Ловушка лжи",
+     "orig": "Netsuzou TRap",
+     "year": 2017,
+     "episodes": 12
+    },
+    {
+     "id": 35241,
+     "ru": "Загадочная история «Коноханы»",
+     "orig": "Konohana Kitan",
+     "year": 2017,
+     "episodes": 12
+    },
+    {
+     "id": 53833,
+     "ru": "Я предпочитаю злодейку",
+     "orig": "Watashi no Oshi wa Akuyaku Reijou.",
+     "year": 2023,
+     "episodes": 12
+    },
+    {
+     "id": 855,
+     "ru": "Клубничная тревога!",
+     "orig": "Strawberry Panic",
+     "year": 2006,
+     "episodes": 26
+    },
+    {
+     "id": 37722,
+     "ru": "Моя горничная слишком надоедливая!",
+     "orig": "Uchi no Maid ga Uzasugiru!",
+     "year": 2018,
+     "episodes": 12
+    },
+    {
+     "id": 26165,
+     "ru": "Шторм Медведя Лилии",
+     "orig": "Yuri Kuma Arashi",
+     "year": 2015,
+     "episodes": 12
+    },
+    {
+     "id": 6164,
+     "ru": "Голубые цветы",
+     "orig": "Aoi Hana",
+     "year": 2009,
+     "episodes": 11
+    },
+    {
+     "id": 54233,
+     "ru": "Прошепчу тебе песню о любви",
+     "orig": "Sasayaku You ni Koi wo Utau",
+     "year": 2024,
+     "episodes": 12
+    },
+    {
+     "id": 28817,
+     "ru": "Сюита школы Микагура",
+     "orig": "Mikagura Gakuen Kumikyoku (TV)",
+     "year": 2015,
+     "episodes": 12
+    },
+    {
+     "id": 6203,
+     "ru": "Я тихо прошепчу",
+     "orig": "Sasameki Koto",
+     "year": 2009,
+     "episodes": 13
+    },
+    {
+     "id": 4535,
+     "ru": "Кэнди-Бой",
+     "orig": "Candy Boy: Nonchalant Talk of the Certain Twin Sisters in Daily Life",
+     "year": 2008,
+     "episodes": 7,
+     "tag": "ONA"
+    },
+    {
+     "id": 36943,
+     "ru": "Любовные страсти пансиона Татибана",
+     "orig": "Tachibanakan Triangle",
+     "year": 2018,
+     "episodes": 12
+    },
+    {
+     "id": 51817,
+     "ru": "Юри — это моя работа!",
+     "orig": "Watashi no Yuri wa Oshigoto desu!",
+     "year": 2023,
+     "episodes": 12
+    },
+    {
+     "id": 46488,
+     "ru": "Один на один: Леди не играют в файтинги",
+     "orig": "Tai-Ari deshita. Ojousama wa Kakutou Game nante Shinai",
+     "year": 2026,
+     "episodes": 12
+    },
+    {
+     "id": 667,
+     "ru": "Касимаси: Девушка встречает девушку",
+     "orig": "Kashimashi: Girl Meets Girl",
+     "year": 2006,
+     "episodes": 12
+    },
+    {
+     "id": 879,
+     "ru": "Симун",
+     "orig": "Simoun",
+     "year": 2006,
+     "episodes": 26
+    },
+    {
+     "id": 5914,
+     "ru": "Записки Каны",
+     "orig": "Kanamemo",
+     "year": 2009,
+     "episodes": 13
+    },
+    {
+     "id": 11769,
+     "ru": "Истории из общаги старшей школы для девочек",
+     "orig": "Gokujo.: Gokurakuin Joshikou Ryou Monogatari",
+     "year": 2012,
+     "episodes": 12
+    },
+    {
+     "id": 2964,
+     "ru": "Синяя капля: Драма ангелов",
+     "orig": "Blue Drop: Tenshi-tachi no Gikyoku",
+     "year": 2007,
+     "episodes": 13
+    },
+    {
+     "id": 3750,
+     "ru": "Дева Мария смотрит за вами 4",
+     "orig": "Maria-sama ga Miteru 4th",
+     "year": 2009,
+     "episodes": 13
+    },
+    {
+     "id": 10384,
+     "ru": "Поцелуй эти лепестки: Дневники Рэо и Май",
+     "orig": "Sono Hanabira ni Kuchizuke wo: Reo x Mai Diaries",
+     "year": 2009,
+     "episodes": 10,
+     "tag": "ONA"
+    },
+    {
+     "id": 49982,
+     "ru": "То лето",
+     "orig": "Geu Yeoreum",
+     "year": 2021,
+     "episodes": 7,
+     "tag": "ONA"
+    }
+   ]
+  },
+  {
+   "id": "g-sj",
+   "t": "Сэйнэн и дзёсэй",
+   "sub": "Взрослые истории: для мужской и женской взрослой аудитории.",
+   "items": [
+    {
+     "id": 3359,
+     "ru": "Хмурая луна",
+     "orig": "Amatsuki",
+     "year": 2008,
+     "episodes": 13
+    },
+    {
+     "id": 7705,
+     "ru": "Звёздное небо",
+     "orig": "Starry☆Sky",
+     "year": 2010,
+     "episodes": 26,
+     "tag": "ONA"
+    },
+    {
+     "id": 35251,
+     "ru": "Кровавая ночь Сэнгоку",
+     "orig": "Sengoku Night Blood",
+     "year": 2017,
+     "episodes": 12
+    },
+    {
+     "id": 33850,
+     "ru": "Весы Нил Адмирари: Загадочная история Тэйто",
+     "orig": "Nil Admirari no Tenbin",
+     "year": 2018,
+     "episodes": 12
+    },
+    {
+     "id": 33726,
+     "ru": "Саюки: Новый взрыв",
+     "orig": "Saiyuuki Reload Blast",
+     "year": 2017,
+     "episodes": 12
+    },
+    {
+     "id": 3615,
+     "ru": "Анжелика",
+     "orig": "Neo Angelique Abyss",
+     "year": 2008,
+     "episodes": 13
+    },
+    {
+     "id": 3298,
+     "ru": "Неслыханная игра",
+     "orig": "Hatenkou Yuugi",
+     "year": 2008,
+     "episodes": 10
+    },
+    {
+     "id": 21067,
+     "ru": "Странности+",
+     "orig": "Strange+",
+     "year": 2014,
+     "episodes": 12
+    },
+    {
+     "id": 13349,
+     "ru": "Стихотворения ста поэтов: Песни о любви",
+     "orig": "Chouyaku Hyakuninisshu: Uta Koi.",
+     "year": 2012,
+     "episodes": 13
+    },
+    {
+     "id": 38331,
+     "ru": "Сцена для моих героев: Фрагмент истины",
+     "orig": "Stand My Heroes: Piece of Truth",
+     "year": 2019,
+     "episodes": 12
+    },
+    {
+     "id": 50470,
+     "ru": "Богиня идола-мерзавца",
+     "orig": "Kami Kuzu☆Idol",
+     "year": 2022,
+     "episodes": 10
+    },
+    {
+     "id": 32697,
+     "ru": "OZ-мафия!",
+     "orig": "Ozmafia!!",
+     "year": 2016,
+     "episodes": 12
+    },
+    {
+     "id": 39527,
+     "ru": "Упорные рыцари",
+     "orig": "Try Knights",
+     "year": 2019,
+     "episodes": 12
+    },
+    {
+     "id": 56420,
+     "ru": "Хаигакура",
+     "orig": "Haigakura",
+     "year": 2024,
+     "episodes": 13
+    },
+    {
+     "id": 54294,
+     "ru": "Собачий сигнал",
+     "orig": "Dog Signal",
+     "year": 2023,
+     "episodes": 20
+    },
+    {
+     "id": 23213,
+     "ru": "Неудовлетворительное руководство",
+     "orig": "Kantoku Fuyuki Todoki",
+     "year": 2014,
+     "episodes": 13
+    },
+    {
+     "id": 38089,
+     "ru": "Добро пожаловать, Титосэ",
+     "orig": "Okoshiyasu, Chitose-chan",
+     "year": 2018,
+     "episodes": 24
+    },
+    {
+     "id": 11547,
+     "ru": "Рай Сэнгоку",
+     "orig": "Sengoku☆Paradise Kiwami",
+     "year": 2011,
+     "episodes": 26
+    },
+    {
+     "id": 49445,
+     "ru": "Тора и Микэ",
+     "orig": "Tora to Mike",
+     "year": 2021,
+     "episodes": 24,
+     "tag": "ONA"
+    },
+    {
+     "id": 18893,
+     "ru": "Симфония морской стали: Новое искусство",
+     "orig": "Aoki Hagane no Arpeggio: Ars Nova",
+     "year": 2013,
+     "episodes": 12
+    },
+    {
+     "id": 11241,
+     "ru": "Храбрая десятка",
+     "orig": "Brave 10",
+     "year": 2012,
+     "episodes": 12
+    },
+    {
+     "id": 52092,
+     "ru": "Мой домашний герой",
+     "orig": "My Home Hero",
+     "year": 2023,
+     "episodes": 12
+    },
+    {
+     "id": 53407,
+     "ru": "Бармен: Бокал бога",
+     "orig": "Bartender: Kami no Glass",
+     "year": 2024,
+     "episodes": 12
+    },
+    {
+     "id": 5079,
+     "ru": "Тёмная богиня",
+     "orig": "Kurokami The Animation",
+     "year": 2009,
+     "episodes": 23
+    },
+    {
+     "id": 9479,
+     "ru": "Коппелион",
+     "orig": "Coppelion",
+     "year": 2013,
+     "episodes": 13
+    },
+    {
+     "id": 48702,
+     "ru": "Танцуй, танцуй, танцор",
+     "orig": "Dance Dance Danseur",
+     "year": 2022,
+     "episodes": 11
+    },
+    {
+     "id": 7588,
+     "ru": "Дом Пяти Листьев",
+     "orig": "Saraiya Goyou",
+     "year": 2010,
+     "episodes": 12
+    },
+    {
+     "id": 37522,
+     "ru": "Питомец",
+     "orig": "Pet",
+     "year": 2020,
+     "episodes": 13
+    },
+    {
+     "id": 39806,
+     "ru": "Клинок Бессмертного ONA",
+     "orig": "Mugen no Juunin: Immortal",
+     "year": 2019,
+     "episodes": 24,
+     "tag": "ONA"
+    },
+    {
+     "id": 30740,
+     "ru": "Молодой Чёрный Джек",
+     "orig": "Young Black Jack",
+     "year": 2015,
+     "episodes": 12
+    },
+    {
+     "id": 38853,
+     "ru": "Экс-Арм",
+     "orig": "Ex-Arm",
+     "year": 2021,
+     "episodes": 12
+    },
+    {
+     "id": 50384,
+     "ru": "История о мононокэ",
+     "orig": "Mononogatari",
+     "year": 2023,
+     "episodes": 12
+    },
+    {
+     "id": 49766,
+     "ru": "Низкоквалифицированный ниндзя",
+     "orig": "Under Ninja",
+     "year": 2023,
+     "episodes": 12
+    },
+    {
+     "id": 27783,
+     "ru": "Меч Гая",
+     "orig": "Sword Gai The Animation",
+     "year": 2018,
+     "episodes": 12,
+     "tag": "ONA"
+    },
+    {
+     "id": 34580,
+     "ru": "Семь — верно, три — неверно",
+     "orig": "Nana Maru San Batsu",
+     "year": 2017,
+     "episodes": 12
+    },
+    {
+     "id": 48649,
+     "ru": "Детективы Футо",
+     "orig": "Fuuto Tantei",
+     "year": 2022,
+     "episodes": 12
+    },
+    {
+     "id": 10372,
+     "ru": "Божественные куклы",
+     "orig": "Kamisama Dolls",
+     "year": 2011,
+     "episodes": 13
+    },
+    {
+     "id": 6758,
+     "ru": "Боевые библиотекари: Книга Банторры",
+     "orig": "Tatakau Shisho: The Book of Bantorra",
+     "year": 2009,
+     "episodes": 27
+    },
+    {
+     "id": 1013,
+     "ru": "Шевалье Д'Эон",
+     "orig": "Le Chevalier D'Eon",
+     "year": 2006,
+     "episodes": 24
+    },
+    {
+     "id": 39531,
+     "ru": "Небесные драконы",
+     "orig": "Kuutei Dragons",
+     "year": 2020,
+     "episodes": 12
+    },
+    {
+     "id": 2608,
+     "ru": "Ванганская полночь",
+     "orig": "Wangan Midnight",
+     "year": 2007,
+     "episodes": 26
+    },
+    {
+     "id": 37890,
+     "ru": "Пусть только выступит мой любимый идол в Будокан, и я помру",
+     "orig": "Oshi ga Budoukan Ittekuretara Shinu",
+     "year": 2020,
+     "episodes": 12
+    },
+    {
+     "id": 6098,
+     "ru": "По велению неба",
+     "orig": "Sora no Manimani",
+     "year": 2009,
+     "episodes": 12
+    },
+    {
+     "id": 27911,
+     "ru": "Чудна́я психосоматическая медицина",
+     "orig": "Anime de Wakaru Shinryounaika",
+     "year": 2015,
+     "episodes": 20,
+     "tag": "ONA"
+    },
+    {
+     "id": 4039,
+     "ru": "Голго-13",
+     "orig": "Golgo 13 (TV)",
+     "year": 2008,
+     "episodes": 50
+    },
+    {
+     "id": 55995,
+     "ru": "Твоя форма",
+     "orig": "Your Forma",
+     "year": 2025,
+     "episodes": 13
+    },
+    {
+     "id": 38529,
+     "ru": "Винтовка прекрасна",
+     "orig": "Rifle Is Beautiful",
+     "year": 2019,
+     "episodes": 12
+    },
+    {
+     "id": 53512,
+     "ru": "Букет для гадкой девочки",
+     "orig": "Busu ni Hanataba wo.",
+     "year": 2025,
+     "episodes": 13
+    },
+    {
+     "id": 3673,
+     "ru": "Дочь Двадцатиликого",
+     "orig": "Nijuu Mensou no Musume",
+     "year": 2008,
+     "episodes": 22
+    },
+    {
+     "id": 56662,
+     "ru": "Игра на триллион",
+     "orig": "Trillion Game",
+     "year": 2024,
+     "episodes": 26
+    },
+    {
+     "id": 9996,
+     "ru": "Чудные вещи",
+     "orig": "Hyouge Mono",
+     "year": 2011,
+     "episodes": 39
+    },
+    {
+     "id": 36871,
+     "ru": "Ультрамен ONA",
+     "orig": "Ultraman",
+     "year": 2019,
+     "episodes": 13,
+     "tag": "ONA"
+    },
+    {
+     "id": 43693,
+     "ru": "Термы Нового Рима",
+     "orig": "Thermae Romae Novae",
+     "year": 2022,
+     "episodes": 11,
+     "tag": "ONA"
+    },
+    {
+     "id": 1592,
+     "ru": "Работяга",
+     "orig": "Hataraki Man",
+     "year": 2006,
+     "episodes": 11
+    },
+    {
+     "id": 50250,
+     "ru": "Тикава",
+     "orig": "Chiikawa",
+     "year": 2022
+    },
+    {
+     "id": 1214,
+     "ru": "Повесть о бедных сёстрах",
+     "orig": "Binbou Shimai Monogatari",
+     "year": 2006,
+     "episodes": 10
+    },
+    {
+     "id": 5005,
+     "ru": "Астро-боец Санред",
+     "orig": "Tentai Senshi Sunred",
+     "year": 2008,
+     "episodes": 26
+    },
+    {
+     "id": 40136,
+     "ru": "Ода «Корица» Нобунага",
+     "orig": "Oda Cinnamon Nobunaga",
+     "year": 2020,
+     "episodes": 12
+    },
+    {
+     "id": 12021,
+     "ru": "Хроники Пуфика",
+     "orig": "Poyopoyo Kansatsu Nikki",
+     "year": 2012,
+     "episodes": 52
+    },
+    {
+     "id": 2744,
+     "ru": "Потэмаё",
+     "orig": "Potemayo",
+     "year": 2007,
+     "episodes": 12
+    },
+    {
+     "id": 5141,
+     "ru": "Бейсболистки эпохи Тайсё",
+     "orig": "Taishou Yakyuu Musume.",
+     "year": 2009,
+     "episodes": 12
+    },
+    {
+     "id": 14277,
+     "ru": "Титосэ тебя достанет!",
+     "orig": "Chitose Get You!!",
+     "year": 2012,
+     "episodes": 26
+    },
+    {
+     "id": 57796,
+     "ru": "Ледяные кости",
+     "orig": "Touhai: Ura Rate Mahjong Touhairoku",
+     "year": 2024,
+     "episodes": 25
+    },
+    {
+     "id": 43763,
+     "ru": "Цестус: Римский боец",
+     "orig": "Cestvs: The Roman Fighter",
+     "year": 2021,
+     "episodes": 11
+    },
+    {
+     "id": 1721,
+     "ru": "Пушинка",
+     "orig": "Hitohira",
+     "year": 2007,
+     "episodes": 12
+    },
+    {
+     "id": 48252,
+     "ru": "Я, Цусима",
+     "orig": "Ore, Tsushima",
+     "year": 2021,
+     "episodes": 12
+    },
+    {
+     "id": 34550,
+     "ru": "Весёлый коммивояжёр (2017)",
+     "orig": "Warau Salesman New",
+     "year": 2017,
+     "episodes": 12
+    },
+    {
+     "id": 38226,
+     "ru": "Подвижная девушка в масштабе ⅙",
+     "orig": "Choukadou Girl ⅙",
+     "year": 2019,
+     "episodes": 12
+    },
+    {
+     "id": 41266,
+     "ru": "Олимпия Киклос",
+     "orig": "Bessatsu Olympia Kyklos",
+     "year": 2020,
+     "episodes": 24
+    },
+    {
+     "id": 16317,
+     "ru": "Исида и Асакура",
+     "orig": "Ishida to Asakura",
+     "year": 2013,
+     "episodes": 12
+    },
+    {
+     "id": 35183,
+     "ru": "Денежное поле",
+     "orig": "Gurazeni",
+     "year": 2018,
+     "episodes": 12
+    },
+    {
+     "id": 36655,
+     "ru": "Кулак Синего неба: Перерождение",
+     "orig": "Souten no Ken: Regenesis",
+     "year": 2018,
+     "episodes": 12
+    },
+    {
+     "id": 38162,
+     "ru": "Умираю, Экода!",
+     "orig": "Rinshi!! Ekoda-chan",
+     "year": 2019,
+     "episodes": 11
+    },
+    {
+     "id": 3000,
+     "ru": "Вы арестованы! Полный газ",
+     "orig": "Taiho Shichau zo: Full Throttle",
+     "year": 2007,
+     "episodes": 23
+    },
+    {
+     "id": 55636,
+     "ru": "Закусочная Басуэ",
+     "orig": "Snack Basue",
+     "year": 2024,
+     "episodes": 13
+    },
+    {
+     "id": 22831,
+     "ru": "Хулиган и боец сумо Мацутаро!",
+     "orig": "Abarenbou Rikishi!! Matsutarou",
+     "year": 2014,
+     "episodes": 23
+    },
+    {
+     "id": 12123,
+     "ru": "Бездельники 3D",
+     "orig": "Yurumates 3D",
+     "year": 2012,
+     "episodes": 13
+    },
+    {
+     "id": 18771,
+     "ru": "Праведные ветра: Канэцугу и Кэйдзи",
+     "orig": "Gifuu Doudou!!: Kanetsugu to Keiji",
+     "year": 2013,
+     "episodes": 25
+    },
+    {
+     "id": 20329,
+     "ru": "Господин убийца",
+     "orig": "Koroshiya-san: The Hired Gun",
+     "year": 2013,
+     "episodes": 10
+    },
+    {
+     "id": 21427,
+     "ru": "Полный сбор! Академия Фальком",
+     "orig": "Minna Atsumare! Falcom Gakuen",
+     "year": 2014,
+     "episodes": 13
+    }
+   ]
+  },
+  {
+   "id": "g-maid",
+   "t": "Горничные, дворецкие и слуги",
+   "sub": "Ваши любимые типажи: поиск по слову в названии, поэтому список небольшой.",
+   "items": [
+    {
+     "id": 36309,
+     "ru": "Дворецкие: История тысячи столетий",
+     "orig": "Butlers: Chitose Momotose Monogatari",
+     "year": 2018,
+     "episodes": 12
+    },
+    {
+     "id": 403,
+     "ru": "Горничные Ханаукё",
+     "orig": "Hanaukyou Maid-tai",
+     "year": 2001,
+     "episodes": 12
+    },
+    {
+     "id": 62342,
+     "ru": "Горничная, которая просто любит покушать",
+     "orig": "Maid-san wa Taberu dake",
+     "year": 2026,
+     "episodes": 12
+    },
+    {
+     "id": 318,
+     "ru": "Ручная горничная Мэй",
+     "orig": "Hand Maid May",
+     "year": 2000,
+     "episodes": 10
+    },
+    {
+     "id": 61686,
+     "ru": "Героиня? Святая? Нет, я всемогущая горничная (И горжусь этим)!",
+     "orig": "Heroine? Seijo? Iie, All Works Maid desu (Hokori)!",
+     "year": 2026,
+     "episodes": 12
+    }
+   ]
+  },
+  {
+   "id": "y-2021",
+   "t": "2021–2026: всё остальное",
+   "sub": "",
+   "items": [
+    {
+     "id": 44074,
+     "ru": "Агент времени",
+     "orig": "Shiguang Dailiren",
+     "year": 2021,
+     "episodes": 11,
+     "tag": "ONA"
+    },
+    {
+     "id": 60489,
+     "ru": "Первородный грех Такопи",
+     "orig": "Takopii no Genzai",
+     "year": 2025,
+     "episodes": 6,
+     "tag": "ONA"
+    },
+    {
+     "id": 49818,
+     "ru": "Повелитель тайн: Клоун",
+     "orig": "Guimi Zhi Zhu: Xiaochou Pian",
+     "year": 2025,
+     "episodes": 13,
+     "tag": "ONA"
+    },
+    {
+     "id": 56285,
+     "ru": "Ниндзя Камуи",
+     "orig": "Ninja Kamui",
+     "year": 2024,
+     "episodes": 13
+    },
+    {
+     "id": 51098,
+     "ru": "Время ниндзя",
+     "orig": "Shinobi no Ittoki",
+     "year": 2022,
+     "episodes": 12
+    },
+    {
+     "id": 61026,
+     "ru": "Мой статус убийцы очевидно превосходит геройский",
+     "orig": "Ansatsusha de Aru Ore no Status ga Yuusha yori mo Akiraka ni Tsuyoi no da ga",
+     "year": 2025,
+     "episodes": 12
+    },
+    {
+     "id": 59846,
+     "ru": "Могу я попросить ещё кое-что?",
+     "orig": "Saigo ni Hitotsu dake Onegai shitemo Yoroshii deshou ka",
+     "year": 2025,
+     "episodes": 13
+    },
+    {
+     "id": 46093,
+     "ru": "Акватоп белого песка",
+     "orig": "Shiroi Suna no Aquatope",
+     "year": 2021,
+     "episodes": 24
+    },
+    {
+     "id": 58502,
+     "ru": "Полное исследование",
+     "orig": "Zenshuu.",
+     "year": 2025,
+     "episodes": 12
+    },
+    {
+     "id": 48633,
+     "ru": "Лжец, лжец",
+     "orig": "Liar Liar",
+     "year": 2023,
+     "episodes": 12
+    },
+    {
+     "id": 58172,
+     "ru": "Плачущий призрак на пенсии",
+     "orig": "Nageki no Bourei wa Intai shitai",
+     "year": 2024,
+     "episodes": 13
+    },
+    {
+     "id": 58359,
+     "ru": "Гениальный целитель, который исцелял в одно мгновение, но был изгнан как бесполезный, теперь наслаждается жизнью в качестве тёмного целителя",
+     "orig": "Isshun de Chiryou shiteita noni Yakutatazu to Tsuihou sareta Tensai Chiyushi, Yami Healer toshite Tanoshiku Ikiru",
+     "year": 2025,
+     "episodes": 12
+    },
+    {
+     "id": 59135,
+     "ru": "Я женился на однокласснице, которую ненавидел",
+     "orig": "Class no Daikirai na Joshi to Kekkon suru Koto ni Natta.",
+     "year": 2025,
+     "episodes": 12
+    },
+    {
+     "id": 62601,
+     "ru": "Брачный токсин",
+     "orig": "Marriagetoxin",
+     "year": 2026,
+     "episodes": 13
+    },
+    {
+     "id": 60852,
+     "ru": "Ледяная стена",
+     "orig": "Koori no Jouheki",
+     "year": 2026,
+     "episodes": 14
+    },
+    {
+     "id": 58811,
+     "ru": "Тёмный демон",
+     "orig": "Tougen Anki",
+     "year": 2025,
+     "episodes": 24
+    },
+    {
+     "id": 63403,
+     "ru": "Табакошка",
+     "orig": "Yani Neko",
+     "year": 2026,
+     "episodes": 12
+    },
+    {
+     "id": 55848,
+     "ru": "Отряд самоубийц из другого мира",
+     "orig": "Isekai Suicide Squad",
+     "year": 2024,
+     "episodes": 10
+    },
+    {
+     "id": 42590,
+     "ru": "Чистый звук",
+     "orig": "Mashiro no Oto",
+     "year": 2021,
+     "episodes": 12
+    },
+    {
+     "id": 58714,
+     "ru": "Самый известный диктор создаёт самый великий в мире клан",
+     "orig": "Saikyou no Shienshoku \"Wajutsushi\" de Aru Ore wa Sekai Saikyou Clan wo Shitagaeru",
+     "year": 2024,
+     "episodes": 12
+    },
+    {
+     "id": 61128,
+     "ru": "Мастера на все руки выгнали из отряда героев",
+     "orig": "Yuusha Party wo Oidasareta Kiyoubinbou",
+     "year": 2026,
+     "episodes": 12
+    },
+    {
+     "id": 48406,
+     "ru": "Ре-Мейн",
+     "orig": "Re-Main",
+     "year": 2021,
+     "episodes": 12
+    },
+    {
+     "id": 57810,
+     "ru": "Маленький гражданин",
+     "orig": "Shoushimin Series",
+     "year": 2024,
+     "episodes": 10
+    },
+    {
+     "id": 59361,
+     "ru": "Ты умеешь хранить секреты?",
+     "orig": "Kono Kaisha ni Suki na Hito ga Imasu",
+     "year": 2025,
+     "episodes": 12
+    },
+    {
+     "id": 60303,
+     "ru": "Я был предан товарищами в глубине подземелья, но благодаря своему навыку «Бесконечная гача» я обрёл союзников девять тысяч девятьсот девяносто девятого уровня, чтобы отомстить бывшим соратникам и всему миру!",
+     "orig": "Shinjiteita Nakama-tachi ni Dungeon Okuchi de Korosarekaketa ga Gift \"Mugen Gacha\" de Level 9999 no Nakama-tachi wo Te ni Irete Moto Party Member to Sekai ni Fukushuu & \"Zamaa!\" Shimasu!",
+     "year": 2025,
+     "episodes": 12
+    },
+    {
+     "id": 59144,
+     "ru": "Худшая работа «оценщика» оказалась самой сильной",
+     "orig": "Fuguushoku \"Kanteishi\" ga Jitsu wa Saikyou Datta",
+     "year": 2025,
+     "episodes": 12
+    },
+    {
+     "id": 58271,
+     "ru": "Сладкий лимонад",
+     "orig": "Honey Lemon Soda",
+     "year": 2025,
+     "episodes": 12
+    },
+    {
+     "id": 58853,
+     "ru": "Мэдака Куроива не понимает моей привлекательности",
+     "orig": "Kuroiwa Medaka ni Watashi no Kawaii ga Tsuujinai",
+     "year": 2025,
+     "episodes": 12
+    },
+    {
+     "id": 54839,
+     "ru": "Медуза не умеет плавать в ночи",
+     "orig": "Yoru no Kurage wa Oyogenai",
+     "year": 2024,
+     "episodes": 12
+    },
+    {
+     "id": 59130,
+     "ru": "Апокалипсис Миногры: Покорение другого мира начинается с разрушенной цивилизации",
+     "orig": "Isekai Mokushiroku Mynoghra: Hametsu no Bunmei de Hajimeru Sekai Seifuku",
+     "year": 2025,
+     "episodes": 13
+    },
+    {
+     "id": 62604,
+     "ru": "Где те девушки, что были бы добры к отаку?",
+     "orig": "Otaku ni Yasashii Gal wa Inai!?",
+     "year": 2026,
+     "episodes": 12
+    },
+    {
+     "id": 41265,
+     "ru": "Красный Марс",
+     "orig": "Mars Red",
+     "year": 2021,
+     "episodes": 13
+    },
+    {
+     "id": 58822,
+     "ru": "Однажды я стану величайшим алхимиком?",
+     "orig": "Izure Saikyou no Renkinjutsushi?",
+     "year": 2025,
+     "episodes": 12
+    },
+    {
+     "id": 63375,
+     "ru": "Троецарствие Японии",
+     "orig": "Nippon Sangoku",
+     "year": 2026,
+     "episodes": 12
+    },
+    {
+     "id": 58788,
+     "ru": "Дневник разных стран",
+     "orig": "Ikoku Nikki",
+     "year": 2026,
+     "episodes": 13
+    },
+    {
+     "id": 59349,
+     "ru": "История о служащем, который стал одним из четырёх Небесных Царей, когда отправился в другой мир",
+     "orig": "Salaryman ga Isekai ni Ittara Shitennou ni Natta Hanashi",
+     "year": 2025,
+     "episodes": 12
+    },
+    {
+     "id": 53149,
+     "ru": "Лукизм",
+     "orig": "Oemojisangjuui",
+     "year": 2022,
+     "episodes": 8,
+     "tag": "ONA"
+    },
+    {
+     "id": 59207,
+     "ru": "Три сестры Микадоно оказались неожиданно простыми",
+     "orig": "Mikadono Sanshimai wa Angai, Choroi.",
+     "year": 2025,
+     "episodes": 12
+    },
+    {
+     "id": 59644,
+     "ru": "Шальной последний босс явился!",
+     "orig": "Yasei no Last Boss ga Arawareta!",
+     "year": 2025,
+     "episodes": 12
+    },
+    {
+     "id": 59730,
+     "ru": "Покинув группу А-ранга, я направился вместе со своими бывшими учениками в глубины лабиринта",
+     "orig": "A-Rank Party wo Ridatsu shita Ore wa, Moto Oshiego-tachi to Meikyuu Shinbu wo Mezasu.",
+     "year": 2025,
+     "episodes": 24
+    },
+    {
+     "id": 51381,
+     "ru": "Красный, белый, чёрный, жёлтый: Ледяная империя",
+     "orig": "RWBY: Hyousetsu Teikoku",
+     "year": 2022,
+     "episodes": 12
+    },
+    {
+     "id": 40679,
+     "ru": "Волейбольный клуб старшей школы Сэйин",
+     "orig": "2.43: Seiin Koukou Danshi Volley-bu",
+     "year": 2021,
+     "episodes": 12
+    },
+    {
+     "id": 54794,
+     "ru": "Металлическая Руж",
+     "orig": "Metallic Rouge",
+     "year": 2024,
+     "episodes": 13
+    },
+    {
+     "id": 62936,
+     "ru": "Я влюбился в тебя, когда ты бежала в лунной ночи",
+     "orig": "Toumei na Yoru ni Kakeru Kimi to, Me ni Mienai Koi wo Shita.",
+     "year": 2026,
+     "episodes": 12
+    },
+    {
+     "id": 43756,
+     "ru": "Бэк-флип!!",
+     "orig": "Bakuten!!",
+     "year": 2021,
+     "episodes": 12
+    },
+    {
+     "id": 59711,
+     "ru": "Смертельная игра ради еды на столе",
+     "orig": "Shibou Yuugi de Meshi wo Kuu.",
+     "year": 2026,
+     "episodes": 11
+    },
+    {
+     "id": 59267,
+     "ru": "Санда",
+     "orig": "Sanda",
+     "year": 2025,
+     "episodes": 12
+    },
+    {
+     "id": 60028,
+     "ru": "Принцесса-рыцарь — невеста варвара",
+     "orig": "Himekishi wa Barbaroi no Yome",
+     "year": 2026,
+     "episodes": 12
+    },
+    {
+     "id": 61169,
+     "ru": "Чёрный факел",
+     "orig": "Black Torch",
+     "year": 2026,
+     "episodes": 12
+    },
+    {
+     "id": 61240,
+     "ru": "Хоть я и бездарная злодейка: Сказка о том, как бабочка и крыса поменялись местами в девичьем дворе",
+     "orig": "Futsutsuka na Akujo dewa Gozaimasu ga: Suuguu Chouso Torikae Den",
+     "year": 2026,
+     "episodes": 11
+    },
+    {
+     "id": 61839,
+     "ru": "Я хочу закончить эту игру любви",
+     "orig": "Aishiteru Game wo Owarasetai",
+     "year": 2026,
+     "episodes": 12
+    },
+    {
+     "id": 59561,
+     "ru": "Жизнь сорокалетнего мужчины в другом мире",
+     "orig": "Around 40 Otoko no Isekai Tsuuhan",
+     "year": 2025,
+     "episodes": 13
+    },
+    {
+     "id": 40752,
+     "ru": "Красавчики-детективы",
+     "orig": "Bishounen Tanteidan",
+     "year": 2021,
+     "episodes": 12
+    },
+    {
+     "id": 60140,
+     "ru": "Непонятый мастер ателье: Обычная история о бывшем помощнике в отряде героя, чьи навыки, кроме боевых, достигли SSS-ранга",
+     "orig": "Kanchigai no Atelier Meister: Eiyuu Party no Moto Zatsuyougakari ga, Jitsu wa Sentou Igai ga SSS Rank Datta to Iu Yoku Aru Hanashi",
+     "year": 2025,
+     "episodes": 12
+    },
+    {
+     "id": 59741,
+     "ru": "Изгнанный реинкарнированный тяжёлый рыцарь не имеет себе равных в знаниях игры",
+     "orig": "Tsuihou sareta Tensei Juukishi wa Game Chishiki de Musou suru",
+     "year": 2026,
+     "tag": "идёт сейчас"
+    },
+    {
+     "id": 59517,
+     "ru": "Титосэ внутри бутылки рамунэ",
+     "orig": "Chitose-kun wa Ramune Bin no Naka",
+     "year": 2025,
+     "episodes": 13
+    },
+    {
+     "id": 48453,
+     "ru": "Суперворы",
+     "orig": "Super Crooks",
+     "year": 2021,
+     "episodes": 13,
+     "tag": "ONA"
+    },
+    {
+     "id": 61983,
+     "ru": "В команде героя была милая девушка, так что я признался ей",
+     "orig": "Yuusha Party ni Kawaii Ko ga Ita node, Kokuhaku shitemita.",
+     "year": 2026,
+     "episodes": 13
+    },
+    {
+     "id": 59002,
+     "ru": "Парадоксальный навык «Мастер фруктов»: Навык, позволяющий есть бесконечное число фруктов (правда, вы умрёте, лишь откусив их)",
+     "orig": "Hazure Skill \"Kinomi Master\": Skill no Mi (Tabetara Shinu) wo Mugen ni Taberareru You ni Natta Ken ni Tsuite",
+     "year": 2025,
+     "episodes": 12
+    },
+    {
+     "id": 37994,
+     "ru": "Би: Начало 2",
+     "orig": "B: The Beginning Succession",
+     "year": 2021,
+     "episodes": 6,
+     "tag": "ONA"
+    },
+    {
+     "id": 48492,
+     "ru": "Алый Нексус",
+     "orig": "Scarlet Nexus",
+     "year": 2021,
+     "episodes": 26
+    },
+    {
+     "id": 54199,
+     "ru": "Мистика, юные девы и загадочное исчезновение",
+     "orig": "Kaii to Otome to Kamikakushi",
+     "year": 2024,
+     "episodes": 12
+    },
+    {
+     "id": 60460,
+     "ru": "Адский режим: Геймер, который любит спидран, становится бесподобным в параллельном мире с устаревшими настройками",
+     "orig": "Hell Mode: Yarikomizuki no Gamer wa Hai Settei no Isekai de Musou suru",
+     "year": 2026,
+     "episodes": 12
+    },
+    {
+     "id": 59047,
+     "ru": "Какой сейчас Тамон?!",
+     "orig": "Tamon-kun Ima Docchi!?",
+     "year": 2026,
+     "episodes": 13
+    },
+    {
+     "id": 62856,
+     "ru": "История электричества в двадцатом веке: Эврика!",
+     "orig": "Nijusseiki Denki Mokuroku: Eureka Evrika",
+     "year": 2026,
+     "episodes": 13
+    },
+    {
+     "id": 61211,
+     "ru": "Полуночный мотив сердца",
+     "orig": "Mayonaka Heart Tune",
+     "year": 2026,
+     "episodes": 12
+    },
+    {
+     "id": 60154,
+     "ru": "Я злой лорд межгалактической империи!",
+     "orig": "Ore wa Seikan Kokka no Akutoku Ryoushu!",
+     "year": 2025,
+     "episodes": 12
+    },
+    {
+     "id": 58600,
+     "ru": "Карта детектива Такао Амэку",
+     "orig": "Ameku Takao no Suiri Karte",
+     "year": 2025,
+     "episodes": 12
+    },
+    {
+     "id": 62405,
+     "ru": "Тацуки Фудзимото: С семнадцати до двадцати шести",
+     "orig": "Fujimoto Tatsuki 17-26",
+     "year": 2025,
+     "episodes": 8,
+     "tag": "ONA"
+    },
+    {
+     "id": 61483,
+     "ru": "Шатёр чародея",
+     "orig": "Tenmaku no Jaadugar",
+     "year": 2026,
+     "episodes": 12
+    },
+    {
+     "id": 59424,
+     "ru": "Белого мага, изгнанного из команды героя, подобрал авантюрист ранга S: Этот белый маг слишком нестандартный",
+     "orig": "Yuusha Party wo Tsuihou sareta Shiromadoushi, S-Rank Boukensha ni Hirowareru: Kono Shiromadoushi ga Kikakugai Sugiru",
+     "year": 2025,
+     "episodes": 12
+    },
+    {
+     "id": 58080,
+     "ru": "Борьба в прямом эфире",
+     "orig": "Kenka Dokugaku",
+     "year": 2024,
+     "episodes": 12
+    },
+    {
+     "id": 58445,
+     "ru": "Прощай, жизнь дракона. Здравствуй, жизнь человека",
+     "orig": "Sayounara Ryuusei, Konnichiwa Jinsei",
+     "year": 2024,
+     "episodes": 12
+    },
+    {
+     "id": 60157,
+     "ru": "Соседнему королевству продали святую, помолвку которой разорвали из-за того, что она стала слишком совершенной",
+     "orig": "Kanpekisugite Kawaige ga Nai to Konyaku Haki sareta Seijo wa Ringoku ni Urareru",
+     "year": 2025,
+     "episodes": 12
+    },
+    {
+     "id": 59791,
+     "ru": "Драгоценности Рури",
+     "orig": "Ruri no Houseki",
+     "year": 2025,
+     "episodes": 13
+    },
+    {
+     "id": 61663,
+     "ru": "Прекрасная вечерняя луна",
+     "orig": "Uruwashi no Yoi no Tsuki",
+     "year": 2026,
+     "episodes": 12
+    },
+    {
+     "id": 63293,
+     "ru": "Свадьба светлячков",
+     "orig": "Hotaru no Yomeiri",
+     "year": 2026,
+     "tag": "идёт сейчас"
+    },
+    {
+     "id": 53213,
+     "ru": "Мститель",
+     "orig": "Revenger",
+     "year": 2023,
+     "episodes": 12
+    },
+    {
+     "id": 62391,
+     "ru": "Убивая юность",
+     "orig": "Kill Ao",
+     "year": 2026,
+     "episodes": 12
+    },
+    {
+     "id": 49738,
+     "ru": "Повесть о доме Тайра",
+     "orig": "Heike Monogatari",
+     "year": 2022,
+     "episodes": 11
+    },
+    {
+     "id": 60692,
+     "ru": "Реинкарнация аристократа: Благословенный с рождения величайшей силой",
+     "orig": "Kizoku Tensei: Megumareta Umare kara Saikyou no Chikara wo Eru",
+     "year": 2026,
+     "episodes": 12
+    },
+    {
+     "id": 43691,
+     "ru": "Девушка из оперы!",
+     "orig": "Kageki Shoujo!!",
+     "year": 2021,
+     "episodes": 13
+    },
+    {
+     "id": 59898,
+     "ru": "Город",
+     "orig": "City The Animation",
+     "year": 2025,
+     "episodes": 13
+    },
+    {
+     "id": 42822,
+     "ru": "Доктор Рамунэ — специалист по таинственным болезням",
+     "orig": "Kai Byoui Ramune",
+     "year": 2021,
+     "episodes": 12
+    },
+    {
+     "id": 53356,
+     "ru": "Куда едет поезд судного дня?",
+     "orig": "Shuumatsu Train Doko e Iku?",
+     "year": 2024,
+     "episodes": 12
+    },
+    {
+     "id": 61501,
+     "ru": "Канан до чёртиков проста",
+     "orig": "Kanan-sama wa Akumade Choroi",
+     "year": 2026,
+     "episodes": 12
+    },
+    {
+     "id": 61443,
+     "ru": "Агенты четырёх сезонов: Весенний танец",
+     "orig": "Shunkashuutou Daikousha: Haru no Mai",
+     "year": 2026,
+     "episodes": 14
+    },
+    {
+     "id": 58437,
+     "ru": "Переродившись аристократом-неудачником, я потратил всё своё свободное время, чтобы стать великим магом!",
+     "orig": "Botsuraku Yotei no Kizoku dakedo, Hima Datta kara Mahou wo Kiwametemita",
+     "year": 2025,
+     "episodes": 12
+    },
+    {
+     "id": 59265,
+     "ru": "Создатель магии: Как создать волшебство в другом мире",
+     "orig": "Magic Maker: Isekai Mahou no Tsukurikata",
+     "year": 2025,
+     "episodes": 12
+    },
+    {
+     "id": 50185,
+     "ru": "Клуб белых воротничков",
+     "orig": "Ryman's Club",
+     "year": 2022,
+     "episodes": 12
+    },
+    {
+     "id": 59360,
+     "ru": "Рок — женская скромность",
+     "orig": "Rock wa Lady no Tashinami deshite",
+     "year": 2025,
+     "episodes": 13
+    },
+    {
+     "id": 61174,
+     "ru": "Путешествие коллекционера по другому миру",
+     "orig": "Sozai Saishuka no Isekai Ryokouki",
+     "year": 2025,
+     "episodes": 12
+    },
+    {
+     "id": 61578,
+     "ru": "Даже у студсовета есть косяки!",
+     "orig": "Seitokai ni mo Ana wa Aru!",
+     "year": 2026,
+     "tag": "идёт сейчас"
+    },
+    {
+     "id": 61917,
+     "ru": "Вечность Югурэ",
+     "orig": "Towa no Yuugure",
+     "year": 2025,
+     "episodes": 12
+    },
+    {
+     "id": 53237,
+     "ru": "Стесняшка",
+     "orig": "Shy",
+     "year": 2023,
+     "episodes": 12
+    },
+    {
+     "id": 63508,
+     "ru": "Необыкновенный неудачник: Дневник переродившегося колдуна S-ранга",
+     "orig": "Rakudai Kenja no Gakuin Musou: Nidome no Tensei, S-Rank Cheat Majutsushi Boukenroku",
+     "year": 2026,
+     "episodes": 12
+    },
+    {
+     "id": 60810,
+     "ru": "Волшебник Кунон всё видит",
+     "orig": "Majutsushi Kunon wa Mieteiru",
+     "year": 2026,
+     "episodes": 13
+    },
+    {
+     "id": 59675,
+     "ru": "Апокалипсис: Отель",
+     "orig": "Apocalypse Hotel",
+     "year": 2025,
+     "episodes": 12
+    },
+    {
+     "id": 58473,
+     "ru": "Я монстр S-класса Бегемот, но меня перепутали с котом, и я живу у эльфийки как домашний питомец",
+     "orig": "S-Rank Monster no \"Behemoth\" dakedo, Neko to Machigawarete Elf Musume no Pet toshite Kurashitemasu",
+     "year": 2025,
+     "episodes": 12
+    },
+    {
+     "id": 61276,
+     "ru": "Придворный маг, пользовавшийся лишь магией поддержки, потому что его союзники слишком слабы, решил стать сильнейшим после изгнания",
+     "orig": "Mikata ga Yowasugite Hojo Mahou ni Tesshiteita Kyuutei Mahoushi, Tsuihou sarete Saikyou wo Mezasu",
+     "year": 2025,
+     "episodes": 12
+    }
+   ]
+  },
+  {
+   "id": "y-2018",
+   "t": "2018–2020: всё остальное",
+   "sub": "",
+   "items": [
+    {
+     "id": 36903,
+     "ru": "Кэнган Асура",
+     "orig": "Kengan Ashura",
+     "year": 2019,
+     "episodes": 12,
+     "tag": "ONA"
+    },
+    {
+     "id": 40515,
+     "ru": "Гибель Японии 2020",
+     "orig": "Nihon Chinbotsu 2020",
+     "year": 2020,
+     "episodes": 10,
+     "tag": "ONA"
+    },
+    {
+     "id": 36039,
+     "ru": "A.I.C.O.: Инкарнация",
+     "orig": "A.I.C.O. Incarnation",
+     "year": 2018,
+     "episodes": 12,
+     "tag": "ONA"
+    },
+    {
+     "id": 35983,
+     "ru": "Харука и Каната принимают подачу",
+     "orig": "Harukana Receive",
+     "year": 2018,
+     "episodes": 12
+    },
+    {
+     "id": 41783,
+     "ru": "Скалолазки",
+     "orig": "Iwa Kakeru! Sport Climbing Girls",
+     "year": 2020,
+     "episodes": 12
+    },
+    {
+     "id": 35503,
+     "ru": "Девичья опера: Свет ревю",
+     "orig": "Shoujo☆Kageki Revue Starlight",
+     "year": 2018,
+     "episodes": 12
+    },
+    {
+     "id": 37998,
+     "ru": "Девичьи воздушные силы",
+     "orig": "Girly Air Force",
+     "year": 2019,
+     "episodes": 12
+    },
+    {
+     "id": 37964,
+     "ru": "Оккультные служащие полуночи",
+     "orig": "Mayonaka no Occult Koumuin",
+     "year": 2019,
+     "episodes": 12
+    },
+    {
+     "id": 40906,
+     "ru": "Драгон Квест: Приключения Дая (2020)",
+     "orig": "Dragon Quest: Dai no Daibouken (2020)",
+     "year": 2020,
+     "episodes": 100
+    },
+    {
+     "id": 39221,
+     "ru": "Бэм",
+     "orig": "Bem",
+     "year": 2019,
+     "episodes": 12
+    },
+    {
+     "id": 36828,
+     "ru": "Калигула",
+     "orig": "Caligula",
+     "year": 2018,
+     "episodes": 12
+    },
+    {
+     "id": 33899,
+     "ru": "Семёрка идолов",
+     "orig": "IDOLiSH7",
+     "year": 2018,
+     "episodes": 17
+    },
+    {
+     "id": 41834,
+     "ru": "Королевский рейд: Наследники воли",
+     "orig": "King's Raid: Ishi wo Tsugumono-tachi",
+     "year": 2020,
+     "episodes": 26
+    },
+    {
+     "id": 37576,
+     "ru": "Волшебник-воин Орфен: Путь странника",
+     "orig": "Majutsushi Orphen Hagure Tabi",
+     "year": 2020,
+     "episodes": 13
+    },
+    {
+     "id": 37221,
+     "ru": "Освобождение шпионов",
+     "orig": "Release the Spyce",
+     "year": 2018,
+     "episodes": 12
+    },
+    {
+     "id": 40230,
+     "ru": "Загадочные дела ювелира Ричарда",
+     "orig": "Housekishou Richard-shi no Nazo Kantei",
+     "year": 2020,
+     "episodes": 12
+    },
+    {
+     "id": 37952,
+     "ru": "Исчезнувший город",
+     "orig": "Shoumetsu Toshi",
+     "year": 2019,
+     "episodes": 12
+    },
+    {
+     "id": 37458,
+     "ru": "Холмс на Тэрамати-Сандзё, Киото",
+     "orig": "Kyoto Teramachi Sanjou no Holmes",
+     "year": 2018,
+     "episodes": 12
+    },
+    {
+     "id": 39583,
+     "ru": "Номер 24",
+     "orig": "number24",
+     "year": 2020,
+     "episodes": 12
+    },
+    {
+     "id": 34839,
+     "ru": "Парни «Санрио»",
+     "orig": "Sanrio Danshi",
+     "year": 2018,
+     "episodes": 12
+    },
+    {
+     "id": 40803,
+     "ru": "Гипнотический микрофон: Рэп-баттл дивизионов",
+     "orig": "Hypnosis Mic: Division Rap Battle - Rhyme Anima",
+     "year": 2020,
+     "episodes": 13
+    },
+    {
+     "id": 36525,
+     "ru": "Я и 23 раба",
+     "orig": "Dorei-ku The Animation",
+     "year": 2018,
+     "episodes": 12
+    },
+    {
+     "id": 35834,
+     "ru": "Анголмуа: Хроники борьбы с монгольским нашествием",
+     "orig": "Angolmois: Genkou Kassenki",
+     "year": 2018,
+     "episodes": 12
+    },
+    {
+     "id": 42668,
+     "ru": "Самурай-гимнаст",
+     "orig": "Taisou Zamurai",
+     "year": 2020,
+     "episodes": 11
+    },
+    {
+     "id": 40934,
+     "ru": "Литераторы и алхимик: Шестерни судей",
+     "orig": "Bungou to Alchemist: Shinpan no Haguruma",
+     "year": 2020,
+     "episodes": 13
+    },
+    {
+     "id": 33889,
+     "ru": "И всё же, грешник танцует с драконом",
+     "orig": "Saredo Tsumibito wa Ryuu to Odoru",
+     "year": 2018,
+     "episodes": 12
+    },
+    {
+     "id": 37487,
+     "ru": "Бюро паранормальных расследований Мухё и Родзи",
+     "orig": "Muhyo to Rouji no Mahouritsu Soudan Jimusho",
+     "year": 2018,
+     "episodes": 12
+    },
+    {
+     "id": 34338,
+     "ru": "Потерянная песня",
+     "orig": "Lost Song",
+     "year": 2018,
+     "episodes": 12
+    },
+    {
+     "id": 32212,
+     "ru": "Звёзды ансамбля!",
+     "orig": "Ensemble Stars!",
+     "year": 2019,
+     "episodes": 24
+    },
+    {
+     "id": 37598,
+     "ru": "Фантом в сумерках",
+     "orig": "Phantom in the Twilight",
+     "year": 2018,
+     "episodes": 12
+    },
+    {
+     "id": 34420,
+     "ru": "Таверна «Нобу» в другом мире",
+     "orig": "Isekai Izakaya: Koto Aitheria no Izakaya Nobu",
+     "year": 2018,
+     "episodes": 24,
+     "tag": "ONA"
+    },
+    {
+     "id": 37587,
+     "ru": "Лазурные огни",
+     "orig": "Lapis Re:LiGHTs",
+     "year": 2020,
+     "episodes": 12
+    },
+    {
+     "id": 39567,
+     "ru": "Специальный отдел криминальных расследований: Токунана",
+     "orig": "Keishichou Tokumubu Tokushu Kyouakuhan Taisakushitsu Dainanaka: Tokunana",
+     "year": 2019,
+     "episodes": 12
+    },
+    {
+     "id": 36108,
+     "ru": "Выпиваем дома",
+     "orig": "Takunomi.",
+     "year": 2018,
+     "episodes": 12
+    },
+    {
+     "id": 38390,
+     "ru": "Сумасшедшие ребята",
+     "orig": "Chuubyou Gekihatsu Boy",
+     "year": 2019,
+     "episodes": 11
+    },
+    {
+     "id": 41372,
+     "ru": "Полководцы Сигрдривы",
+     "orig": "Senyoku no Sigrdrifa",
+     "year": 2020,
+     "episodes": 12
+    },
+    {
+     "id": 40979,
+     "ru": "Возвращение героя",
+     "orig": "Yingxiong Zai Lin",
+     "year": 2020,
+     "episodes": 12,
+     "tag": "ONA"
+    },
+    {
+     "id": 37601,
+     "ru": "Владыка Вермилиона: Король алого лотоса",
+     "orig": "Lord of Vermilion: Guren no Ou",
+     "year": 2018,
+     "episodes": 12
+    },
+    {
+     "id": 35252,
+     "ru": "Иллюзия Хатэны",
+     "orig": "Hatena☆Illusion",
+     "year": 2020,
+     "episodes": 12
+    },
+    {
+     "id": 39681,
+     "ru": "Д — значит диджей: Первый микс",
+     "orig": "D4DJ First Mix",
+     "year": 2020,
+     "episodes": 13
+    },
+    {
+     "id": 37154,
+     "ru": "Заметки Гримм",
+     "orig": "Grimms Notes The Animation",
+     "year": 2019,
+     "episodes": 12
+    },
+    {
+     "id": 37206,
+     "ru": "Девичьи кричалки!",
+     "orig": "Anima Yell!",
+     "year": 2018,
+     "episodes": 12
+    },
+    {
+     "id": 40783,
+     "ru": "Президент, пришло время для битвы!",
+     "orig": "Shachou, Battle no Jikan desu!",
+     "year": 2020,
+     "episodes": 12
+    },
+    {
+     "id": 32843,
+     "ru": "Песня боевых принцесс: Мехасимфония 5",
+     "orig": "Senki Zesshou Symphogear XV",
+     "year": 2019,
+     "episodes": 13
+    },
+    {
+     "id": 35997,
+     "ru": "Сказочная девочка",
+     "orig": "Marchen Madchen",
+     "year": 2018,
+     "episodes": 10
+    },
+    {
+     "id": 38663,
+     "ru": "Убийца насекомых",
+     "orig": "Mushikago no Cagaster",
+     "year": 2020,
+     "episodes": 12,
+     "tag": "ONA"
+    },
+    {
+     "id": 37254,
+     "ru": "Последний период: История бесконечной спирали",
+     "orig": "Last Period: Owarinaki Rasen no Monogatari",
+     "year": 2018,
+     "episodes": 12
+    },
+    {
+     "id": 35835,
+     "ru": "RErideD: Деррида, покоривший время",
+     "orig": "RErideD: Tokigoe no Derrida",
+     "year": 2018,
+     "episodes": 12
+    },
+    {
+     "id": 37561,
+     "ru": "Девушки в багряном свете",
+     "orig": "Akanesasu Shoujo",
+     "year": 2018,
+     "episodes": 12
+    },
+    {
+     "id": 37599,
+     "ru": "Бедственная правда",
+     "orig": "Magatsu Wahrheit: Zuerst",
+     "year": 2020,
+     "episodes": 12
+    },
+    {
+     "id": 39184,
+     "ru": "A3! Весна и лето",
+     "orig": "A3! Season Spring & Summer",
+     "year": 2020,
+     "episodes": 12
+    },
+    {
+     "id": 38301,
+     "ru": "Пустынная эскадрилья Котобуки",
+     "orig": "Kouya no Kotobuki Hikoutai",
+     "year": 2019,
+     "episodes": 12
+    },
+    {
+     "id": 36565,
+     "ru": "Второй Мэйджор",
+     "orig": "Major 2nd",
+     "year": 2018,
+     "episodes": 25
+    },
+    {
+     "id": 39966,
+     "ru": "Тамаёми",
+     "orig": "Tamayomi",
+     "year": 2020,
+     "episodes": 12
+    },
+    {
+     "id": 38628,
+     "ru": "Маска героя",
+     "orig": "Hero Mask",
+     "year": 2018,
+     "episodes": 15,
+     "tag": "ONA"
+    },
+    {
+     "id": 37302,
+     "ru": "Дымная трава",
+     "orig": "Kemurikusa (TV)",
+     "year": 2019,
+     "episodes": 12
+    },
+    {
+     "id": 39990,
+     "ru": "Любовь Влада",
+     "orig": "Vlad Love",
+     "year": 2020,
+     "episodes": 12,
+     "tag": "ONA"
+    },
+    {
+     "id": 37618,
+     "ru": "Очаровательная богиня еды",
+     "orig": "Meng Qi Shi Shen",
+     "year": 2018,
+     "episodes": 12,
+     "tag": "ONA"
+    },
+    {
+     "id": 37150,
+     "ru": "Боевой континент",
+     "orig": "Douluo Dalu",
+     "year": 2018,
+     "episodes": 26,
+     "tag": "ONA"
+    },
+    {
+     "id": 34607,
+     "ru": "Лострейдж: Объединение «WIXOSS»",
+     "orig": "Lostorage Conflated WIXOSS",
+     "year": 2018,
+     "episodes": 12
+    },
+    {
+     "id": 41611,
+     "ru": "Улица всех святых",
+     "orig": "Wan Sheng Jie",
+     "year": 2020,
+     "episodes": 12,
+     "tag": "ONA"
+    },
+    {
+     "id": 37232,
+     "ru": "История Мерк",
+     "orig": "Merc Storia: Mukiryoku no Shounen to Bin no Naka no Shoujo",
+     "year": 2018,
+     "episodes": 12
+    },
+    {
+     "id": 37438,
+     "ru": "Ингресс",
+     "orig": "Ingress the Animation",
+     "year": 2018,
+     "episodes": 11
+    },
+    {
+     "id": 36593,
+     "ru": "Хорошенькое лекарство: Объятия",
+     "orig": "Hug tto! Precure",
+     "year": 2018,
+     "episodes": 49
+    },
+    {
+     "id": 35988,
+     "ru": "Дама и принц",
+     "orig": "Dame x Prince Anime Caravan",
+     "year": 2018,
+     "episodes": 12
+    },
+    {
+     "id": 38920,
+     "ru": "Прекрасная бабочка: Юный Нобунага",
+     "orig": "Kochouki: Wakaki Nobunaga",
+     "year": 2019,
+     "episodes": 12
+    },
+    {
+     "id": 38091,
+     "ru": "Девять августовских золушек",
+     "orig": "Hachigatsu no Cinderella Nine",
+     "year": 2019,
+     "episodes": 12
+    },
+    {
+     "id": 39582,
+     "ru": "Детективное агентство «Дятел»",
+     "orig": "Kitsutsuki Tanteidokoro",
+     "year": 2020,
+     "episodes": 12
+    },
+    {
+     "id": 39188,
+     "ru": "Охота демонического короля на свою жену",
+     "orig": "Xie Wang Zhui Qi",
+     "year": 2019,
+     "episodes": 13,
+     "tag": "ONA"
+    },
+    {
+     "id": 39590,
+     "ru": "Офисный работник из Африки",
+     "orig": "Africa no Salaryman (TV)",
+     "year": 2019,
+     "episodes": 12
+    },
+    {
+     "id": 38098,
+     "ru": "Микс: История Мэйсэй",
+     "orig": "Mix: Meisei Story",
+     "year": 2019,
+     "episodes": 24
+    },
+    {
+     "id": 39519,
+     "ru": "Догма дракона",
+     "orig": "Dragon's Dogma",
+     "year": 2020,
+     "episodes": 7,
+     "tag": "ONA"
+    },
+    {
+     "id": 37584,
+     "ru": "Парень из эпохи Бакумацу",
+     "orig": "Bakumatsu",
+     "year": 2018,
+     "episodes": 12
+    },
+    {
+     "id": 37873,
+     "ru": "Ура мечте! Девушки из группы",
+     "orig": "BanG Dream! Garupa☆Pico",
+     "year": 2018,
+     "episodes": 26,
+     "tag": "ONA"
+    },
+    {
+     "id": 37106,
+     "ru": "Голос лисицы",
+     "orig": "Kitsune no Koe",
+     "year": 2018,
+     "episodes": 12
+    }
+   ]
+  },
+  {
+   "id": "y-2015",
+   "t": "2015–2017: всё остальное",
+   "sub": "",
+   "items": [
+    {
+     "id": 33926,
+     "ru": "Аватар короля",
+     "orig": "Quanzhi Gaoshou",
+     "year": 2017,
+     "episodes": 12,
+     "tag": "ONA"
+    },
+    {
+     "id": 31500,
+     "ru": "Морская школа",
+     "orig": "High School Fleet",
+     "year": 2016,
+     "episodes": 12
+    },
+    {
+     "id": 32032,
+     "ru": "Правильный ответ: «Кадо»",
+     "orig": "Seikaisuru Kado",
+     "year": 2017,
+     "episodes": 12
+    },
+    {
+     "id": 25867,
+     "ru": "Девчонки-путешественницы",
+     "orig": "Rolling☆Girls",
+     "year": 2015,
+     "episodes": 12
+    },
+    {
+     "id": 34501,
+     "ru": "Боевой главарь банды: Девушка бьёт парней",
+     "orig": "Kenka Banchou Otome: Girl Beats Boys",
+     "year": 2017,
+     "episodes": 12
+    },
+    {
+     "id": 34547,
+     "ru": "Империя Альтаир",
+     "orig": "Shoukoku no Altair",
+     "year": 2017,
+     "episodes": 24
+    },
+    {
+     "id": 32608,
+     "ru": "Эндрайд",
+     "orig": "Endride",
+     "year": 2016,
+     "episodes": 24
+    },
+    {
+     "id": 31223,
+     "ru": "Фантастическая Звезда Онлайн 2",
+     "orig": "Phantasy Star Online 2 The Animation",
+     "year": 2016,
+     "episodes": 12
+    },
+    {
+     "id": 28791,
+     "ru": "Небесный стрелок",
+     "orig": "Gunslinger Stratos The Animation",
+     "year": 2015,
+     "episodes": 12
+    },
+    {
+     "id": 34565,
+     "ru": "Повелитель хроноса",
+     "orig": "Jikan no Shihaisha",
+     "year": 2017,
+     "episodes": 13
+    },
+    {
+     "id": 34177,
+     "ru": "Ангельское трио",
+     "orig": "Tenshi no 3P!",
+     "year": 2017,
+     "episodes": 12
+    },
+    {
+     "id": 32483,
+     "ru": "Ребята-чирлидеры!",
+     "orig": "Cheer Danshi!!",
+     "year": 2016,
+     "episodes": 12
+    },
+    {
+     "id": 35248,
+     "ru": "Измерение 18",
+     "orig": "18if",
+     "year": 2017,
+     "episodes": 13
+    },
+    {
+     "id": 32171,
+     "ru": "Девы-ангелы",
+     "orig": "Ange Vierge",
+     "year": 2016,
+     "episodes": 12
+    },
+    {
+     "id": 33350,
+     "ru": "Улица демонов",
+     "orig": "Zhen Hun Jie",
+     "year": 2016,
+     "episodes": 24,
+     "tag": "ONA"
+    },
+    {
+     "id": 30721,
+     "ru": "Цифровые куклы",
+     "orig": "Hacka Doll The Animation",
+     "year": 2015,
+     "episodes": 13
+    },
+    {
+     "id": 32947,
+     "ru": "Бэттери",
+     "orig": "Battery",
+     "year": 2016,
+     "episodes": 11
+    },
+    {
+     "id": 24011,
+     "ru": "Копьё и маски",
+     "orig": "Lance N' Masques",
+     "year": 2015,
+     "episodes": 12
+    },
+    {
+     "id": 34368,
+     "ru": "Инспекторы чудес Ватикана",
+     "orig": "Vatican Kiseki Chousakan",
+     "year": 2017,
+     "episodes": 12
+    },
+    {
+     "id": 33046,
+     "ru": "Проект-Б: Амбициозное биение",
+     "orig": "B-Project: Kodou*Ambitious",
+     "year": 2016,
+     "episodes": 12
+    },
+    {
+     "id": 33031,
+     "ru": "Знойный пинг-понг",
+     "orig": "Shakunetsu no Takkyuu Musume",
+     "year": 2016,
+     "episodes": 12
+    },
+    {
+     "id": 30375,
+     "ru": "Музыкальная школа звёзд",
+     "orig": "Starmyu",
+     "year": 2015,
+     "episodes": 12
+    },
+    {
+     "id": 31499,
+     "ru": "Сводники духов: Лисьи свахи",
+     "orig": "Huyao Xiao Hongniang 1: Xia Sha Pian",
+     "year": 2015,
+     "episodes": 13,
+     "tag": "ONA"
+    },
+    {
+     "id": 23605,
+     "ru": "Охотник на ниндзя",
+     "orig": "Ninja Slayer From Animation",
+     "year": 2015,
+     "episodes": 26,
+     "tag": "ONA"
+    },
+    {
+     "id": 33983,
+     "ru": "Онихэй",
+     "orig": "Onihei",
+     "year": 2017,
+     "episodes": 13
+    },
+    {
+     "id": 32555,
+     "ru": "Магия Стеллы",
+     "orig": "Stella no Mahou",
+     "year": 2016,
+     "episodes": 12
+    },
+    {
+     "id": 36455,
+     "ru": "Моя подруга — культиватор",
+     "orig": "Wo de Tian Jie Nu You",
+     "year": 2017,
+     "episodes": 15,
+     "tag": "ONA"
+    },
+    {
+     "id": 32601,
+     "ru": "12 лет: Биение маленького сердца",
+     "orig": "12-sai.: Chicchana Mune no Tokimeki",
+     "year": 2016,
+     "episodes": 12
+    },
+    {
+     "id": 35250,
+     "ru": "Урахара",
+     "orig": "Urahara",
+     "year": 2017,
+     "episodes": 12
+    },
+    {
+     "id": 31519,
+     "ru": "Аниме-тренировки",
+     "orig": "Anitore! EX",
+     "year": 2015,
+     "episodes": 12
+    },
+    {
+     "id": 31439,
+     "ru": "Эгоист высокой специальности",
+     "orig": "Wagamama High Spec",
+     "year": 2016,
+     "episodes": 12
+    },
+    {
+     "id": 34745,
+     "ru": "Волшебный круг Гуру-Гуру (2017)",
+     "orig": "Mahoujin Guruguru (2017)",
+     "year": 2017,
+     "episodes": 24
+    },
+    {
+     "id": 28155,
+     "ru": "Яттерман ночи",
+     "orig": "Yoru no Yatterman",
+     "year": 2015,
+     "episodes": 12
+    },
+    {
+     "id": 32606,
+     "ru": "Онигири",
+     "orig": "Onigiri",
+     "year": 2016,
+     "episodes": 13
+    },
+    {
+     "id": 33244,
+     "ru": "Юный Китаро и дневник о ёкаях",
+     "orig": "Kiitarou Shounen no Youkai Enikki",
+     "year": 2016,
+     "episodes": 12
+    },
+    {
+     "id": 33668,
+     "ru": "Матой: Изгоняющая духов",
+     "orig": "Soushin Shoujo Matoi",
+     "year": 2016,
+     "episodes": 12
+    },
+    {
+     "id": 31143,
+     "ru": "Хаконэ — юный дух горячих источников",
+     "orig": "Onsen Yousei Hakone-chan",
+     "year": 2015,
+     "episodes": 13
+    },
+    {
+     "id": 34449,
+     "ru": "Отражение: Первая волна",
+     "orig": "The Reflection",
+     "year": 2017,
+     "episodes": 12
+    },
+    {
+     "id": 30652,
+     "ru": "Марафонцы!",
+     "orig": "Long Riders!",
+     "year": 2016,
+     "episodes": 12
+    },
+    {
+     "id": 32829,
+     "ru": "Ниндзя Нобунаги",
+     "orig": "Nobunaga no Shinobi",
+     "year": 2016,
+     "episodes": 26
+    },
+    {
+     "id": 31793,
+     "ru": "Мне надоело быть девочкой-волшебницей",
+     "orig": "Mahou Shoujo Nante Mou Ii desu kara.",
+     "year": 2016,
+     "episodes": 12
+    },
+    {
+     "id": 34006,
+     "ru": "Девушки дополненной реальности",
+     "orig": "Kakuchou Shoujo-kei Trinary",
+     "year": 2017,
+     "episodes": 34,
+     "tag": "ONA"
+    },
+    {
+     "id": 33037,
+     "ru": "Лунная песнь",
+     "orig": "Tsukiuta. The Animation",
+     "year": 2016,
+     "episodes": 13
+    },
+    {
+     "id": 31157,
+     "ru": "Классикалоид",
+     "orig": "ClassicaLoid",
+     "year": 2016,
+     "episodes": 25
+    },
+    {
+     "id": 30757,
+     "ru": "Удар монстра",
+     "orig": "Monster Strike",
+     "year": 2015,
+     "episodes": 51,
+     "tag": "ONA"
+    },
+    {
+     "id": 33184,
+     "ru": "Боевая старшая школа для девочек",
+     "orig": "Battle Girl High School",
+     "year": 2017,
+     "episodes": 12
+    },
+    {
+     "id": 36009,
+     "ru": "Двое за рулём",
+     "orig": "Two Car",
+     "year": 2017,
+     "episodes": 12
+    },
+    {
+     "id": 28283,
+     "ru": "Эпоха доблести",
+     "orig": "Sengoku Musou",
+     "year": 2015,
+     "episodes": 12
+    },
+    {
+     "id": 32613,
+     "ru": "Эльсворд: Леди Эль",
+     "orig": "Elsword: El-ui Yeoin",
+     "year": 2016,
+     "episodes": 12,
+     "tag": "ONA"
+    },
+    {
+     "id": 33462,
+     "ru": "Сказала мисс Бернард",
+     "orig": "Bernard-jou Iwaku.",
+     "year": 2016,
+     "episodes": 12
+    },
+    {
+     "id": 31422,
+     "ru": "Девичий велоклуб Минами Камакуры",
+     "orig": "Minami Kamakura Koukou Joshi Jitensha-bu",
+     "year": 2017,
+     "episodes": 12
+    },
+    {
+     "id": 32881,
+     "ru": "Тигровая маска W",
+     "orig": "Tiger Mask W",
+     "year": 2016,
+     "episodes": 38
+    },
+    {
+     "id": 34602,
+     "ru": "Идеальный муж и я, или Как украсть 55 поцелуев",
+     "orig": "Guomin Laogong Dai Huijia",
+     "year": 2016,
+     "episodes": 12,
+     "tag": "ONA"
+    },
+    {
+     "id": 28929,
+     "ru": "Вампир Холмс",
+     "orig": "Vampire Holmes",
+     "year": 2015,
+     "episodes": 12
+    },
+    {
+     "id": 33775,
+     "ru": "Разрушитель душ",
+     "orig": "Soul Buster",
+     "year": 2016,
+     "episodes": 12
+    },
+    {
+     "id": 33840,
+     "ru": "Клуб кабуки",
+     "orig": "Kabuki-bu!",
+     "year": 2017,
+     "episodes": 12
+    },
+    {
+     "id": 34675,
+     "ru": "Мир в суперпесочнице",
+     "orig": "Chou Yuu Sekai: Being the Reality",
+     "year": 2017,
+     "episodes": 20,
+     "tag": "ONA"
+    },
+    {
+     "id": 34289,
+     "ru": "Школьницы в ударе",
+     "orig": "Schoolgirl Strikers: Animation Channel",
+     "year": 2017,
+     "episodes": 13
+    },
+    {
+     "id": 32152,
+     "ru": "Доводчики: Отряд «Чёрные агнцы»",
+     "orig": "Closers: Side Blacklambs",
+     "year": 2016,
+     "episodes": 6,
+     "tag": "ONA"
+    },
+    {
+     "id": 27927,
+     "ru": "Усаги из Уравы",
+     "orig": "Urawa no Usagi-chan",
+     "year": 2015,
+     "episodes": 12
+    },
+    {
+     "id": 35626,
+     "ru": "Сказания о демонах и богах",
+     "orig": "Yao Shen Ji",
+     "year": 2017,
+     "episodes": 40,
+     "tag": "ONA"
+    },
+    {
+     "id": 33341,
+     "ru": "Путешественницы во времени: Мари, Вака и восемь учёных",
+     "orig": "Time Travel Shoujo: Mari Waka to 8-nin no Kagakusha-tachi",
+     "year": 2016,
+     "episodes": 12
+    },
+    {
+     "id": 33447,
+     "ru": "Вкусно! Моя итальянская кухня",
+     "orig": "Piace: Watashi no Italian",
+     "year": 2017,
+     "episodes": 12
+    },
+    {
+     "id": 33788,
+     "ru": "Запредельная четвёрка",
+     "orig": "Marginal#4: Kiss kara Tsukuru Big Bang",
+     "year": 2017,
+     "episodes": 12
+    },
+    {
+     "id": 36491,
+     "ru": "Расколотая битвой синева небес",
+     "orig": "Doupo Cangqiong",
+     "year": 2017,
+     "episodes": 12,
+     "tag": "ONA"
+    }
+   ]
+  },
+  {
+   "id": "y-2010",
+   "t": "2010–2014: всё остальное",
+   "sub": "",
+   "items": [
+    {
+     "id": 16005,
+     "ru": "Восхитительные дети: Безграничный",
+     "orig": "Zettai Karen Children: The Unlimited - Hyoubu Kyousuke",
+     "year": 2013,
+     "episodes": 12
+    },
+    {
+     "id": 10798,
+     "ru": "Ан-го",
+     "orig": "Un-Go",
+     "year": 2011,
+     "episodes": 11
+    },
+    {
+     "id": 8915,
+     "ru": "Таинственная библиотека Данталиан",
+     "orig": "Dantalian no Shoka",
+     "year": 2011,
+     "episodes": 12
+    },
+    {
+     "id": 9331,
+     "ru": "Мерри, пожирательница снов",
+     "orig": "Yumekui Merry",
+     "year": 2011,
+     "episodes": 13
+    },
+    {
+     "id": 21743,
+     "ru": "Облачный смех",
+     "orig": "Donten ni Warau",
+     "year": 2014,
+     "episodes": 12
+    },
+    {
+     "id": 9981,
+     "ru": "Фи Брейн: Загадка Бога",
+     "orig": "Phi Brain: Kami no Puzzle",
+     "year": 2011,
+     "episodes": 25
+    },
+    {
+     "id": 10156,
+     "ru": "Священная семёрка",
+     "orig": "Sacred Seven",
+     "year": 2011,
+     "episodes": 12
+    },
+    {
+     "id": 16518,
+     "ru": "Арата: Легенда",
+     "orig": "Arata Kangatari",
+     "year": 2013,
+     "episodes": 12
+    },
+    {
+     "id": 19855,
+     "ru": "Пушка Нобунаги",
+     "orig": "Nobunagun",
+     "year": 2014,
+     "episodes": 13
+    },
+    {
+     "id": 21167,
+     "ru": "Мастерская Эски и Логи: Алхимики сумеречного неба",
+     "orig": "Escha & Logy no Atelier: Tasogare no Sora no Renkinjutsushi",
+     "year": 2014,
+     "episodes": 12
+    },
+    {
+     "id": 12149,
+     "ru": "АКБ0048",
+     "orig": "AKB0048",
+     "year": 2012,
+     "episodes": 13
+    },
+    {
+     "id": 9539,
+     "ru": "Карточные бои Авангарда",
+     "orig": "Cardfight!! Vanguard",
+     "year": 2011,
+     "episodes": 65
+    },
+    {
+     "id": 19023,
+     "ru": "Проснитесь, девушки!",
+     "orig": "Wake Up, Girls!",
+     "year": 2014,
+     "episodes": 12
+    },
+    {
+     "id": 17651,
+     "ru": "Свет проникает сквозь иллюзии",
+     "orig": "Genei wo Kakeru Taiyou",
+     "year": 2013,
+     "episodes": 13
+    },
+    {
+     "id": 17821,
+     "ru": "Кружок по страйкболу женской гимназии Стелла",
+     "orig": "Stella Jogakuin Koutou-ka C³-bu",
+     "year": 2013,
+     "episodes": 13
+    },
+    {
+     "id": 18495,
+     "ru": "Клуб идущих домой",
+     "orig": "Kitaku-bu Katsudou Kiroku",
+     "year": 2013,
+     "episodes": 12
+    },
+    {
+     "id": 19367,
+     "ru": "Девы Галилея",
+     "orig": "Galilei Donna",
+     "year": 2013,
+     "episodes": 11
+    },
+    {
+     "id": 20033,
+     "ru": "Мисс Монохром",
+     "orig": "Miss Monochrome The Animation",
+     "year": 2013,
+     "episodes": 13
+    },
+    {
+     "id": 10308,
+     "ru": "Девы гражданской войны: Розовый парадокс",
+     "orig": "Sengoku Otome: Momoiro Paradox",
+     "year": 2011,
+     "episodes": 13
+    },
+    {
+     "id": 7768,
+     "ru": "Детективное агентство Милки Холмс",
+     "orig": "Tantei Opera Milky Holmes",
+     "year": 2010,
+     "episodes": 12
+    },
+    {
+     "id": 6973,
+     "ru": "Огни ночного рейда",
+     "orig": "Senkou no Night Raid",
+     "year": 2010,
+     "episodes": 13
+    },
+    {
+     "id": 12367,
+     "ru": "Сияющие сердца: Без хлеба куска везде тоска!",
+     "orig": "Shining Hearts: Shiawase no Pan",
+     "year": 2012,
+     "episodes": 12
+    },
+    {
+     "id": 20533,
+     "ru": "Z/X: Зажигание",
+     "orig": "Z/X: Ignition",
+     "year": 2014,
+     "episodes": 12
+    },
+    {
+     "id": 24699,
+     "ru": "Любовь: Тэнти лишний!",
+     "orig": "Ai Tenchi Muyou!",
+     "year": 2014,
+     "episodes": 50
+    },
+    {
+     "id": 22359,
+     "ru": "Ронья, дочь разбойника",
+     "orig": "Sanzoku no Musume Ronja",
+     "year": 2014,
+     "episodes": 26
+    },
+    {
+     "id": 19257,
+     "ru": "Клуб очкариков!",
+     "orig": "Megane-bu!",
+     "year": 2013,
+     "episodes": 12
+    },
+    {
+     "id": 23037,
+     "ru": "Рок эпохи Бакумацу",
+     "orig": "Bakumatsu Rock",
+     "year": 2014,
+     "episodes": 12
+    },
+    {
+     "id": 17681,
+     "ru": "Неуязвимая Левиафан",
+     "orig": "Zettai Bouei Leviathan",
+     "year": 2013,
+     "episodes": 13
+    },
+    {
+     "id": 10197,
+     "ru": "Мяупырь",
+     "orig": "Nyanpire The Animation",
+     "year": 2011,
+     "episodes": 12
+    },
+    {
+     "id": 6919,
+     "ru": "Люди Икс",
+     "orig": "X-Men",
+     "year": 2011,
+     "episodes": 12
+    },
+    {
+     "id": 12875,
+     "ru": "Вперёд, ко вселенной!!",
+     "orig": "Ginga e Kickoff!!",
+     "year": 2012,
+     "episodes": 39
+    },
+    {
+     "id": 15883,
+     "ru": "Фантастическая кукла",
+     "orig": "Fantasista Doll",
+     "year": 2013,
+     "episodes": 12
+    },
+    {
+     "id": 29089,
+     "ru": "Список нечисти",
+     "orig": "Yaoguai Mingdan",
+     "year": 2014,
+     "episodes": 18,
+     "tag": "ONA"
+    },
+    {
+     "id": 16636,
+     "ru": "Котоура: Комната Харуки",
+     "orig": "Kotoura-san: Haruka no Heya",
+     "year": 2012,
+     "episodes": 6,
+     "tag": "ONA"
+    },
+    {
+     "id": 12611,
+     "ru": "Параллельный мир самураев",
+     "orig": "Sengoku Collection",
+     "year": 2012,
+     "episodes": 26
+    },
+    {
+     "id": 21325,
+     "ru": "Пупипо!",
+     "orig": "Pupipo!",
+     "year": 2013,
+     "episodes": 15
+    },
+    {
+     "id": 11457,
+     "ru": "Крошка-дьяволёнок!",
+     "orig": "Chibi☆Devi!",
+     "year": 2011,
+     "episodes": 75
+    },
+    {
+     "id": 9693,
+     "ru": "Мосидора",
+     "orig": "Moshidora",
+     "year": 2011,
+     "episodes": 10
+    },
+    {
+     "id": 16405,
+     "ru": "Сестрёнка из Осаки",
+     "orig": "Boku no Imouto wa \"Osaka Okan\"",
+     "year": 2012,
+     "episodes": 12
+    },
+    {
+     "id": 22817,
+     "ru": "Дело ведёт юный детектив Киндаити: Возвращение",
+     "orig": "Kindaichi Shounen no Jikenbo Returns",
+     "year": 2014,
+     "episodes": 25
+    },
+    {
+     "id": 21421,
+     "ru": "Войны девочек-волшебниц",
+     "orig": "Mahou Shoujo Taisen",
+     "year": 2014,
+     "episodes": 26
+    },
+    {
+     "id": 12677,
+     "ru": "Озма",
+     "orig": "Ozma",
+     "year": 2012,
+     "episodes": 6
+    },
+    {
+     "id": 23151,
+     "ru": "Мальчики Голливуда",
+     "orig": "Shounen Hollywood: Holly Stage for 49",
+     "year": 2014,
+     "episodes": 13
+    },
+    {
+     "id": 19919,
+     "ru": "Внешкольная жизнь",
+     "orig": "Tesagure! Bukatsumono",
+     "year": 2013,
+     "episodes": 12
+    },
+    {
+     "id": 8217,
+     "ru": "Свет драгоценных зверушек 2",
+     "orig": "Jewelpet Twinkle☆",
+     "year": 2010,
+     "episodes": 52
+    },
+    {
+     "id": 11103,
+     "ru": "Шинки — Боевой лунный ангел",
+     "orig": "Busou Shinki Moon Angel",
+     "year": 2011,
+     "episodes": 10,
+     "tag": "ONA"
+    },
+    {
+     "id": 21267,
+     "ru": "Вперёд! Вперёд! 575",
+     "orig": "Go! Go! 575",
+     "year": 2014,
+     "episodes": 4
+    },
+    {
+     "id": 10838,
+     "ru": "Двойной Джей",
+     "orig": "Double-J",
+     "year": 2011,
+     "episodes": 11
+    },
+    {
+     "id": 15313,
+     "ru": "Вузер сводит концы с концами",
+     "orig": "Wooser no Sono Higurashi",
+     "year": 2012,
+     "episodes": 12
+    },
+    {
+     "id": 19067,
+     "ru": "Карты будущего: Дружеские бои",
+     "orig": "Future Card Buddyfight",
+     "year": 2014,
+     "episodes": 64
+    },
+    {
+     "id": 23787,
+     "ru": "Высший класс! Сега-девушки",
+     "orig": "Hi☆sCoool! SeHa Girls",
+     "year": 2014,
+     "episodes": 13
+    },
+    {
+     "id": 15043,
+     "ru": "Привет, Нанафа",
+     "orig": "Haitai Nanafa",
+     "year": 2012,
+     "episodes": 13
+    },
+    {
+     "id": 8206,
+     "ru": "Принцессы-идолы",
+     "orig": "Hime Chen! Otogi Chikku Idol Lilpri",
+     "year": 2010,
+     "episodes": 51
+    },
+    {
+     "id": 17731,
+     "ru": "Группа крови!",
+     "orig": "Ketsuekigata-kun!",
+     "year": 2013,
+     "episodes": 12
+    },
+    {
+     "id": 16211,
+     "ru": "Призрачный вор Роман",
+     "orig": "Bakumatsu Gijinden Roman",
+     "year": 2013,
+     "episodes": 12
+    },
+    {
+     "id": 27503,
+     "ru": "Хроники Карен",
+     "orig": "Karen Senki",
+     "year": 2014,
+     "episodes": 11,
+     "tag": "ONA"
+    },
+    {
+     "id": 17849,
+     "ru": "Воробьиный отель",
+     "orig": "Sparrow's Hotel",
+     "year": 2013,
+     "episodes": 12
+    },
+    {
+     "id": 13185,
+     "ru": "Монсуно",
+     "orig": "Juusen Battle Monsuno",
+     "year": 2012,
+     "episodes": 52
+    },
+    {
+     "id": 13159,
+     "ru": "А вот и чёрная колдунья!",
+     "orig": "Kuromajo-san ga Tooru!!",
+     "year": 2012,
+     "episodes": 60
+    },
+    {
+     "id": 21671,
+     "ru": "Кэроро",
+     "orig": "Keroro",
+     "year": 2014,
+     "episodes": 23
+    },
+    {
+     "id": 22955,
+     "ru": "Франческа: Амбициозная девушка",
+     "orig": "Francesca",
+     "year": 2014,
+     "episodes": 24
+    },
+    {
+     "id": 21835,
+     "ru": "Кость Маджина",
+     "orig": "Majin Bone",
+     "year": 2014,
+     "episodes": 52
+    },
+    {
+     "id": 10217,
+     "ru": "Небесные воровки, близняшки-ангелочки",
+     "orig": "Kaitou Tenshi Twin Angel: Kyunkyun☆Tokimeki Paradise!!",
+     "year": 2011,
+     "episodes": 12
+    },
+    {
+     "id": 10348,
+     "ru": "Прелестный Файрбол",
+     "orig": "Fireball Charming",
+     "year": 2011,
+     "episodes": 13
+    },
+    {
+     "id": 10958,
+     "ru": "Лучший результат",
+     "orig": "High Score",
+     "year": 2011,
+     "episodes": 8
+    }
+   ]
+  },
+  {
+   "id": "y-2006",
+   "t": "2006–2009: всё остальное",
+   "sub": "",
+   "items": [
+    {
+     "id": 4177,
+     "ru": "КсамД: Позабывший невзгоды",
+     "orig": "Bounen no Xamdou",
+     "year": 2008,
+     "episodes": 26,
+     "tag": "ONA"
+    },
+    {
+     "id": 935,
+     "ru": "Клинок ведьм",
+     "orig": "Witchblade",
+     "year": 2006,
+     "episodes": 24
+    },
+    {
+     "id": 1606,
+     "ru": "Заградители",
+     "orig": "Kekkaishi",
+     "year": 2006,
+     "episodes": 52
+    },
+    {
+     "id": 6774,
+     "ru": "Трапеция",
+     "orig": "Kuuchuu Buranko",
+     "year": 2009,
+     "episodes": 11
+    },
+    {
+     "id": 3407,
+     "ru": "Блассрейтер",
+     "orig": "Blassreiter",
+     "year": 2008,
+     "episodes": 24
+    },
+    {
+     "id": 845,
+     "ru": "Киба",
+     "orig": "Kiba",
+     "year": 2006,
+     "episodes": 51
+    },
+    {
+     "id": 3594,
+     "ru": "Слёзы Тиары",
+     "orig": "Tears to Tiara",
+     "year": 2009,
+     "episodes": 26
+    },
+    {
+     "id": 953,
+     "ru": "Планета Короля Зверей",
+     "orig": "Juu Ou Sei",
+     "year": 2006,
+     "episodes": 11
+    },
+    {
+     "id": 5220,
+     "ru": "Шангри-Ла",
+     "orig": "Shangri-La",
+     "year": 2009,
+     "episodes": 24
+    },
+    {
+     "id": 4879,
+     "ru": "Ящик нечисти",
+     "orig": "Mouryou no Hako",
+     "year": 2008,
+     "episodes": 13
+    },
+    {
+     "id": 2369,
+     "ru": "Магия напрокат",
+     "orig": "Rental Magica",
+     "year": 2007,
+     "episodes": 24
+    },
+    {
+     "id": 2030,
+     "ru": "Эль Касадор",
+     "orig": "El Cazador de la Bruja",
+     "year": 2007,
+     "episodes": 26
+    },
+    {
+     "id": 1557,
+     "ru": "Юный мастер Инь-Ян",
+     "orig": "Shounen Onmyouji",
+     "year": 2006,
+     "episodes": 26
+    },
+    {
+     "id": 4415,
+     "ru": "Разрушение мира",
+     "orig": "World Destruction: Sekai Bokumetsu no Rokunin",
+     "year": 2008,
+     "episodes": 13
+    },
+    {
+     "id": 990,
+     "ru": "Божественная семейка",
+     "orig": "Kamisama Kazoku",
+     "year": 2006,
+     "episodes": 13
+    },
+    {
+     "id": 5984,
+     "ru": "Ристоранте Парадизо",
+     "orig": "Ristorante Paradiso",
+     "year": 2009,
+     "episodes": 11
+    },
+    {
+     "id": 789,
+     "ru": "Момо, маленькая богиня смерти",
+     "orig": "Shinigami no Ballad.",
+     "year": 2006,
+     "episodes": 6
+    },
+    {
+     "id": 1601,
+     "ru": "Красный сад",
+     "orig": "Red Garden",
+     "year": 2006,
+     "episodes": 22
+    },
+    {
+     "id": 1538,
+     "ru": "Тыквенные ножницы",
+     "orig": "Pumpkin Scissors",
+     "year": 2006,
+     "episodes": 24
+    },
+    {
+     "id": 5041,
+     "ru": "Сага о Гуине",
+     "orig": "Guin Saga",
+     "year": 2009,
+     "episodes": 26
+    },
+    {
+     "id": 860,
+     "ru": "Сага войн Преисподней: Дисгая",
+     "orig": "Makai Senki Disgaea",
+     "year": 2006,
+     "episodes": 12
+    },
+    {
+     "id": 2112,
+     "ru": "Ускорение",
+     "orig": "Over Drive",
+     "year": 2007,
+     "episodes": 26
+    },
+    {
+     "id": 1810,
+     "ru": "Кёсиро под вечным небом",
+     "orig": "Kyoushirou to Towa no Sora",
+     "year": 2007,
+     "episodes": 12
+    },
+    {
+     "id": 3549,
+     "ru": "Аллисон и Лилия",
+     "orig": "Allison to Lillia",
+     "year": 2008,
+     "episodes": 26
+    },
+    {
+     "id": 6867,
+     "ru": "Легенды Хало",
+     "orig": "Halo Legends",
+     "year": 2009,
+     "episodes": 8,
+     "tag": "ONA"
+    },
+    {
+     "id": 5702,
+     "ru": "Мунто: Мир, отражённый в глазах девушки, смотрящей на небо",
+     "orig": "Sora wo Miageru Shoujo no Hitomi ni Utsuru Sekai",
+     "year": 2009,
+     "episodes": 9
+    },
+    {
+     "id": 1543,
+     "ru": "Ярче предрассветной лазури",
+     "orig": "Yoake Mae yori Ruriiro na: Crescent Love",
+     "year": 2006,
+     "episodes": 12
+    },
+    {
+     "id": 1576,
+     "ru": "Борьба за власть времён Бакумацу: Никто не вечен",
+     "orig": "Bakumatsu Kikansetsu Irohanihoheto",
+     "year": 2006,
+     "episodes": 26,
+     "tag": "ONA"
+    },
+    {
+     "id": 1221,
+     "ru": "Поехали! Крутые девчонки Зет",
+     "orig": "Demashita! Powerpuff Girls Z",
+     "year": 2006,
+     "episodes": 52
+    },
+    {
+     "id": 2970,
+     "ru": "Ночной чародей",
+     "orig": "Night Wizard",
+     "year": 2007,
+     "episodes": 13
+    },
+    {
+     "id": 4080,
+     "ru": "Отныне Мао, король демонов! 3",
+     "orig": "Kyou kara Maou! 3rd Series",
+     "year": 2008,
+     "episodes": 39
+    },
+    {
+     "id": 1516,
+     "ru": "Революция пузырьков",
+     "orig": "Kirarin☆Revolution",
+     "year": 2006,
+     "episodes": 153
+    },
+    {
+     "id": 2161,
+     "ru": "Человек-череп",
+     "orig": "Skull Man",
+     "year": 2007,
+     "episodes": 13
+    },
+    {
+     "id": 1695,
+     "ru": "Отверженные: Козетта",
+     "orig": "Les Miserables: Shoujo Cosette",
+     "year": 2007,
+     "episodes": 52
+    },
+    {
+     "id": 2562,
+     "ru": "Сион и король",
+     "orig": "Shion no Ou",
+     "year": 2007,
+     "episodes": 22
+    }
+   ]
+  },
+  {
+   "id": "y-old",
+   "t": "До 2006: всё остальное",
+   "sub": "",
+   "items": [
+    {
+     "id": 114,
+     "ru": "Кромешная путяга",
+     "orig": "Sakigake!! Cromartie Koukou",
+     "year": 2003,
+     "episodes": 26
+    },
+    {
+     "id": 25,
+     "ru": "Пустынная крыса",
+     "orig": "Sunabouzu",
+     "year": 2004,
+     "episodes": 24
+    },
+    {
+     "id": 147,
+     "ru": "Беспокойные сердца",
+     "orig": "Kimi ga Nozomu Eien",
+     "year": 2003,
+     "episodes": 14
+    },
+    {
+     "id": 250,
+     "ru": "Златовласый Гаш Белл",
+     "orig": "Konjiki no Gash Bell!!",
+     "year": 2003,
+     "episodes": 150
+    },
+    {
+     "id": 488,
+     "ru": "Клубничный зефир",
+     "orig": "Ichigo Mashimaro",
+     "year": 2005,
+     "episodes": 12
+    },
+    {
+     "id": 7,
+     "ru": "Робин — охотница на ведьм",
+     "orig": "Witch Hunter Robin",
+     "year": 2002,
+     "episodes": 26
+    },
+    {
+     "id": 132,
+     "ru": "Агентство по возврату утраченного",
+     "orig": "GetBackers",
+     "year": 2002,
+     "episodes": 49
+    },
+    {
+     "id": 198,
+     "ru": "Спидграфер",
+     "orig": "Speed Grapher",
+     "year": 2005,
+     "episodes": 24
+    },
+    {
+     "id": 479,
+     "ru": "Закон Уэки",
+     "orig": "Ueki no Housoku",
+     "year": 2005,
+     "episodes": 51
+    },
+    {
+     "id": 272,
+     "ru": "Нуар",
+     "orig": "Noir",
+     "year": 2001,
+     "episodes": 26
+    },
+    {
+     "id": 133,
+     "ru": "Жаркое лето",
+     "orig": "Green Green",
+     "year": 2003,
+     "episodes": 12
+    },
+    {
+     "id": 248,
+     "ru": "Стопроцентная клубничка",
+     "orig": "Ichigo 100%",
+     "year": 2005,
+     "episodes": 12
+    },
+    {
+     "id": 379,
+     "ru": "Эксель-сага",
+     "orig": "Heppoko Jikken Animation Excel♥Saga",
+     "year": 1999,
+     "episodes": 26
+    },
+    {
+     "id": 122,
+     "ru": "В поисках полной луны",
+     "orig": "Full Moon wo Sagashite",
+     "year": 2002,
+     "episodes": 52
+    },
+    {
+     "id": 53,
+     "ru": "Темнее, чем индиго",
+     "orig": "Ai Yori Aoshi",
+     "year": 2002,
+     "episodes": 24
+    },
+    {
+     "id": 325,
+     "ru": "Красотка",
+     "orig": "Peach Girl",
+     "year": 2005,
+     "episodes": 25
+    },
+    {
+     "id": 338,
+     "ru": "Роза Версаля",
+     "orig": "Versailles no Bara",
+     "year": 1979,
+     "episodes": 40
+    },
+    {
+     "id": 658,
+     "ru": "Акаги, легенда маджонга",
+     "orig": "Touhai Densetsu Akagi: Yami ni Maiorita Tensai",
+     "year": 2005,
+     "episodes": 26
+    },
+    {
+     "id": 102,
+     "ru": "Моя малышка",
+     "orig": "Aishiteruze Baby★★",
+     "year": 2004,
+     "episodes": 26
+    },
+    {
+     "id": 246,
+     "ru": "Рэйв Мастер",
+     "orig": "Groove Adventure Rave",
+     "year": 2001,
+     "episodes": 51
+    }
+   ]
+  },
+  {
+   "id": "t-kids",
+   "t": "Детское",
+   "sub": "Знакомое с детства или по мемам: отметьте быстро.",
+   "items": [
+    {
+     "id": 288,
+     "ru": "Бейблэйд",
+     "orig": "Bakuten Shoot Beyblade",
+     "year": 2001,
+     "episodes": 51
+    },
+    {
+     "id": 508,
+     "ru": "Хамтаро",
+     "orig": "Tottoko Hamtarou",
+     "year": 2000,
+     "episodes": 296
+    },
+    {
+     "id": 36259,
+     "ru": "Пингу в городе",
+     "orig": "Pingu in the City",
+     "year": 2017,
+     "episodes": 26
+    },
+    {
+     "id": 19157,
+     "ru": "Часы ёкаев",
+     "orig": "Youkai Watch",
+     "year": 2014,
+     "episodes": 214
+    },
+    {
+     "id": 2150,
+     "ru": "Муми-тролли",
+     "orig": "Tanoshii Muumin Ikka",
+     "year": 1990,
+     "episodes": 78
+    },
+    {
+     "id": 1826,
+     "ru": "Квест Дельторы",
+     "orig": "Deltora Quest",
+     "year": 2007,
+     "episodes": 65
+    },
+    {
+     "id": 3576,
+     "ru": "Король динозавров",
+     "orig": "Kodai Ouja Kyouryuu King",
+     "year": 2007,
+     "episodes": 49
+    },
+    {
+     "id": 1685,
+     "ru": "Мастера дуэлей",
+     "orig": "Duel Masters",
+     "year": 2002,
+     "episodes": 26
+    },
+    {
+     "id": 2828,
+     "ru": "Бездомный мальчик Реми",
+     "orig": "Ie Naki Ko",
+     "year": 1977,
+     "episodes": 51
+    },
+    {
+     "id": 44235,
+     "ru": "Пуй-пуй Молькар",
+     "orig": "Pui Pui Molcar",
+     "year": 2021,
+     "episodes": 12
+    },
+    {
+     "id": 37023,
+     "ru": "Детективное агентство Лейтон: Расследования Кэт",
+     "orig": "Layton Mystery Tanteisha: Katri no Nazotoki File",
+     "year": 2018,
+     "episodes": 50
+    },
+    {
+     "id": 6980,
+     "ru": "Ресторан ужасов",
+     "orig": "Kaidan Restaurant",
+     "year": 2009,
+     "episodes": 23
+    },
+    {
+     "id": 57517,
+     "ru": "Пуниру — милая слизь",
+     "orig": "Puniru wa Kawaii Slime",
+     "year": 2024,
+     "episodes": 12
+    },
+    {
+     "id": 24909,
+     "ru": "Загадочный Джокер",
+     "orig": "Kaitou Joker",
+     "year": 2014,
+     "episodes": 13
+    },
+    {
+     "id": 2789,
+     "ru": "Боевой Бидамен",
+     "orig": "B-Legend! Battle B-Daman",
+     "year": 2004,
+     "episodes": 52
+    }
+   ]
+  },
+  {
+   "id": "t-horror",
+   "t": "Ужасы (красная линия)",
+   "sub": "Вы ужасы не любите: если не смотрели, нажмите «Не смотрел» и идите дальше.",
+   "items": [
+    {
+     "id": 43690,
+     "ru": "Небесное вторжение",
+     "orig": "Tenkuu Shinpan",
+     "year": 2021,
+     "episodes": 12,
+     "tag": "ONA"
+    },
+    {
+     "id": 52505,
+     "ru": "Тёмное собрание",
+     "orig": "Dark Gathering",
+     "year": 2023,
+     "episodes": 25
+    },
+    {
+     "id": 11837,
+     "ru": "Зетмен",
+     "orig": "Zetman",
+     "year": 2012,
+     "episodes": 13
+    },
+    {
+     "id": 7662,
+     "ru": "Детектив-медиум Якумо",
+     "orig": "Shinrei Tantei Yakumo",
+     "year": 2010,
+     "episodes": 13
+    },
+    {
+     "id": 4581,
+     "ru": "Принцесса немёртвых: Красная хроника",
+     "orig": "Shikabane Hime: Aka",
+     "year": 2008,
+     "episodes": 13
+    },
+    {
+     "id": 19383,
+     "ru": "Ями Шибаи: Японские рассказы о привидениях",
+     "orig": "Yami Shibai",
+     "year": 2013,
+     "episodes": 13
+    },
+    {
+     "id": 5039,
+     "ru": "Куродзука",
+     "orig": "Kurozuka",
+     "year": 2008,
+     "episodes": 12
+    },
+    {
+     "id": 1860,
+     "ru": "Токийская школа магов",
+     "orig": "Tokyo Majin Gakuen Kenpuuchou: Tou",
+     "year": 2007,
+     "episodes": 14
+    },
+    {
+     "id": 58,
+     "ru": "Синяя порода",
+     "orig": "Blue Gender",
+     "year": 1999,
+     "episodes": 26
+    },
+    {
+     "id": 2130,
+     "ru": "Принцесса чудовищ",
+     "orig": "Kaibutsu Oujo",
+     "year": 2007,
+     "episodes": 25
+    },
+    {
+     "id": 36245,
+     "ru": "Зло или жизнь",
+     "orig": "Evil or Live",
+     "year": 2017,
+     "episodes": 12
+    },
+    {
+     "id": 1454,
+     "ru": "Когти зверя",
+     "orig": "Kemonozume",
+     "year": 2006,
+     "episodes": 13
+    },
+    {
+     "id": 326,
+     "ru": "Магазинчик ужасов",
+     "orig": "Petshop of Horrors",
+     "year": 1999,
+     "episodes": 4
+    },
+    {
+     "id": 7079,
+     "ru": "Унесённые волками",
+     "orig": "Ookamikakushi",
+     "year": 2010,
+     "episodes": 12
+    },
+    {
+     "id": 40074,
+     "ru": "Джибиэйт",
+     "orig": "Gibiate",
+     "year": 2020,
+     "episodes": 12
+    },
+    {
+     "id": 104,
+     "ru": "Подозрительная Церера",
+     "orig": "Ayashi no Ceres",
+     "year": 2000,
+     "episodes": 24
+    },
+    {
+     "id": 37140,
+     "ru": "Щелкунчик Китаро (2018)",
+     "orig": "Gegege no Kitarou (2018)",
+     "year": 2018,
+     "episodes": 97
+    },
+    {
+     "id": 916,
+     "ru": "Токко: Пробуждение Дьявола",
+     "orig": "Tokkou",
+     "year": 2006,
+     "episodes": 13
+    },
+    {
+     "id": 618,
+     "ru": "Манускрипт ниндзя: Новая глава",
+     "orig": "Juubee Ninpuuchou: Ryuuhougyoku-hen",
+     "year": 2003,
+     "episodes": 13
+    },
+    {
+     "id": 690,
+     "ru": "Принцесса-вампир Мию",
+     "orig": "Kyuuketsuhime Miyu (TV)",
+     "year": 1997,
+     "episodes": 26
+    },
+    {
+     "id": 279,
+     "ru": "Реквием из тьмы",
+     "orig": "Kyougoku Natsuhiko: Kousetsu Hyaku Monogatari",
+     "year": 2003,
+     "episodes": 13
+    },
+    {
+     "id": 51306,
+     "ru": "Жилой комплекс С",
+     "orig": "C Danchi",
+     "year": 2022,
+     "episodes": 4
+    },
+    {
+     "id": 30948,
+     "ru": "Взор ужаса",
+     "orig": "Kowabon",
+     "year": 2015,
+     "episodes": 13
+    },
+    {
+     "id": 30524,
+     "ru": "Кагэвани",
+     "orig": "Kagewani",
+     "year": 2015,
+     "episodes": 13
+    },
+    {
+     "id": 998,
+     "ru": "Голубое семя",
+     "orig": "Blue Seed",
+     "year": 1994,
+     "episodes": 26
+    },
+    {
+     "id": 620,
+     "ru": "Театр Румико Такахаси: Лес русалок",
+     "orig": "Takahashi Rumiko Gekijou Ningyo no Mori",
+     "year": 2003,
+     "episodes": 11
+    },
+    {
+     "id": 3166,
+     "ru": "Аякаси",
+     "orig": "Ayakashi",
+     "year": 2007,
+     "episodes": 12
+    },
+    {
+     "id": 1048,
+     "ru": "Похититель душ",
+     "orig": "The SoulTaker: Tamashii-gari",
+     "year": 2001,
+     "episodes": 13
+    },
+    {
+     "id": 2012,
+     "ru": "Адский учитель Нубэ",
+     "orig": "Jigoku Sensei Nube",
+     "year": 1996,
+     "episodes": 49
+    },
+    {
+     "id": 35069,
+     "ru": "Тёмная книга мира",
+     "orig": "Sekai no Yami Zukan",
+     "year": 2017,
+     "episodes": 13
+    },
+    {
+     "id": 621,
+     "ru": "Ночной странник",
+     "orig": "Night Walker: Mayonaka no Tantei",
+     "year": 1998,
+     "episodes": 12
+    },
+    {
+     "id": 33814,
+     "ru": "Синий демон",
+     "orig": "Ao Oni The Animation",
+     "year": 2016,
+     "episodes": 13
+    },
+    {
+     "id": 159,
+     "ru": "Мелодия забвения",
+     "orig": "Boukyaku no Senritsu",
+     "year": 2004,
+     "episodes": 24
+    },
+    {
+     "id": 1163,
+     "ru": "Неоранга — дух южного моря",
+     "orig": "Neo Ranga",
+     "year": 1998,
+     "episodes": 48
+    },
+    {
+     "id": 48425,
+     "ru": "Дьяволёнок ONA",
+     "orig": "Akuma-kun (ONA)",
+     "year": 2023,
+     "episodes": 12,
+     "tag": "ONA"
+    },
+    {
+     "id": 1517,
+     "ru": "Молчаливый Мёбиус",
+     "orig": "Silent Möbius",
+     "year": 1998,
+     "episodes": 26
+    },
+    {
+     "id": 55,
+     "ru": "Парень Арк",
+     "orig": "Arc the Lad",
+     "year": 1999,
+     "episodes": 26
+    },
+    {
+     "id": 1136,
+     "ru": "Беттермен",
+     "orig": "Betterman",
+     "year": 1999,
+     "episodes": 26
+    },
+    {
+     "id": 1573,
+     "ru": "Принц-демон Дзэнки",
+     "orig": "Kishin Douji Zenki",
+     "year": 1995,
+     "episodes": 51
+    },
+    {
+     "id": 15045,
+     "ru": "Клуб Личи Хикари",
+     "orig": "Litchi DE Hikari Club",
+     "year": 2012,
+     "episodes": 8
+    }
+   ]
+  },
+  {
+   "id": "t-mecha",
+   "t": "Меха (красная линия)",
+   "sub": "Тоже красная линия: быстро отметьте «Не смотрел», если не знакомо.",
+   "items": [
+    {
+     "id": 165,
+     "ru": "Ра-Зефон",
+     "orig": "RahXephon",
+     "year": 2002,
+     "episodes": 26
+    },
+    {
+     "id": 8934,
+     "ru": "Звёздный пилот: Блистательный Такуто",
+     "orig": "Star Driver: Kagayaki no Takuto",
+     "year": 2010,
+     "episodes": 25
+    },
+    {
+     "id": 2002,
+     "ru": "Эпоха героев",
+     "orig": "Heroic Age",
+     "year": 2007,
+     "episodes": 26
+    },
+    {
+     "id": 31318,
+     "ru": "Комета Люцифер",
+     "orig": "Comet Lucifer",
+     "year": 2015,
+     "episodes": 12
+    },
+    {
+     "id": 10447,
+     "ru": "Акварион: Эвол",
+     "orig": "Aquarion Evol",
+     "year": 2012,
+     "episodes": 26
+    },
+    {
+     "id": 567,
+     "ru": "Большой О",
+     "orig": "The Big O",
+     "year": 1999,
+     "episodes": 26
+    },
+    {
+     "id": 38192,
+     "ru": "Сакуган",
+     "orig": "Sakugan",
+     "year": 2021,
+     "episodes": 12
+    },
+    {
+     "id": 5342,
+     "ru": "Плач Асуры",
+     "orig": "Asura Cryin'",
+     "year": 2009,
+     "episodes": 13
+    },
+    {
+     "id": 167,
+     "ru": "Выброшенная принцесса",
+     "orig": "Scrapped Princess",
+     "year": 2003,
+     "episodes": 24
+    },
+    {
+     "id": 21177,
+     "ru": "Дурак Нобунага",
+     "orig": "Nobunaga the Fool",
+     "year": 2014,
+     "episodes": 24
+    },
+    {
+     "id": 22433,
+     "ru": "Сломанный меч",
+     "orig": "Break Blade",
+     "year": 2014,
+     "episodes": 12
+    },
+    {
+     "id": 21437,
+     "ru": "Дружеский комплекс",
+     "orig": "Buddy Complex",
+     "year": 2014,
+     "episodes": 13
+    },
+    {
+     "id": 180,
+     "ru": "Вандред",
+     "orig": "Vandread",
+     "year": 2000,
+     "episodes": 13
+    },
+    {
+     "id": 1816,
+     "ru": "Соник Икс",
+     "orig": "Sonic X",
+     "year": 2003,
+     "episodes": 78
+    },
+    {
+     "id": 411,
+     "ru": "Огнём и мечом",
+     "orig": "Gun x Sword",
+     "year": 2005,
+     "episodes": 26
+    },
+    {
+     "id": 2795,
+     "ru": "Драгонавт: Резонанс",
+     "orig": "Dragonaut: The Resonance",
+     "year": 2007,
+     "episodes": 25
+    },
+    {
+     "id": 11227,
+     "ru": "Цветок вечности",
+     "orig": "Rinne no Lagrange",
+     "year": 2012,
+     "episodes": 12
+    },
+    {
+     "id": 21809,
+     "ru": "Даймидалер: Принц против Пингвиньей Империи",
+     "orig": "Kenzen Robo Daimidaler",
+     "year": 2014,
+     "episodes": 12
+    },
+    {
+     "id": 109,
+     "ru": "Ангелы смерти",
+     "orig": "Bakuretsu Tenshi",
+     "year": 2004,
+     "episodes": 24
+    },
+    {
+     "id": 43229,
+     "ru": "Годзилла: Точка сингулярности",
+     "orig": "Godzilla: S.P",
+     "year": 2021,
+     "episodes": 13
+    },
+    {
+     "id": 32023,
+     "ru": "Бубуки Буранки",
+     "orig": "Bubuki Buranki",
+     "year": 2016,
+     "episodes": 12
+    },
+    {
+     "id": 21677,
+     "ru": "Капитан Земля",
+     "orig": "Captain Earth",
+     "year": 2014,
+     "episodes": 25
+    },
+    {
+     "id": 37436,
+     "ru": "Ревизия",
+     "orig": "Revisions",
+     "year": 2019,
+     "episodes": 12
+    },
+    {
+     "id": 40165,
+     "ru": "Слушатели",
+     "orig": "Listeners",
+     "year": 2020,
+     "episodes": 12
+    },
+    {
+     "id": 53033,
+     "ru": "Механические руки",
+     "orig": "Mecha-ude (TV)",
+     "year": 2024,
+     "episodes": 12
+    },
+    {
+     "id": 20053,
+     "ru": "Адвокаты магов",
+     "orig": "Wizard Barristers: Benmashi Cecil",
+     "year": 2014,
+     "episodes": 12
+    },
+    {
+     "id": 218,
+     "ru": "Крейсер Надэсико",
+     "orig": "Kidou Senkan Nadesico",
+     "year": 1996,
+     "episodes": 26
+    },
+    {
+     "id": 31790,
+     "ru": "Активный рейд: Мобильная боевая дивизия, восьмой отряд",
+     "orig": "Active Raid: Kidou Kyoushuushitsu Dai Hachi Gakari",
+     "year": 2016,
+     "episodes": 12
+    },
+    {
+     "id": 37578,
+     "ru": "Планета",
+     "orig": "Planet With",
+     "year": 2018,
+     "episodes": 12
+    },
+    {
+     "id": 53026,
+     "ru": "Синдуальность: Нуар",
+     "orig": "Synduality: Noir",
+     "year": 2023,
+     "episodes": 12
+    },
+    {
+     "id": 15863,
+     "ru": "Последний рубеж: Защитники Галактики",
+     "orig": "Ginga Kikoutai Majestic Prince",
+     "year": 2013,
+     "episodes": 24
+    },
+    {
+     "id": 23133,
+     "ru": "М3: Эта чёрная сталь",
+     "orig": "M3: Sono Kuroki Hagane",
+     "year": 2014,
+     "episodes": 24
+    },
+    {
+     "id": 39417,
+     "ru": "Гранбелм",
+     "orig": "Granbelm",
+     "year": 2019,
+     "episodes": 13
+    },
+    {
+     "id": 1212,
+     "ru": "Обан: Звёздные гонки",
+     "orig": "Oban Star-Racers",
+     "year": 2006,
+     "episodes": 26
+    },
+    {
+     "id": 763,
+     "ru": "Зойды",
+     "orig": "Zoids",
+     "year": 1999,
+     "episodes": 67
+    },
+    {
+     "id": 75,
+     "ru": "Небесный Фафнир: Мёртвый агрессор",
+     "orig": "Soukyuu no Fafner: Dead Aggressor",
+     "year": 2004,
+     "episodes": 25
+    },
+    {
+     "id": 4618,
+     "ru": "Райдбэк",
+     "orig": "RideBack",
+     "year": 2009,
+     "episodes": 12
+    },
+    {
+     "id": 5675,
+     "ru": "Басквош!",
+     "orig": "Basquash!",
+     "year": 2009,
+     "episodes": 26
+    },
+    {
+     "id": 274,
+     "ru": "Детское подразделение",
+     "orig": "Kiddy Grade",
+     "year": 2002,
+     "episodes": 24
+    },
+    {
+     "id": 593,
+     "ru": "Бесконечное путешествие корабля Ривиас",
+     "orig": "Mugen no Ryvius",
+     "year": 1999,
+     "episodes": 26
+    }
+   ]
+  },
+  {
+   "id": "t-space",
+   "t": "Космос и BL (не любите)",
+   "sub": "Тоже можно быстро пролистать.",
+   "items": [
+    {
+     "id": 47591,
+     "ru": "Я превратился в девушку и занялся сексом с лучшим другом",
+     "orig": "Kuro Gal ni Natta kara Shinyuu to shitemita.",
+     "year": 2021,
+     "episodes": 8,
+     "tag": "ONA"
+    },
+    {
+     "id": 39533,
+     "ru": "Дарованный",
+     "orig": "Given",
+     "year": 2019,
+     "episodes": 11
+    },
+    {
+     "id": 49430,
+     "ru": "Минъён",
+     "orig": "Mignon",
+     "year": 2023,
+     "episodes": 12,
+     "tag": "ONA"
+    },
+    {
+     "id": 21105,
+     "ru": "Любовная сцена!",
+     "orig": "Love Stage!!",
+     "year": 2014,
+     "episodes": 10
+    },
+    {
+     "id": 41466,
+     "ru": "Невеста титана",
+     "orig": "Kyojinzoku no Hanayome",
+     "year": 2020,
+     "episodes": 9,
+     "tag": "ONA"
+    },
+    {
+     "id": 3092,
+     "ru": "Чистая романтика",
+     "orig": "Junjou Romantica",
+     "year": 2008,
+     "episodes": 12
+    },
+    {
+     "id": 38797,
+     "ru": "Хочу быть отцом",
+     "orig": "Papa datte, Shitai",
+     "year": 2019,
+     "episodes": 8,
+     "tag": "ONA"
+    },
+    {
+     "id": 44055,
+     "ru": "Сасаки и Мияно",
+     "orig": "Sasaki to Miyano",
+     "year": 2022,
+     "episodes": 12
+    },
+    {
+     "id": 40491,
+     "ru": "Гипервентиляция",
+     "orig": "Gwahoheub",
+     "year": 2017,
+     "episodes": 6,
+     "tag": "ONA"
+    },
+    {
+     "id": 47792,
+     "ru": "Реинкарнация в мире короля демонов Евалогии",
+     "orig": "Maou Evelogia ni Mi wo Sasage yo",
+     "year": 2021,
+     "episodes": 9,
+     "tag": "ONA"
+    },
+    {
+     "id": 33654,
+     "ru": "Монополия моего героя",
+     "orig": "Hitorijime My Hero",
+     "year": 2017,
+     "episodes": 12
+    },
+    {
+     "id": 48471,
+     "ru": "Луна, Лайка и Носферату",
+     "orig": "Tsuki to Laika to Nosferatu",
+     "year": 2021,
+     "episodes": 12
+    },
+    {
+     "id": 49460,
+     "ru": "Во время спячки лесного медведя",
+     "orig": "Mori no Kuma-san, Toumin-chuu.",
+     "year": 2022,
+     "episodes": 9,
+     "tag": "ONA"
+    },
+    {
+     "id": 37597,
+     "ru": "Угроза для парня №1",
+     "orig": "Dakaretai Otoko 1-i ni Odosarete Imasu.",
+     "year": 2018,
+     "episodes": 13
+    },
+    {
+     "id": 57789,
+     "ru": "Идеальный принц любит меня, своего соперника?!",
+     "orig": "Ateuma Chara no Kuse shite, Super Darling Ouji ni Chouai sareteimasu.",
+     "year": 2024,
+     "episodes": 8,
+     "tag": "ONA"
+    },
+    {
+     "id": 31680,
+     "ru": "Больше, чем возлюбленные",
+     "orig": "Super Lovers",
+     "year": 2016,
+     "episodes": 10
+    },
+    {
+     "id": 149,
+     "ru": "Нелюбимый",
+     "orig": "Loveless",
+     "year": 2005,
+     "episodes": 12
+    },
+    {
+     "id": 49357,
+     "ru": "Звёздные войны: Видения",
+     "orig": "Star Wars: Visions",
+     "year": 2021,
+     "episodes": 9,
+     "tag": "ONA"
+    },
+    {
+     "id": 243,
+     "ru": "Гравитация",
+     "orig": "Gravitation",
+     "year": 2000,
+     "episodes": 13
+    },
+    {
+     "id": 7058,
+     "ru": "Предательство знает моё имя",
+     "orig": "Uragiri wa Boku no Namae wo Shitteiru",
+     "year": 2010,
+     "episodes": 24
+    },
+    {
+     "id": 8917,
+     "ru": "Лихие космические пираты",
+     "orig": "Mouretsu Pirates",
+     "year": 2012,
+     "episodes": 26
+    },
+    {
+     "id": 55973,
+     "ru": "Тридцатилетний девственник может стать волшебником?",
+     "orig": "30-sai made Doutei dato Mahoutsukai ni Nareru Rashii",
+     "year": 2024,
+     "episodes": 12
+    },
+    {
+     "id": 2158,
+     "ru": "Достичь Терры",
+     "orig": "Terra e... (TV)",
+     "year": 2007,
+     "episodes": 24
+    },
+    {
+     "id": 33605,
+     "ru": "Контракт душ",
+     "orig": "Ling Qi",
+     "year": 2016,
+     "episodes": 20,
+     "tag": "ONA"
+    },
+    {
+     "id": 290,
+     "ru": "Звёздный герб",
+     "orig": "Seikai no Monshou",
+     "year": 1999,
+     "episodes": 13
+    }
+   ]
+  }
+ ]
+}
