@@ -20,6 +20,8 @@ import {
   volumesText,
   weekItems,
 } from "./core.ts";
+import { handleReadLink } from "./linkHandlers.ts";
+import { type ReadLinkSay, parseReadLink } from "./linkSay.ts";
 import { lookupSource } from "./refresh.ts";
 import { parseReadAsk, parseReadSay, type ReadAsk, type ReadSay } from "./say.ts";
 import { type FetchFn, type ReadCand, searchRead } from "./sources.ts";
@@ -48,8 +50,10 @@ const text = (content: string): MessageBody => ({ content, components: [], allow
 /** fetch, который считает каждый запрос в бюджет подзапросов запуска Worker. */
 const counted = (c: ReadCtx): FetchFn => (c.spend ? (((input: unknown, init?: RequestInit) => (c.spend?.(1), c.fetchFn(input as RequestInfo, init))) as unknown as FetchFn) : c.fetchFn);
 
-/** Разобрать сообщение хозяина: вопрос или живая фраза про чтение; null — это не про чтение. */
-export function parseReading(textIn: string): { ask: ReadAsk } | { say: ReadSay } | null {
+/** Разобрать сообщение хозяина: вопрос, живая фраза или фраза со ссылкой на сайт чтения; null — это не про чтение. */
+export function parseReading(textIn: string): { ask: ReadAsk } | { say: ReadSay } | { link: ReadLinkSay } | null {
+  const link = parseReadLink(textIn);
+  if (link) return { link };
   const ask = parseReadAsk(textIn);
   if (ask) return { ask };
   const say = parseReadSay(textIn);
@@ -57,7 +61,8 @@ export function parseReading(textIn: string): { ask: ReadAsk } | { say: ReadSay 
 }
 
 /** Ответ на фразу или вопрос. null — «не моё»: фраза про чужое название без обращения, остаётся обычным делом. */
-export async function handleReading(c: ReadCtx, x: { ask: ReadAsk } | { say: ReadSay }): Promise<MessageBody | null> {
+export async function handleReading(c: ReadCtx, x: { ask: ReadAsk } | { say: ReadSay } | { link: ReadLinkSay }): Promise<MessageBody | null> {
+  if ("link" in x) return handleReadLink(c, x.link);
   return "ask" in x ? handleReadAsk(c, x.ask) : handleReadSay(c, x.say);
 }
 
