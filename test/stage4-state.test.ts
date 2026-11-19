@@ -85,7 +85,7 @@ describe("пометка «данные от …»", () => {
 describe("экран «Состояние»", () => {
   const all = { light: true, water: true, gas: true };
   it("перечисляет все восемь источников с названиями; прогноз погоды пока не подключён, дождь — отдельная строка", () => {
-    expect(SOURCES.map((s) => s.id)).toEqual(["light", "ukrenergo", "water", "gas", "shikimori", "anilibria", "weather", "rain"]);
+    expect(SOURCES.map((s) => s.id)).toEqual(["light", "avaria", "water", "gas", "shikimori", "anilibria", "weather", "rain"]);
     const t = statusText({}, all, NOW, TZ);
     for (const s of SOURCES) expect(t, s.id).toContain(s.name);
     expect(t).toMatch(/Погода[^\n]*пока не подключена/);

@@ -27,6 +27,7 @@ import { animeListMessage } from "../anime/ui.ts";
 import { parseReadingWhen, readingModal } from "../reading/ui.ts";
 import { detectSecret } from "../secrets.ts";
 import { META_KEY as PASSPORT_KEY, SILENT_BOT_TEXT, parsePassport, statusText } from "../sources.ts";
+import { avariaOn } from "../avaria.ts";
 import {
   cancelItemOps,
   doneOps,
@@ -917,7 +918,7 @@ async function onMenu(c: C, parts: string[], values: string[]): Promise<Reply> {
     }
     case "ss": {
       // «Состояние» (этап 4): паспорт источников; всё берём из меты, которая уже прочитана, — лишних подзапросов нет
-      const text = statusText(parsePassport(c.meta.get(PASSPORT_KEY)), { light: !!c.s.lightGroup, ukrenergo: !!c.s.lightGroup, water: c.s.waterWords.length > 0, gas: c.s.gasWords.length > 0, rain: c.s.rainOn }, c.now, c.s.tz);
+      const text = statusText(parsePassport(c.meta.get(PASSPORT_KEY)), { light: !!c.s.lightGroup, avaria: avariaOn(c.s), water: c.s.waterWords.length > 0, gas: c.s.gasWords.length > 0, rain: c.s.rainOn }, c.now, c.s.tz);
       return show(statusMessage(text, panel ? "pn" : "mn"));
     }
     case "sq": {

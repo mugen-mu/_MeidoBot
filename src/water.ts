@@ -102,7 +102,7 @@ export function waterKind(p: WaterPost): WaterKind {
 
 // ---------- районы ----------
 
-const DISTRICTS: { stem: string; name: string }[] = [
+export const DISTRICTS: { stem: string; name: string }[] = [
   { stem: "амур", name: "Амур-Нижньодніпровський" },
   { stem: "шевченківськ", name: "Шевченківський" },
   { stem: "соборн", name: "Соборний" },
@@ -264,10 +264,10 @@ export interface WaterMatch {
   districts: DistrictMap;
 }
 
-export function matchWater(post: WaterPost, words: string[]): WaterMatch | null {
+/** `districts` — карта районов, если запись устроена иначе (район в заголовке, а не в предложении про отключение): так читает канал `src/avaria.ts`. */
+export function matchWater(post: WaterPost, words: string[], districts: DistrictMap = waterDistricts(post.text)): WaterMatch | null {
   if (!words.length) return null;
   const low = `${post.title} ${post.text}`.toLowerCase();
-  const districts = waterDistricts(post.text);
   const dWords = words.filter(isDistrictWord);
   const sWords = words.filter((w) => !isDistrictWord(w));
   const streetHit = sWords.some((w) => low.includes(w));
@@ -346,8 +346,8 @@ function at(ms: number, now: number, tz: string): string {
   return `${/^(сегодня|завтра|вчера)$/.test(d) ? d : usDate(w.y, w.mo, w.d)}, ${fmtHHMM(w.h * 60 + w.mi)}`;
 }
 
-const LEVEL_WORD: Record<DistrictLevel, string> = { off: "воды не будет", low: "давление снизится" };
-const HIT_NOTE: Record<WaterMatch["hit"], string> = {
+export const LEVEL_WORD: Record<DistrictLevel, string> = { off: "воды не будет", low: "давление снизится" };
+export const HIT_NOTE: Record<WaterMatch["hit"], string> = {
   district: "",
   street: " Адрес из ваших слов назван в тексте.",
   maybe: " Район совпал, а улицы в тексте нет: может коснуться вас, адрес смотрите по карте.",
