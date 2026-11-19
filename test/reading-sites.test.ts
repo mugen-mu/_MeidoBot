@@ -643,7 +643,8 @@ describe("ночная проверка по сайту", () => {
 describe("миграция 0016 и паспорт источников", () => {
   it("0016: только новые столбцы (ничего не удаляется), применилась в тестовой базе, отрицательный номер допустим", () => {
     const sql = readFileSync(join(process.cwd(), "migrations", "0016_reading_sites.sql"), "utf8");
-    const statements = sql.split("\n").filter((l) => l.trim() && !l.trim().startsWith("--"));
+    // файл на Windows может прийти с CRLF: режем по любому переводу строки и обрезаем пробелы
+    const statements = sql.split(/\r?\n/).map((l) => l.trim()).filter((l) => l && !l.startsWith("--"));
     expect(statements.length).toBeGreaterThan(0);
     for (const s of statements) expect(s).toMatch(/^ALTER TABLE reading ADD COLUMN (?:site|site_url|site_key|site_q|site_at) (?:TEXT|INTEGER);$/);
     expect(sql).not.toMatch(/\b(?:DROP|DELETE|UPDATE|RENAME)\b/i);
