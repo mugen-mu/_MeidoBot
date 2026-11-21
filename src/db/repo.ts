@@ -113,6 +113,17 @@ export class Repo {
     );
   }
 
+  /**
+   * Дело, о котором бот напоминал последним: по сохранённым копиям напоминаний (`occ_messages`, отдельное значение в мете не нужно),
+   * если копию отправили не раньше `since`. Открыто ли оно ещё, решает вызывающий: закрытое дело подменять другим нельзя.
+   */
+  lastReminded(since: number): Promise<OccView | null> {
+    return this.first<OccView>(
+      `${OCC_VIEW_SELECT} WHERE o.id = (SELECT occ_id FROM occ_messages WHERE sent_at >= ? ORDER BY sent_at DESC, rowid DESC LIMIT 1)`,
+      since,
+    );
+  }
+
   getItem(id: number): Promise<Item | null> {
     return this.first<Item>("SELECT * FROM items WHERE id = ?", id);
   }

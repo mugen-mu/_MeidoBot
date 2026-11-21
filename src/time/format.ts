@@ -43,6 +43,20 @@ export function formatWhen(ms: number, now: number, tz: string): string {
   return `${formatDate(ms, now, tz)}, ${hhmm(ms, tz)}`;
 }
 
+/**
+ * Куда перенесли — с предлогом, для «Перенесла «Дело» на завтра, 09:00.»: «на завтра, 09:00», «на пятницу, 18:00»,
+ * «на 11.25.2026, 18:00»; для близкого будущего — «на 14:35 (через 20 мин)».
+ */
+export function formatMoveTarget(ms: number, now: number, tz: string): string {
+  const delta = ms - now;
+  if (delta > 0 && delta < 60 * 60_000) return `на ${hhmm(ms, tz)} (через ${Math.max(1, Math.round(delta / 60_000))} мин)`;
+  const w = wallOf(ms, tz);
+  const n = wallOf(now, tz);
+  const diff = civilDay(w.y, w.mo, w.d) - civilDay(n.y, n.mo, n.d);
+  const day = diff === 0 ? "сегодня" : diff === 1 ? "завтра" : diff === -1 ? "вчера" : diff > 1 && diff < 7 ? WD_NOM[w.wd] : usDate(w.y, w.mo, w.d);
+  return `на ${day}, ${hhmm(ms, tz)}`;
+}
+
 function plural(n: number, one: string, few: string, many: string): string {
   const m10 = n % 10;
   const m100 = n % 100;

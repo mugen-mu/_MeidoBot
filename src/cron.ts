@@ -38,7 +38,7 @@ import { listAnime } from "./anime/store.ts";
 import { eveningLines } from "./anime/ui.ts";
 import { runReading } from "./reading/cron.ts";
 import { handleReading, parseReading } from "./reading/handlers.ts";
-import { handleReply } from "./reply.ts";
+import { handleReply, looksLikeMove } from "./reply.ts";
 import { YASNO_ATTEMPTS, fetchYasno, groupsFor, lightFullText, lightLines, publishedFor, tomorrowDigest, type LightData } from "./light.ts";
 import { isLightQuestion, lightAskMessage } from "./lightAsk.ts";
 import { isWeatherQuestion, weatherAskMessage } from "./weatherAsk.ts";
@@ -404,8 +404,9 @@ ${n.text}` } : n;
             if (!m.attachments?.length) blind++;
             continue;
           }
-          // Reply на сообщение бота, привязанное к делу (в том числе «Записано …»): «готово», «отмени», «на час» — действие над делом
-          if (m.message_reference?.message_id && room2(5)) {
+          // Reply на сообщение бота, привязанное к делу (в том числе «Записано …»): «готово», «отмени», «на час» — действие над делом;
+          // и просьба перенести без ответа («перенеси на завтра», «отложи на вечер») — переносится последнее напоминание (src/reply.ts)
+          if ((m.message_reference?.message_id || looksLikeMove(m.content)) && room2(5)) {
             if ((await handleReply({ repo, api, s, now, mood }, m, ch)) === "handled") {
               report.intake++;
               continue;
