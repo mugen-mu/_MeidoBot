@@ -27,7 +27,7 @@ export interface Reading {
   src_ch: number;
   src_vol: number;
   src_at: number | null;
-  /** последняя глава и том по-русски (манга: MangaDex, `ru`; ранобэ: RanobeHub, справочно). null — ещё не смотрела, 0 — смотрела, перевода нет */
+  /** последняя глава и том по-русски (манга: MangaDex, `ru`; ранобэ: RanobeHub; тайтл с сайтом по ссылке — сайт). По ним «вышло» и «накопилось». null — ещё не смотрела, 0 — смотрела, перевода нет */
   ru_ch: number | null;
   ru_vol: number | null;
   src_url: string | null;
@@ -98,33 +98,32 @@ export const siteLed = (r: Reading): boolean => siteCounts(r.site) && !!r.site_k
 /** Как называется сайт тайтла по ссылке («Senkuro»); null — ссылки нет. */
 export const siteNameOf = (r: Reading): string | null => siteById(r.site)?.name ?? null;
 
-/** Где смотрим русский счётчик: сайт по ссылке или MangaDex. */
-export const ruWhere = (r: Reading): string => (siteLed(r) ? (siteNameOf(r) ?? "сайте") : "MangaDex");
-
-/** Русский счётчик ведёт «вышла» и «накопилось»: у манги всегда, у ранобэ — когда счётчик даёт сайт по ссылке. */
-export const ruLed = (r: Reading): boolean => r.kind === "manga" || siteLed(r);
+/** Где смотрим русский счётчик: сайт по ссылке, у ранобэ — RanobeHub, у манги — MangaDex. */
+export const ruWhere = (r: Reading): string => (siteLed(r) ? (siteNameOf(r) ?? "сайте") : r.kind === "ranobe" ? "RanobeHub" : "MangaDex");
 
 /**
- * Что у тайтла «вышло» для разговора с хозяином (решение Ihor 2026-11-18: «писать только когда глава есть по-русски»).
- * Манга — только русский перевод на MangaDex (`ru_ch`, `ru_vol`): главы и тома, которых нет по-русски, не поднимают «накопилось» и не упоминаются.
- * Ранобэ — по-прежнему счётчик источника (MangaUpdates: язык там не различается); RanobeHub для ранобэ — только справочная строка.
- * Тайтл со ссылкой на сайт со счётчиком (`siteLed`) — всегда по русскому счётчику сайта (`ru_ch`, `ru_vol`), и манга, и ранобэ.
+ * Что у тайтла «вышло» для разговора с хозяином (решения Ihor: манга — 2026-11-18, ранобэ — 2026-11-21, вопрос H6 волны 5: «писать только когда том или глава есть по-русски»).
+ * Всегда только русский счётчик (`ru_ch`, `ru_vol`), и у манги, и у ранобэ: манга — MangaDex или сайт по ссылке; ранобэ — RanobeHub или сайт по ссылке.
+ * Главы и тома, которых нет по-русски, не поднимают «накопилось» и не упоминаются. Оригинал (MangaDex на всех языках, MangaUpdates) остаётся в `src_*` —
+ * для итогов, фразы «прочитал последнюю главу» и прямого вопроса «какая глава / какой том», но «вышло» и «накопилось» по нему не считаются.
  */
 export function availOf(r: Reading, unit: ReadUnit = r.unit): number {
-  if (ruLed(r)) return (unit === "ch" ? r.ru_ch : r.ru_vol) ?? 0;
-  return srcOf(r, unit);
+  return (unit === "ch" ? r.ru_ch : r.ru_vol) ?? 0;
 }
 
-/** Есть ли у манги хоть что-то по-русски (по MangaDex). У ранобэ вопрос не стоит: правило языка там не действует. */
-export const hasRussian = (r: Reading): boolean => !ruLed(r) || (r.ru_ch ?? 0) > 0 || (r.ru_vol ?? 0) > 0;
+/** Есть ли у тайтла хоть что-то по-русски (по русскому счётчику). */
+export const hasRussian = (r: Reading): boolean => (r.ru_ch ?? 0) > 0 || (r.ru_vol ?? 0) > 0;
 
-/** Манга, которую смотрели на MangaDex, а русского перевода там нет: о ней молчим, пока он не появится. */
-export const noRussianYet = (r: Reading): boolean => ruLed(r) && r.ru_ch !== null && !hasRussian(r);
+/** Смотрели ли русскую сторону тайтла: `ru_ch` уже не NULL, а у ранобэ ещё и «искала на RanobeHub, ответ был» (метка `rh_map_at`: у старых строк цифр по-русски там может не быть). */
+export const ruChecked = (r: Reading): boolean => r.ru_ch !== null || (r.kind === "ranobe" && r.rh_map_at !== null);
+
+/** Тайтл, который смотрели, а русского перевода там нет: о нём молчим, пока он не появится. */
+export const noRussianYet = (r: Reading): boolean => ruChecked(r) && !hasRussian(r);
 
 /** «до главы 150» / «до тома 25» (родительный, для «по-русски до … на …»). */
 export const upTo = (n: number, unit: ReadUnit): string => `до ${unit === "ch" ? "главы" : "тома"} ${n}`;
 
-/** Сколько накопилось: что вышло (по-русски — у манги) минус прочитанное. null — не знаем, на чём хозяин остановился, или счётчика нет. */
+/** Сколько накопилось: что вышло по-русски минус прочитанное. null — не знаем, на чём хозяин остановился, или русского счётчика нет. */
 export function unread(r: Reading): number | null {
   const have = readOf(r);
   const top = availOf(r);
@@ -190,13 +189,13 @@ export interface WeekItem {
   ended: boolean;
 }
 
-/** Что просится в субботнее сообщение: новое по-русски (у манги), завершение или накопленное непрочитанное. Только отслеживаемые тайтлы; манга без русского перевода молчит целиком. */
+/** Что просится в субботнее сообщение: новое по-русски, завершение или накопленное непрочитанное. Только отслеживаемые тайтлы; тайтл (манга или ранобэ) без русского перевода молчит целиком. */
 export function weekItems(rows: Reading[]): WeekItem[] {
   const out: WeekItem[] = [];
   for (const r of rows) {
     if (!isTracked(r) || !hasRussian(r)) continue;
-    // ранобэ с сайтом по ссылке (RanobeHub даёт и тома, и главы): новости — только в той единице, которой считает хозяин, иначе каждая новая глава веб-новеллы была бы «новостью»
-    const only = r.kind === "ranobe" && siteLed(r) ? r.unit : null;
+    // ранобэ (RanobeHub и сайты чтения дают и тома, и главы): новости — только в той единице, которой считает хозяин, иначе каждая новая глава веб-новеллы была бы «новостью»
+    const only = r.kind === "ranobe" ? r.unit : null;
     const it: WeekItem = { r, newCh: only !== "vol" && availOf(r, "ch") > r.told_ch, newVol: only !== "ch" && availOf(r, "vol") > r.told_vol, unread: unread(r), ended: isFinished(r) && !r.end_told };
     if (it.ended || it.newCh || it.newVol || (it.unread ?? 0) > 0) out.push(it);
   }

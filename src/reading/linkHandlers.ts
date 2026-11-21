@@ -37,7 +37,12 @@ export function siteNote(link: SiteLink, t: SiteTitle | null, c: ReadCtx, known 
   const name = link.site.name;
   const counting = link.site.counts && !!link.key;
   if (!counting) {
-    return `${name}: ${manualWhy(link)}, поэтому глав там сама не вижу. Ссылку запомнила и подставлю в сообщения. По общим источникам (MangaDex, MangaUpdates) попробую найти название ночью, но что вышло именно на ${name}, они не покажут.${hint}`;
+    // ранобэ: русские тома и главы ищу на RanobeHub (по ним и пишу), MangaUpdates — оригинал, о нём только по вопросу «какой том»
+    const general =
+      link.kind === "ranobe"
+        ? `По RanobeHub попробую найти название ночью: если оно там есть по-русски, напишу про новые тома, но что вышло именно на ${name}, он не покажет.`
+        : `По общим источникам (MangaDex, MangaUpdates) попробую найти название ночью, но что вышло именно на ${name}, они не покажут.`;
+    return `${name}: ${manualWhy(link)}, поэтому глав там сама не вижу. Ссылку запомнила и подставлю в сообщения. ${general}${hint}`;
   }
   if (!t) return `${name} сейчас не открылся. Ссылку запомнила, число глав посчитаю ночью. ${whenLine(c)}`;
   if (!t.ch && !t.vol) return `На ${name} по-русски пока нет ни одной главы, поэтому о новых писать не буду, пока они не появятся. Ссылку запомнила.`;
@@ -159,7 +164,7 @@ async function addFromLink(c: ReadCtx, x: ReadLinkSay, link: SiteLink, rows: Rea
   const fresh: Reading = {
     id: 0, mal_id: mal, kind, title_ru: name, title_orig: n.orig, status, unit, read_ch: null, read_vol: null, liked: 0, total_ch: n.totalCh, total_vol: n.totalVol, src_status: n.srcStatus,
     src_ch: n.srcCh, src_vol: n.srcVol, src_at: null, ru_ch: n.ruCh, ru_vol: n.ruVol, src_url: link.url, md_id: n.mdId, mu_id: n.muId, rh_id: n.rhId, rh_map_at: n.rhMapAt, map_at: n.mapAt,
-    checked_at: c.now, chk_fail: 0, shiki_at: null, told_ch: counting ? (t?.ch ?? 0) : kind === "manga" ? (n.ruCh ?? 0) : n.srcCh, told_vol: counting ? (t?.vol ?? 0) : kind === "manga" ? (n.ruVol ?? 0) : n.srcVol,
+    checked_at: c.now, chk_fail: 0, shiki_at: null, told_ch: counting ? (t?.ch ?? 0) : (n.ruCh ?? 0), told_vol: counting ? (t?.vol ?? 0) : (n.ruVol ?? 0),
     end_told: finished ? 1 : 0, adapt_mal: null, adapt_ru: null, adapt_status: null, adapt_at: null, adapt_told: null, weekq_at: null, last_move_at: c.now, added_at: c.now, updated_at: c.now,
     ...siteFields,
   } as Reading;

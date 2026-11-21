@@ -20,7 +20,6 @@ import {
   isFinished,
   noRussianYet,
   readOf,
-  ruLed,
   ruWhere,
   siteLed,
   siteNameOf,
@@ -52,7 +51,7 @@ const siteBit = (r: Reading): string | null => {
   return s ? `на ${s.name}${siteLed(r) ? "" : " (вручную)"}` : null;
 };
 
-/** Где хозяин и сколько накопилось: «глава 120 из 149 · накопилось 29». У манги «из N» и «накопилось» — по-русски (MangaDex). */
+/** Где хозяин и сколько накопилось: «глава 120 из 149 · накопилось 29». «Из N» и «накопилось» — по-русски (манга: MangaDex, ранобэ: RanobeHub, или сайт по ссылке). */
 export function progressText(r: Reading): string {
   const have = readOf(r);
   const top = availOf(r);
@@ -91,15 +90,15 @@ export function listText(rows: Reading[], ch: Character, rand?: () => number): s
   return headVoice(haru("list", ch, rand), out.join("\n"));
 }
 
-/** Что нового у тайтла по росту счётчика (у манги — по-русски, у ранобэ — у источника). */
+/** Что нового у тайтла по росту русского счётчика. */
 function newBits(it: WeekItem): string[] {
   const { r } = it;
   const ch = availOf(r, "ch");
   const vol = availOf(r, "vol");
   const bits: string[] = [];
   if (it.ended) {
-    // у манги всего глав и томов может быть больше, чем есть по-русски: цифры оставляем только когда они совпадают, иначе их заменит строка «по-русски до …»
-    const full = !ruLed(r) || (ch >= r.src_ch && vol >= r.src_vol);
+    // всего глав и томов (по оригиналу) может быть больше, чем есть по-русски: цифры оставляем только когда они совпадают, иначе их заменит строка «по-русски до …»
+    const full = ch >= r.src_ch && vol >= r.src_vol;
     const total = full ? [r.src_ch > 0 ? chaptersText(r.src_ch) : "", r.src_vol > 0 ? volumesText(r.src_vol) : ""].filter(Boolean).join(", ") : "";
     bits.push(`закончен${total ? `: всего ${total}` : ""}`);
   }
@@ -124,19 +123,13 @@ function whereBits(r: Reading): string | null {
 }
 
 /**
- * Честная строка про русский перевод и сайт: «по-русски до главы 149 на MangaDex» (манга: по этому счётчику говорю «вышла» и «накопилось»)
- * или «по-русски до тома 21 на RanobeHub» (ранобэ: справочно, новые тома по-прежнему по MangaUpdates, там язык не различается).
+ * Честная строка про русский перевод и сайт: «по-русски до главы 149 на MangaDex» (манга), «по-русски до тома 21 на RanobeHub» (ранобэ) или то же на сайте по ссылке.
+ * По этому счётчику говорю «вышла» и «накопилось».
  */
 export function ruBit(r: Reading): string | null {
-  if (ruLed(r)) {
-    const unit: ReadUnit = availOf(r, r.unit) > 0 ? r.unit : r.unit === "ch" ? "vol" : "ch";
-    const n = availOf(r, unit);
-    return n > 0 ? `по-русски ${upTo(n, unit)} на ${ruWhere(r)}` : null;
-  }
-  if (!r.rh_id) return null;
-  const unit: ReadUnit = (r.unit === "ch" ? r.ru_ch : r.ru_vol) ? r.unit : r.unit === "ch" ? "vol" : "ch";
-  const n = (unit === "ch" ? r.ru_ch : r.ru_vol) ?? 0;
-  return n > 0 ? `по-русски ${upTo(n, unit)} на RanobeHub` : null;
+  const unit: ReadUnit = availOf(r, r.unit) > 0 ? r.unit : r.unit === "ch" ? "vol" : "ch";
+  const n = availOf(r, unit);
+  return n > 0 ? `по-русски ${upTo(n, unit)} на ${ruWhere(r)}` : null;
 }
 /** Ссылка «читать»: страница тайтла на сайте, где читает хозяин (если он дал ссылку), иначе источник счётчика. */
 const linkBit = (r: Reading): string | null => {
@@ -162,28 +155,32 @@ export function newsText(items: WeekItem[], tracked: number, silent: Reading[] =
   const tail = silent.length
     ? `Русского перевода на ${[...new Set(silent.map(ruWhere))].join(" и ")} не вижу: ${silent.slice(0, 5).map((r) => clip(r.title_ru, 30)).join(", ")}${silent.length > 5 ? "…" : ""}. Пока он не появится, о них молчу.`
     : null;
-  if (!items.length) return ["По чтению нового нет: что вышло по моим источникам (у манги — по-русски), вы уже прочитали. Я смотрю источники раз в ночь.", tail].filter(Boolean).join("\n");
+  if (!items.length) return ["По чтению нового нет: что вышло по-русски, вы уже прочитали. Я смотрю источники раз в ночь.", tail].filter(Boolean).join("\n");
   return [`**📖 Чтение · что вышло и накопилось** (${items.length})`, ...items.map(itemLine), tail, "Я смотрю источники раз в ночь."].filter(Boolean).join("\n");
 }
 
-/** «Какая глава Кауру»: где он, что есть по-русски (манга) или у источника (ранобэ). */
+/**
+ * «Какая глава Кауру»: где он и что есть по-русски. У ранобэ ещё справка по оригиналу (MangaUpdates): это единственное место, где оригинальные тома попадают в ответ;
+ * в «вышло» и «накопилось» они не идут.
+ */
 export function whereText(r: Reading): string {
   const have = readOf(r);
   const top = availOf(r);
-  const manga = ruLed(r);
+  const novel = r.kind === "ranobe";
   const lines = [`${name(r)} (${KIND_WORD[r.kind]}) — ${STATUS_LABEL[r.status].toLowerCase()}.`];
-  lines.push(have === null ? "Вы не говорили, на чём остановились. Скажите: «прочитал главу 120 …»." : `Вы на: ${unitLabel(have, r.unit)}${top > 0 ? ` (${manga ? "по-русски вышло" : "по источнику вышло"} ${top})` : ""}.`);
+  lines.push(have === null ? "Вы не говорили, на чём остановились. Скажите: «прочитал главу 120 …»." : `Вы на: ${unitLabel(have, r.unit)}${top > 0 ? ` (по-русски вышло ${top})` : ""}.`);
   const left = unread(r);
   if (left) lines.push(`Накопилось: ${unitText(left, r.unit)}.`);
   const total = totalOf(r);
   const ru = ruBit(r);
-  if (isFinished(r) && total && !(manga && top < total)) lines.push(`Тайтл закончен: всего ${unitText(total, r.unit)}.`);
-  else if (isFinished(r) && manga) lines.push("Тайтл закончен.");
-  if (noRussianYet(r)) lines.push(`Русского перевода на ${ruWhere(r)} пока нет, поэтому о новых главах не пишу, пока он не появится.`);
+  if (isFinished(r) && total && top >= total) lines.push(`Тайтл закончен: всего ${unitText(total, r.unit)}.`);
+  else if (isFinished(r)) lines.push("Тайтл закончен.");
+  if (noRussianYet(r)) lines.push(`Русского перевода на ${ruWhere(r)} пока нет, поэтому о новых ${novel ? "томах и главах" : "главах"} не пишу, пока он не появится.`);
   else if (siteLed(r) && top === 0 && !isFinished(r)) lines.push(`Число глав на ${ruWhere(r)} пока не прочиталось, догоню ночью.`);
-  else if (manga && top === 0 && !isFinished(r)) lines.push(r.md_id ? "Русский перевод на MangaDex пока не посмотрела, догоню ночью." : "Сколько вышло по-русски, сама не вижу: на MangaDex этого названия не нашла.");
-  else if (!manga && top === 0 && !isFinished(r)) lines.push(r.mu_id ? "Источник пока не показал, сколько вышло." : "Сколько вышло, сама не вижу: источника для этого названия не нашла.");
+  else if (novel && top === 0 && !isFinished(r)) lines.push("Русский перевод на RanobeHub пока не посмотрела, догоню ночью.");
+  else if (top === 0 && !isFinished(r)) lines.push(r.md_id ? "Русский перевод на MangaDex пока не посмотрела, догоню ночью." : "Сколько вышло по-русски, сама не вижу: на MangaDex этого названия не нашла.");
   if (ru) lines.push(`${ru[0].toUpperCase()}${ru.slice(1)}.`);
+  if (novel && !siteLed(r) && r.mu_id && r.src_vol > 0) lines.push(`По оригиналу (MangaUpdates) вышло ${volumesText(r.src_vol)}. Это справка: в сообщения о новом оригинал не идёт, пишу только про русское.`);
   const site = siteById(r.site);
   if (site && r.site_url) lines.push(`Читаете на ${site.name}${siteLed(r) ? "" : ` (глав там не вижу: ${site.why ?? "сайт закрыт для программ"})`}: [ссылка](<${r.site_url}>).`);
   return lines.join("\n");

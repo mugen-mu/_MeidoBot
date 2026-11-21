@@ -98,21 +98,32 @@ describe("чтение: подсчёт и выбор", () => {
     expect(unread(row({ ru_ch: null, src_ch: 199, read_ch: 5 }))).toBeNull();
     expect(unread(row({ ru_ch: 10, read_ch: 12 }))).toBe(0);
     expect(unread(row({ unit: "vol", ru_vol: 13, read_vol: 10, src_vol: 20 }))).toBe(3);
-    // ранобэ: по-прежнему счётчик источника (MangaUpdates), RanobeHub на него не влияет
-    expect(unread(row({ kind: "ranobe", unit: "vol", src_vol: 13, read_vol: 10, ru_vol: 4, rh_id: 7 }))).toBe(3);
+    // ранобэ: то же правило (решение Ihor 2026-11-21): по-русски (RanobeHub или сайт), оригинал по MangaUpdates в «накопилось» не идёт
+    expect(unread(row({ kind: "ranobe", unit: "vol", src_vol: 13, read_vol: 2, ru_vol: 4, rh_id: 7 }))).toBe(2);
+    expect(unread(row({ kind: "ranobe", unit: "vol", src_vol: 13, read_vol: 2, ru_vol: 0, ru_ch: 0 }))).toBeNull(); // по-русски нет: 13 томов оригинала не в счёт
+    expect(unread(row({ kind: "ranobe", unit: "vol", src_vol: 13, read_vol: 2, ru_vol: null }))).toBeNull();
     expect(availOf(row({ ru_ch: 149, src_ch: 199 }), "ch")).toBe(149);
-    expect(availOf(row({ kind: "ranobe", src_vol: 12, ru_vol: 3 }), "vol")).toBe(12);
+    expect(availOf(row({ kind: "ranobe", src_vol: 12, ru_vol: 3 }), "vol")).toBe(3);
+    expect(availOf(row({ kind: "ranobe", src_vol: 12, ru_vol: null }), "vol")).toBe(0);
   });
 
-  it("есть ли что-то по-русски: у манги по счётчику, у ранобэ вопрос не стоит; «смотрела, нет» отличается от «не смотрела»", () => {
+  it("есть ли что-то по-русски: по русскому счётчику, и у манги, и у ранобэ; «смотрела, нет» отличается от «не смотрела»", () => {
     expect(hasRussian(row({ ru_ch: 1 }))).toBe(true);
     expect(hasRussian(row({ ru_vol: 1 }))).toBe(true);
     expect(hasRussian(row({ ru_ch: 0, ru_vol: 0 }))).toBe(false);
     expect(hasRussian(row({ ru_ch: null }))).toBe(false);
-    expect(hasRussian(row({ kind: "ranobe", ru_ch: null }))).toBe(true);
     expect(noRussianYet(row({ ru_ch: 0, ru_vol: 0 }))).toBe(true);
     expect(noRussianYet(row({ ru_ch: null }))).toBe(false);
     expect(noRussianYet(row({ ru_ch: 5 }))).toBe(false);
+    // ранобэ: оригинал (MangaUpdates) русским не считается
+    const novel = (o: Partial<Reading> = {}) => row({ kind: "ranobe", unit: "vol", src_vol: 12, mu_id: 5, ...o });
+    expect(hasRussian(novel({ ru_ch: null }))).toBe(false);
+    expect(hasRussian(novel({ ru_vol: 2 }))).toBe(true);
+    expect(hasRussian(novel({ ru_ch: 40, ru_vol: 0 }))).toBe(true);
+    expect(noRussianYet(novel({ ru_ch: 0, ru_vol: 0 }))).toBe(true);
+    expect(noRussianYet(novel({ ru_ch: null, rh_map_at: 5 }))).toBe(true); // старая строка: на RanobeHub искала, цифр по-русски там нет
+    expect(noRussianYet(novel({ ru_ch: null, rh_map_at: null }))).toBe(false); // RanobeHub ещё не смотрела: не «нет», а «не знаю»
+    expect(noRussianYet(novel({ ru_vol: 3 }))).toBe(false);
   });
 
   it("поиск в своём списке: точное важнее частичного, несколько — не угадываем", () => {
@@ -163,6 +174,19 @@ describe("чтение: подсчёт и выбор", () => {
     expect(items[2]).toMatchObject({ newCh: true, unread: 1 });
   });
 
+  it("ранобэ в субботнем выборе: новое и накопленное только по-русски; только оригинал или «не смотрела» молчат; считает хозяин тем, чем считает", () => {
+    const novel = (o: Partial<Reading>) => row({ kind: "ranobe", unit: "vol", src_vol: 14, mu_id: 5, ...o });
+    const ruNew = novel({ id: 1, title_ru: "A", ru_vol: 9, ru_ch: 70, told_vol: 8, told_ch: 70, read_vol: 9 }); // вышел русский том 9
+    const origOnly = novel({ id: 2, title_ru: "B", src_vol: 20, ru_vol: 0, ru_ch: 0, rh_map_at: 5, read_vol: 1 }); // оригинал есть, по-русски нет
+    const unseen = novel({ id: 3, title_ru: "C", src_vol: 20, ru_vol: null, read_vol: 1 }); // RanobeHub ещё не смотрели
+    const web = novel({ id: 4, title_ru: "D", unit: "ch", ru_vol: 1, ru_ch: 301, told_vol: 1, told_ch: 300, read_ch: 301 }); // веб-новелла: том один, считаем главами
+    const endedOrig = novel({ id: 5, title_ru: "E", src_status: "finished", src_vol: 12, ru_vol: 0, ru_ch: 0, rh_map_at: 5, read_vol: 12 }); // закончено по оригиналу, перевода нет
+    const items = weekItems([ruNew, origOnly, unseen, web, endedOrig]);
+    expect(items.map((x) => x.r.title_ru)).toEqual(["A", "D"]);
+    expect(items[0]).toMatchObject({ newVol: true, newCh: false, unread: 0 });
+    expect(items[1]).toMatchObject({ newCh: true, newVol: false });
+  });
+
   it("английская глава не новость: общий счётчик вырос, а русский нет — тишина; русский вырос — новость", () => {
     const en = row({ src_ch: 201, ru_ch: 149, told_ch: 149, read_ch: 149 });
     expect(weekItems([en])).toEqual([]);
@@ -180,22 +204,37 @@ describe("чтение: подсчёт и выбор", () => {
 
 describe("чтение: что увидели у источника", () => {
   const T = 1_000_000;
-  it("ранобэ: первая цифра — отправная точка (про неё не пишем), рост — новость, спад и скачок — игнор", () => {
+  it("ранобэ: оригинал (MangaUpdates) растёт — это только справка; по-русски первая цифра — отправная точка, рост — новость, спад и заливка — не новость", () => {
     const novel = (o: Partial<Reading> = {}) => row({ kind: "ranobe", unit: "vol", ...o });
+    // оригинал: общий счётчик растёт, но «вышло» и «про что писала» он не двигает
     const first = applyObs(novel({ src_vol: 0 }), { vol: 24 }, T);
-    expect(first).toMatchObject({ src_vol: 24, told_vol: 24 });
+    expect(first).toMatchObject({ src_vol: 24 });
+    expect(first.told_vol).toBeUndefined();
     expect(first.src_at).toBeUndefined();
-    const grew = applyObs(novel({ src_vol: 24, told_vol: 24 }), { vol: 25, url: "https://x/y" }, T);
-    expect(grew).toMatchObject({ src_vol: 25, src_at: T, src_url: "https://x/y" });
+    const grew = applyObs(novel({ src_vol: 24, told_vol: 3, ru_vol: 3, ru_ch: 20 }), { vol: 25, url: "https://x/y" }, T);
+    expect(grew).toMatchObject({ src_vol: 25, src_url: "https://x/y" });
     expect(grew.told_vol).toBeUndefined();
+    expect(grew.src_at).toBeUndefined(); // оригинальный том — не новость
     expect(applyObs(novel({ src_vol: 24 }), { vol: 20 }, T).src_vol).toBeUndefined();
     expect(applyObs(novel({ src_vol: 24 }), { vol: 24 + JUMP_MAX + 1 }, T).src_vol).toBeUndefined();
     expect(applyObs(novel({ src_vol: 24 }), { vol: 24 + JUMP_MAX }, T).src_vol).toBe(124);
-    // справочные цифры RanobeHub: записываются как есть и «про что писала» не трогают
-    const rh = applyObs(novel({ src_vol: 24, told_vol: 24, ru_vol: 3 }), { ruCh: 40, ruVol: 2 }, T);
-    expect(rh).toMatchObject({ ru_ch: 40, ru_vol: 2 });
-    expect(rh.told_vol).toBeUndefined();
-    expect(rh.src_at).toBeUndefined();
+    // по-русски (RanobeHub): первая цифра — отправная точка, рост — новость
+    const rhFirst = applyObs(novel({ src_vol: 24, told_vol: 0, ru_vol: null, ru_ch: null }), { ruCh: 40, ruVol: 2 }, T);
+    expect(rhFirst).toMatchObject({ ru_ch: 40, told_ch: 40, ru_vol: 2, told_vol: 2 });
+    expect(rhFirst.src_at).toBeUndefined();
+    const rhGrew = applyObs(novel({ ru_ch: 40, told_ch: 40, ru_vol: 2, told_vol: 2 }), { ruCh: 43, ruVol: 3, url: "https://ranobehub.org/ranobe/1" }, T);
+    expect(rhGrew).toMatchObject({ ru_ch: 43, ru_vol: 3, src_at: T, src_url: "https://ranobehub.org/ranobe/1" });
+    expect(rhGrew.told_vol).toBeUndefined();
+    expect(applyObs(novel({ ru_vol: 3, told_vol: 3 }), { ruVol: 1 }, T).ru_vol).toBe(3); // счётчик только растёт
+    const bulk = applyObs(novel({ ru_vol: 2, told_vol: 2 }), { ruVol: 2 + JUMP_MAX + 1 }, T);
+    expect(bulk).toMatchObject({ ru_vol: 103, told_vol: 103 }); // залили разом: не новость
+    expect(bulk.src_at).toBeUndefined();
+    // RanobeHub сказал «такой книги нет»: по-русски нет, это не «не смотрела»
+    expect(applyObs(novel({ ru_vol: null, ru_ch: null, told_vol: 12 }), { ruCh: 0, ruVol: 0 }, T)).toMatchObject({ ru_ch: 0, ru_vol: 0, told_ch: 0, told_vol: 0 });
+    // старая строка: «про что писала» шло по MangaUpdates и больше, чем есть по-русски — подтягиваем вниз, чтобы следующий русский том был новостью
+    const legacy = applyObs(novel({ src_vol: 13, told_vol: 13, ru_vol: 8, ru_ch: 70, told_ch: 0 }), { ruCh: 70, ruVol: 8 }, T);
+    expect(legacy).toMatchObject({ told_vol: 8 });
+    expect(legacy.src_at).toBeUndefined();
   });
 
   it("манга: общий счётчик MangaDex про «вышло» не говорит; по-русски первая цифра — отправная точка, рост — новость, спад и заливка — не новость", () => {
@@ -221,8 +260,10 @@ describe("чтение: что увидели у источника", () => {
   });
 
   it("итоги закончившегося: счётчики и состояние, ссылка запоминается только при росте или в первый раз", () => {
-    const p = applyObs(row({ kind: "ranobe", unit: "vol", src_vol: 15, told_vol: 15 }), { status: "finished", totalCh: 160, totalVol: 18 }, T);
-    expect(p).toMatchObject({ src_status: "finished", total_ch: 160, total_vol: 18, src_vol: 18, src_at: T });
+    const p = applyObs(row({ kind: "ranobe", unit: "vol", src_vol: 15, told_vol: 3, ru_vol: 3 }), { status: "finished", totalCh: 160, totalVol: 18 }, T);
+    expect(p).toMatchObject({ src_status: "finished", total_ch: 160, total_vol: 18, src_vol: 18 });
+    expect(p.src_at).toBeUndefined(); // итоги по оригиналу не делают «вышел том» у ранобэ: по-русски они могут быть позже
+    expect(p.told_vol).toBeUndefined();
     const m = applyObs(row({ src_ch: 150, ru_ch: 100, told_ch: 100 }), { status: "finished", totalCh: 160, totalVol: 18 }, T);
     expect(m).toMatchObject({ src_status: "finished", total_ch: 160, src_ch: 160 });
     expect(m.src_at).toBeUndefined(); // итоги не делают «вышла глава» у манги: по-русски они могут быть позже
@@ -274,11 +315,24 @@ describe("чтение: что увидели у источника", () => {
     expect(whereText(none)).not.toContain("199");
     expect(whereText(hana)).toContain("Вы на: глава 140 (по-русски вышло 149).");
     expect(whereText(hana)).not.toContain("199");
-    const novel = row({ kind: "ranobe", unit: "vol", src_vol: 12, read_vol: 10, rh_id: 7, ru_vol: 9, ru_ch: 80 });
+    const novel = row({ kind: "ranobe", unit: "vol", src_vol: 12, read_vol: 6, rh_id: 7, ru_vol: 9, ru_ch: 80, mu_id: 5 });
     expect(ruBit(novel)).toBe("по-русски до тома 9 на RanobeHub");
     expect(ruBit({ ...novel, unit: "ch" })).toBe("по-русски до главы 80 на RanobeHub");
-    expect(ruBit({ ...novel, rh_id: null })).toBeNull();
-    expect(progressText(novel)).toBe("том 10 из 12 · накопилось 2");
+    expect(ruBit({ ...novel, ru_ch: 0, ru_vol: 0 })).toBeNull();
+    expect(progressText(novel)).toBe("том 6 из 9 · накопилось 3"); // «из N» и «накопилось» — по-русски; 12 томов оригинала не звучат
+    expect(whereText(novel)).toContain("Вы на: том 6 (по-русски вышло 9).");
+    expect(whereText(novel)).toContain("Накопилось: 3 тома.");
+    expect(whereText(novel)).toContain("По оригиналу (MangaUpdates) вышло 12 томов."); // справка на прямой вопрос
+    // ранобэ только по оригиналу: по-русски нет — честная пометка и в списке, и в «какой том»; оригинал назван справкой
+    const orig = row({ kind: "ranobe", unit: "vol", src_vol: 12, read_vol: 10, ru_vol: 0, ru_ch: 0, mu_id: 5, rh_map_at: 5 });
+    expect(ruBit(orig)).toBeNull();
+    expect(progressText(orig)).toBe("том 10 · русского перевода на RanobeHub пока нет");
+    expect(whereText(orig)).toContain("Русского перевода на RanobeHub пока нет, поэтому о новых томах и главах не пишу, пока он не появится.");
+    expect(whereText(orig)).toContain("По оригиналу (MangaUpdates) вышло 12 томов.");
+    expect(whereText(orig)).not.toContain("Накопилось");
+    expect(whereText(orig)).not.toContain("по-русски вышло");
+    // RanobeHub ещё не смотрели: не «перевода нет», а «догоню ночью»
+    expect(whereText({ ...orig, ru_vol: null, ru_ch: null, rh_map_at: null })).toContain("Русский перевод на RanobeHub пока не посмотрела, догоню ночью.");
   });
 
   it("MangaDex: наибольшие целые глава и том; дробные главы считаем целой частью; «none» не считается", () => {

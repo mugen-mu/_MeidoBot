@@ -11,7 +11,7 @@ export async function getReading(repo: Repo, id: number): Promise<Reading | null
   return repo.first<Reading>("SELECT * FROM reading WHERE id = ?", id);
 }
 
-/** Новый тайтл целиком: что известно из Shikimori, MangaDex или MangaUpdates на момент добавления. */
+/** Новый тайтл целиком: что известно из Shikimori, MangaDex, RanobeHub или MangaUpdates на момент добавления. */
 export interface NewReading {
   mal: number;
   kind: ReadKind;
@@ -26,7 +26,7 @@ export interface NewReading {
   srcStatus: string | null;
   srcCh: number;
   srcVol: number;
-  /** по-русски: null — не смотрела, 0 — смотрела, перевода нет (манга: MangaDex; ранобэ: RanobeHub, справочно) */
+  /** по-русски: null — не смотрела, 0 — смотрела, перевода нет (манга: MangaDex; ранобэ: RanobeHub) */
   ruCh: number | null;
   ruVol: number | null;
   srcUrl: string | null;
@@ -41,11 +41,11 @@ export interface NewReading {
 
 /**
  * Добавить тайтл или, если он уже есть (по номеру MyAnimeList), поменять статус, единицу и прочитанное.
- * Про уже вышедшее не пишем: «про что уже сообщала» (told_*) при добавлении равно тому, что у источника сейчас (у манги — что есть по-русски,
- * у ранобэ — счётчик MangaUpdates), а про завершение уже закончившегося тайтла (end_told) — тем более: новость — это когда тайтл закончится, пока он у хозяина.
+ * Про уже вышедшее не пишем: «про что уже сообщала» (told_*) при добавлении равно тому, что есть по-русски сейчас, а про завершение уже закончившегося тайтла (end_told) —
+ * тем более: новость — это когда тайтл закончится, пока он у хозяина.
  */
-/** «Про что уже писала» при добавлении: манга — по-русски (если ещё не смотрели, 0: первая цифра станет отправной точкой), ранобэ — счётчик источника. */
-const told = (n: NewReading): [number, number] => (n.kind === "manga" ? [n.ruCh ?? 0, n.ruVol ?? 0] : [n.srcCh, n.srcVol]);
+/** «Про что уже писала» при добавлении: что есть по-русски, и у манги, и у ранобэ (если ещё не смотрели, 0: первая цифра станет отправной точкой). */
+const told = (n: NewReading): [number, number] => [n.ruCh ?? 0, n.ruVol ?? 0];
 
 export function insertOp(n: NewReading): Op {
   return op(
@@ -71,7 +71,7 @@ export function patchOp(id: number, patch: Patch, now: number): Op {
   return op(`UPDATE reading SET ${keys.map((k) => `${k} = ?`).join(", ")}, updated_at = ? WHERE id = ?`, ...Object.values(full), now, id);
 }
 
-/** Субботнее сообщение ушло: про эти главы и тома (по-русски у манги) больше не пишем как про новые; о завершении и об аниме — один раз. */
+/** Субботнее сообщение ушло: про эти главы и тома (по-русски) больше не пишем как про новые; о завершении и об аниме — один раз. */
 export function toldOp(r: Reading, patch: { end?: boolean; adapt?: string | null; weekq?: number }, now: number): Op {
   const p: Patch = { told_ch: availOf(r, "ch"), told_vol: availOf(r, "vol") };
   if (patch.end) p.end_told = 1;

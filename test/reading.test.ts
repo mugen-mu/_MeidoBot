@@ -249,50 +249,68 @@ describe("чтение: запись фразой в канале «бот»", (
     expect(src.calls.length).toBe(before);
   });
 
-  it("ранобэ: тома по MangaUpdates, единица — тома, число томов ведут люди (говорим об этом)", async () => {
+  it("ранобэ только по оригиналу (на RanobeHub нет): MangaUpdates — справка, о новых томах не пишем, честно говорим об этом", async () => {
     src.shikiRanobe = [KEN];
     src.muSearch = [{ series_id: 555, title: "Ken to Kage (Novel)" }, { series_id: 556, title: "Ken to Kage: Side (Novel)" }];
     src.muSeries[555] = { status: "12 Volumes (Ongoing)" };
     const t = await say("хочу почитать ранобэ меч и тень", MON + MINUTE);
-    expect(rows()[0]).toMatchObject({ mal_id: 9002, kind: "ranobe", status: "planned", unit: "vol", src_vol: 12, told_vol: 12, mu_id: 555 });
-    expect(t).toContain("MangaUpdates");
-    expect(t).toContain("12 томов");
+    expect(rows()[0]).toMatchObject({ mal_id: 9002, kind: "ranobe", status: "planned", unit: "vol", src_vol: 12, told_vol: 0, ru_vol: 0, ru_ch: 0, mu_id: 555, rh_id: null });
+    expect(t).toContain("На RanobeHub этого названия нет");
+    expect(t).toContain("писать буду только про русское");
+    expect(t).toContain("По оригиналу на MangaUpdates вышло 12 томов"); // справка: оригинал не скрываем, но «слежу» про него не говорим
+    expect(t).not.toContain("Слежу");
     expect(src.count("mangadex")).toBe(0);
     await say("читаю меч и тень том 4", MON + 2 * MINUTE);
     expect(rows()[0]).toMatchObject({ read_vol: 4, status: "reading", unit: "vol" });
     const t2 = await say("прочитал меч и тень", MON + 3 * MINUTE);
     expect(rows()[0].read_vol).toBe(5);
-    expect(t2).toContain("Накопилось: 7 томов");
+    expect(t2).not.toContain("Накопилось"); // 12 томов оригинала в «накопилось» не идут
+    expect(t2).not.toContain("из 12");
   });
 
-  it("ранобэ: русский перевод на RanobeHub — справочная строка, тома и «про что писала» остаются по MangaUpdates", async () => {
+  it("ранобэ: русский перевод на RanobeHub ведёт «вышло» и «накопилось»; MangaUpdates — только справка в ответе", async () => {
     src.shikiRanobe = [KEN];
     src.muSearch = [{ series_id: 555, title: "Ken to Kage (Novel)" }];
     src.muSeries[555] = { status: "12 Volumes (Ongoing)" };
     src.rh["Ken to Kage"] = [rhBook(77, "Меч и тень (ЛН)", "Ken to Kage (LN)", 7, 60), rhBook(78, "Меч и тень [Украинский]", "Ken to Kage", 12, 99), rhBook(79, "Совсем другое", "Other", 30, 300)];
     const t = await say("читаю ранобэ меч и тень том 4", MON + MINUTE);
-    expect(rows()[0]).toMatchObject({ mu_id: 555, src_vol: 12, told_vol: 12, rh_id: 77, ru_vol: 7, ru_ch: 60, src_url: "https://ranobehub.org/ranobe/77" });
+    expect(rows()[0]).toMatchObject({ mu_id: 555, src_vol: 12, told_vol: 7, told_ch: 60, rh_id: 77, ru_vol: 7, ru_ch: 60, unit: "vol", src_url: "https://ranobehub.org/ranobe/77" });
     expect(rows()[0].rh_map_at).not.toBeNull();
-    expect(t).toContain("12 томов"); // тома — по MangaUpdates
-    expect(t).toContain("По-русски на RanobeHub есть до тома 7");
-    expect(t).toContain("Накопилось: 8 томов"); // 12 − 4: правило языка для ранобэ не менялось
+    expect(t).toContain("Слежу по RanobeHub, пишу только про то, что там есть по-русски: сейчас до тома 7");
+    expect(t).toContain("Накопилось: 3 тома"); // 7 − 4: по-русски, а не 12 − 4 по оригиналу
+    expect(t).toContain("из 7");
+    expect(t).toContain("По оригиналу на MangaUpdates вышло 12 томов"); // справка
     expect(src.count("ranobehub.org")).toBe(1);
   });
 
-  it("ранобэ: на RanobeHub не нашли — молча, повторю не раньше чем через неделю; сайт не ответил — найдём ночью", async () => {
+  it("ранобэ-веб-новелла на RanobeHub (том один, глав много): считаем главами, а не пустой единицей", async () => {
+    src.shikiRanobe = [KEN];
+    src.rh["Ken to Kage"] = [rhBook(77, "Меч и тень", "Ken to Kage", 1, 300)];
+    const t = await say("читаю ранобэ меч и тень", MON + MINUTE);
+    expect(rows()[0]).toMatchObject({ unit: "ch", ru_vol: 1, ru_ch: 300, told_ch: 300 });
+    expect(t).toContain("до главы 300");
+    // сказал «том» — его слово главнее
+    w.d1.sqlite.prepare("DELETE FROM reading").run();
+    await say("читаю ранобэ меч и тень том 1", MON + 2 * MINUTE);
+    expect(rows()[0].unit).toBe("vol");
+  });
+
+  it("ранобэ: на RanobeHub не нашли — по-русски нет, о новых томах писать не будем; сайт не ответил — найдём ночью", async () => {
     src.shikiRanobe = [KEN];
     src.muSearch = [];
     let t = await say("читаю ранобэ меч и тень", MON + MINUTE);
-    expect(rows()[0]).toMatchObject({ rh_id: null, ru_vol: null });
+    expect(rows()[0]).toMatchObject({ rh_id: null, ru_vol: 0, ru_ch: 0, told_vol: 0 });
     expect(rows()[0].rh_map_at).not.toBeNull();
-    expect(t).not.toContain("RanobeHub");
+    expect(t).toContain("На RanobeHub этого названия нет");
+    expect(t).toContain("о новых писать не буду");
     w.d1.sqlite.prepare("DELETE FROM reading").run();
     src.rh["Ken to Kage"] = null;
     src.rh["Меч и тень"] = null;
     t = await say("читаю ранобэ меч и тень", MON + 2 * MINUTE);
-    expect(rows()[0]).toMatchObject({ rh_id: null, rh_map_at: null });
+    expect(rows()[0]).toMatchObject({ rh_id: null, rh_map_at: null, ru_vol: null });
     expect(t).toContain("Записала");
-    expect(t).not.toContain("RanobeHub");
+    expect(t).toContain("RanobeHub сейчас не ответил, найду это название ночью");
+    expect(t).toContain("только когда они есть по-русски");
   });
 
   it("источника счётчиков для названия нет: записываем, честно говорим, что главы сам считать буду по его фразам", async () => {
@@ -348,7 +366,7 @@ describe("чтение: запись фразой в канале «бот»", (
 describe("чтение: вопросы", () => {
   beforeEach(async () => {
     put({ mal_id: 1, title_ru: "Цветок и меч", read_ch: 140, src_ch: 199, told_ch: 149, told_vol: 19, ru_ch: 149, ru_vol: 19, md_id: "md-1" });
-    put({ mal_id: 2, title_ru: "Меч и тень", kind: "ranobe", unit: "vol", status: "waiting", read_vol: 12, src_vol: 12, told_vol: 12, mu_id: 5 });
+    put({ mal_id: 2, title_ru: "Меч и тень", kind: "ranobe", unit: "vol", status: "waiting", read_vol: 12, src_vol: 14, told_vol: 12, ru_vol: 12, ru_ch: 90, mu_id: 5, rh_id: 77, rh_map_at: MON });
     put({ mal_id: 3, title_ru: "Лунный сад", status: "planned" });
     put({ mal_id: 4, title_ru: "Старая сказка", status: "done", src_status: "finished", src_ch: 40, total_ch: 40, read_ch: 40 });
     await turnOn();
@@ -391,6 +409,22 @@ describe("чтение: вопросы", () => {
     const list = await say("что я читаю", MON + 3 * MINUTE);
     expect(list).toContain("**Без перевода** (манга) — глава 3 · русского перевода на MangaDex пока нет");
     expect(list).not.toContain("120");
+  });
+
+  it("ранобэ только по оригиналу: в «что вышло» честная строка и ни слова про его тома, в списке — пометка, по «какой том» оригинал показан справкой", async () => {
+    put({ mal_id: 7, title_ru: "Только оригинал", kind: "ranobe", unit: "vol", read_vol: 3, src_vol: 20, mu_id: 9, ru_vol: 0, ru_ch: 0, rh_map_at: MON });
+    put({ mal_id: 8, title_ru: "Не искали", kind: "ranobe", unit: "vol", read_vol: 1, src_vol: 15, mu_id: 10 });
+    const news = await say("что вышло по чтению", MON + MINUTE);
+    expect(news).toContain("Русского перевода на RanobeHub не вижу: Только оригинал, Не искали. Пока он не появится, о них молчу.");
+    expect(news).not.toMatch(/\b(?:20|15)\b/); // тома оригинала не звучат
+    expect(news).not.toContain("Меч и тень"); // а ранобэ с русским переводом, где вы догнали, не «молчит»: нового просто нет
+    const list = await say("что я читаю", MON + 2 * MINUTE);
+    expect(list).toContain("**Только оригинал** (ранобэ) — том 3 · русского перевода на RanobeHub пока нет");
+    expect(list).not.toMatch(/из (?:20|15)\b/);
+    const where = await say("какой том только оригинал", MON + 3 * MINUTE);
+    expect(where).toContain("Русского перевода на RanobeHub пока нет, поэтому о новых томах и главах не пишу, пока он не появится.");
+    expect(where).toContain("По оригиналу (MangaUpdates) вышло 20 томов.");
+    expect(where).not.toContain("Накопилось");
   });
 
   it("«какая глава Цветок»: где вы, что у источника; неизвестное название — подсказка", async () => {
@@ -706,15 +740,57 @@ describe("чтение: субботнее сообщение", () => {
 });
 
 describe("чтение: ранобэ по томам", () => {
-  it("рост у MangaUpdates: «вышел том 13», ночью цифра растёт, в субботу про него пишем", async () => {
-    put({ mal_id: 9002, title_ru: "Меч и тень", title_orig: "Ken to Kage", kind: "ranobe", unit: "vol", read_vol: 10, src_vol: 12, told_vol: 12, mu_id: 555, map_at: MON, shiki_at: MON, adapt_at: MON });
+  const RH_URL = "https://ranobehub.org/ranobe/77";
+
+  it("по оригиналу вышло больше: MangaUpdates растёт — тишина; по-русски вышел том — «вышел том 9» и только он", async () => {
+    put({ mal_id: 9002, title_ru: "Меч и тень", title_orig: "Ken to Kage", kind: "ranobe", unit: "vol", read_vol: 8, src_vol: 12, told_vol: 8, ru_vol: 8, ru_ch: 70, rh_id: 77, rh_map_at: MON, src_url: RH_URL, mu_id: 555, map_at: MON, shiki_at: MON, adapt_at: MON });
     src.muSeries[555] = { status: "13 Volumes (Ongoing)" };
+    src.rh["Ken to Kage"] = [rhBook(77, "Меч и тень", "Ken to Kage", 8, 70)];
     await turnOn();
     await run(day(17, 4));
-    expect(rows()[0]).toMatchObject({ src_vol: 13, told_vol: 12 });
+    expect(rows()[0]).toMatchObject({ src_vol: 13, told_vol: 8, ru_vol: 8 }); // оригинал вырос, русский счётчик нет
+    expect(rows()[0].src_at).toBeNull();
     await run(sat(11, 5));
+    expect(posted("Чтение")).toHaveLength(0); // молчим, хотя по оригиналу 13 томов, а вы на 8
+    src.rh["Ken to Kage"] = [rhBook(77, "Меч и тень", "Ken to Kage", 9, 75)];
+    await run(day(22, 4));
+    expect(rows()[0]).toMatchObject({ ru_vol: 9, ru_ch: 75, told_vol: 8 });
+    await run(day(28, 11, 5));
     const t = posted("Чтение")[0].body.content ?? "";
-    expect(t).toContain("**Меч и тень** (ранобэ) — вышел том 13 · вы на 10, накопилось 3");
+    expect(t).toContain(`**Меч и тень** (ранобэ) — вышел том 9 · вы на 8, накопилось 1 · по-русски до тома 9 на RanobeHub · [читать](<${RH_URL}>)`);
+    expect(t).not.toContain("13");
+    expect(rows()[0].told_vol).toBe(9);
+  });
+
+  it("ранобэ без русского перевода: ночью оригинал растёт, а в субботу — ни сообщения, ни слова про тома по-английски", async () => {
+    put({ mal_id: 9002, title_ru: "Меч и тень", title_orig: "Ken to Kage", kind: "ranobe", unit: "vol", read_vol: 1, src_vol: 12, ru_vol: 0, ru_ch: 0, rh_map_at: day(16, 3), mu_id: 555, map_at: MON, shiki_at: MON, adapt_at: MON });
+    src.muSeries[555] = { status: "14 Volumes (Ongoing)" };
+    await turnOn();
+    await run(day(17, 4));
+    expect(rows()[0]).toMatchObject({ src_vol: 14, ru_vol: 0, told_vol: 0 });
+    await run(sat(11, 5));
+    expect(posted("Чтение")).toHaveLength(0);
+    expect(w.d1.q<{ value: string }>("SELECT value FROM meta WHERE key = 'reading_week'")[0].value).toBe("2026-11-16"); // неделя отмечена: таблицу не перечитываем
+    // закончился (по Shikimori), но перевода нет: про завершение тоже молчим, пока нет русского
+    w.d1.sqlite.prepare("UPDATE reading SET src_status = 'finished', total_vol = 14").run();
+    await run(sat(11, 5) + 7 * 24 * HOUR);
+    expect(posted("Чтение")).toHaveLength(0);
+    expect(rows()[0].end_told).toBe(0);
+  });
+
+  it("старая строка ранобэ (про что писала — по MangaUpdates, русская цифра из справочной строки): ложных новостей нет, следующий русский том — новость", async () => {
+    put({ mal_id: 9002, title_ru: "Меч и тень", title_orig: "Ken to Kage", kind: "ranobe", unit: "vol", read_vol: 8, src_vol: 13, told_vol: 13, ru_vol: 8, ru_ch: 70, rh_id: 77, rh_map_at: MON, src_url: RH_URL, mu_id: 555, map_at: MON, shiki_at: MON, adapt_at: MON });
+    src.muSeries[555] = { status: "13 Volumes (Ongoing)" };
+    src.rh["Ken to Kage"] = [rhBook(77, "Меч и тень", "Ken to Kage", 8, 70)];
+    await turnOn();
+    await run(day(17, 4));
+    expect(rows()[0].told_vol).toBe(8); // подтянули вниз: русских томов 8
+    await run(sat(11, 5));
+    expect(posted("Чтение")).toHaveLength(0);
+    src.rh["Ken to Kage"] = [rhBook(77, "Меч и тень", "Ken to Kage", 9, 75)];
+    await run(day(22, 4));
+    await run(day(28, 11, 5));
+    expect(posted("Чтение")[0].body.content).toContain("вышел том 9");
   });
 });
 
@@ -722,18 +798,20 @@ describe("чтение: ранобэ и RanobeHub ночью", () => {
   const NIGHT = day(17, 3, 40);
   const novel = (o: Partial<Reading> = {}) => put({ mal_id: 9002, title_ru: "Меч и тень", title_orig: "Ken to Kage", kind: "ranobe", unit: "vol", read_vol: 10, src_vol: 12, told_vol: 12, mu_id: 555, map_at: MON, shiki_at: MON, adapt_at: MON, ...o });
 
-  it("находит книгу на RanobeHub и привязывает; тома по MangaUpdates, русская строка — справочно; ссылка на русский перевод", async () => {
-    novel();
+  it("находит книгу на RanobeHub и привязывает; первая русская цифра — отправная точка; в субботу — накопилось по-русски, оригинал не звучит; ссылка на русский перевод", async () => {
+    novel({ read_vol: 5 });
     src.muSeries[555] = { status: "13 Volumes (Ongoing)" };
     src.rh["Ken to Kage"] = [rhBook(77, "Меч и тень", "Ken to Kage", 8, 70)];
     await turnOn();
     await run(NIGHT);
-    expect(rows()[0]).toMatchObject({ rh_id: 77, ru_vol: 8, ru_ch: 70, src_vol: 13, told_vol: 12, src_url: "https://ranobehub.org/ranobe/77" });
+    expect(rows()[0]).toMatchObject({ rh_id: 77, ru_vol: 8, ru_ch: 70, src_vol: 13, told_vol: 8, told_ch: 70, src_url: "https://ranobehub.org/ranobe/77" });
     expect(rows()[0].rh_map_at).toBe(NIGHT);
     await run(sat(11, 5));
     const t = posted("Чтение")[0].body.content ?? "";
-    // правило языка для ранобэ не менялось: «вышел том 13» по MangaUpdates, даже если по-русски пока до 8
-    expect(t).toContain("**Меч и тень** (ранобэ) — вышел том 13 · вы на 10, накопилось 3 · по-русски до тома 8 на RanobeHub · [читать](<https://ranobehub.org/ranobe/77>)");
+    // «вышел том 13» по MangaUpdates больше не пишем: по-русски до 8, и накопилось 8 − 5
+    expect(t).toContain("**Меч и тень** (ранобэ) — вы на 5, накопилось 3 · по-русски до тома 8 на RanobeHub · [читать](<https://ranobehub.org/ranobe/77>)");
+    expect(t).not.toContain("вышел том");
+    expect(t).not.toContain("13");
   });
 
   it("привязанная книга обновляется по номеру: растёт — записываем; сайт не отвечает или книга пропала из выдачи — прежние цифры, ночь не считается сбойной", async () => {
@@ -759,7 +837,7 @@ describe("чтение: ранобэ и RanobeHub ночью", () => {
     src.muSeries[555] = { status: "12 Volumes (Ongoing)" };
     await turnOn();
     await run(NIGHT);
-    expect(rows()[0]).toMatchObject({ rh_id: null, ru_vol: null, chk_fail: 0 });
+    expect(rows()[0]).toMatchObject({ rh_id: null, ru_vol: 0, ru_ch: 0, told_vol: 0, chk_fail: 0 }); // искала, на RanobeHub нет: по-русски нет (а не «не смотрела»)
     expect(rows()[0].rh_map_at).toBe(NIGHT);
     const n = src.count("ranobehub.org");
     await run(day(18, 3, 40));

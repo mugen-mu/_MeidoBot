@@ -20,7 +20,7 @@ import {
   volumesText,
   weekItems,
 } from "./core.ts";
-import { handleReadLink } from "./linkHandlers.ts";
+import { handleReadLink, pickUnit } from "./linkHandlers.ts";
 import { type ReadLinkSay, parseReadLink } from "./linkSay.ts";
 import { lookupSource } from "./refresh.ts";
 import { parseReadAsk, parseReadSay, type ReadAsk, type ReadSay } from "./say.ts";
@@ -187,10 +187,12 @@ async function addNew(c: ReadCtx, say: ReadSay, rows: Reading[]): Promise<Messag
 
   const src = await lookupSource(pick, f);
   const finished = pick.status === "finished";
+  // ранобэ, которое нашлось на RanobeHub: считаем в том, чем оно там делится (настоящие тома — томами, веб-новелла на сотни глав — главами), иначе «из N» было бы про пустую единицу
+  const ruUnit: ReadUnit | null = pick.kind === "ranobe" && (src.ruCh || src.ruVol) ? pickUnit("ranobe", { ch: src.ruCh ?? 0, vol: src.ruVol ?? 0 }) : null;
   const base: ReadBase = {
     read_ch: null,
     read_vol: null,
-    unit: say.unit ?? defaultUnit(pick.kind),
+    unit: say.unit ?? ruUnit ?? defaultUnit(pick.kind),
     src_status: pick.status || null,
     src_ch: Math.max(src.ch, finished ? pick.chapters : 0),
     src_vol: Math.max(src.vol, finished ? pick.volumes : 0),
@@ -237,7 +239,7 @@ async function addNew(c: ReadCtx, say: ReadSay, rows: Reading[]): Promise<Messag
   const fresh: Reading = {
     id: 0, mal_id: n.mal, kind: n.kind, title_ru: n.ru, title_orig: n.orig, status: n.status, unit: n.unit, read_ch: n.readCh, read_vol: n.readVol, liked: 0,
     total_ch: n.totalCh, total_vol: n.totalVol, src_status: n.srcStatus, src_ch: n.srcCh, src_vol: n.srcVol, src_at: null, ru_ch: n.ruCh, ru_vol: n.ruVol, src_url: n.srcUrl, md_id: n.mdId, mu_id: n.muId,
-    rh_id: n.rhId, rh_map_at: n.rhMapAt, map_at: n.mapAt, checked_at: c.now, chk_fail: 0, shiki_at: null, told_ch: n.kind === "manga" ? (n.ruCh ?? 0) : n.srcCh, told_vol: n.kind === "manga" ? (n.ruVol ?? 0) : n.srcVol, end_told: finished ? 1 : 0, adapt_mal: null, adapt_ru: null, adapt_status: null,
+    rh_id: n.rhId, rh_map_at: n.rhMapAt, map_at: n.mapAt, checked_at: c.now, chk_fail: 0, shiki_at: null, told_ch: n.ruCh ?? 0, told_vol: n.ruVol ?? 0, end_told: finished ? 1 : 0, adapt_mal: null, adapt_ru: null, adapt_status: null,
     adapt_at: null, adapt_told: null, weekq_at: null, last_move_at: c.now, added_at: c.now, updated_at: c.now,
   };
   return savedMessage({ r: fresh, how: "added", guessed, sourceNote: sourceNote(pick, src, c), overLimit: isTracked(fresh) && trackedSet(rows).length >= TRACK_LIMIT, line: lineFor(say.action, status, "added", c) });
@@ -256,10 +258,13 @@ function sourceNote(pick: ReadCand, src: Awaited<ReturnType<typeof lookupSource>
     if (src.mdId) return `Нашла название на MangaDex, но число глав пока не прочиталось, догоню ночью. ${when}`;
     return "На MangaDex этого названия нет, поэтому главы сама не вижу. Отмечайте прочитанное фразой «прочитал …», я посчитаю.";
   }
-  // ранобэ: тома по MangaUpdates (язык там не различается), русская строка по RanobeHub — справочно
-  const ru = src.rhId && (src.ruVol || src.ruCh) ? ` По-русски на RanobeHub ${src.ruVol ? `есть до тома ${src.ruVol}` : `есть до главы ${src.ruCh}`}.` : "";
-  if (src.search === "fail") return `MangaUpdates сейчас не ответил, найду это название ночью.${ru}`;
-  if (src.muId && src.counted) return `Тома смотрю по MangaUpdates (там число томов ведут люди, оно может отставать): сейчас вышло ${volumesText(src.vol)}. ${when}${ru}`;
-  if (src.muId) return `Нашла название на MangaUpdates, но число томов там не указано. Отмечайте прочитанное фразой «прочитал том …», я посчитаю.${ru}`;
-  return `По ранобэ у меня нет надёжного источника новых томов, и этого названия я там не нашла. Отмечайте прочитанное фразой «прочитал том …», я посчитаю.${ru}`;
+  // ранобэ (решение Ihor 2026-11-21): «вышло» и «накопилось» только по-русски, по RanobeHub; MangaUpdates (оригинал) — справка на вопрос «какой том»
+  const orig = src.muId && src.counted ? ` По оригиналу на MangaUpdates вышло ${volumesText(src.vol)}: покажу, если спросите «какой том …», но писать буду только про русское.` : "";
+  if (src.rhSearch === "fail") return `RanobeHub сейчас не ответил, найду это название ночью. О новых томах пока не пишу: только когда они есть по-русски.${orig}`;
+  if (src.rhId && (src.ruVol || src.ruCh)) {
+    const have = pickUnit("ranobe", { ch: src.ruCh ?? 0, vol: src.ruVol ?? 0 }) === "vol" ? `до тома ${src.ruVol}` : `до главы ${src.ruCh}`;
+    return `Слежу по RanobeHub, пишу только про то, что там есть по-русски: сейчас ${have}. ${when}${orig}`;
+  }
+  if (src.rhId) return `На RanobeHub это название есть, но томов и глав по-русски там пока нет, поэтому о новых писать не буду, пока они не появятся.${orig}`;
+  return `На RanobeHub этого названия нет, поэтому русских томов сама не вижу и о новых писать не буду, пока они не появятся. Отмечайте прочитанное фразой «прочитал том …», я посчитаю.${orig}`;
 }

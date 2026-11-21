@@ -545,6 +545,40 @@ describe("ручной режим: MangaLib, RanobeLib, Com-X", () => {
     expect(t).toContain("RanobeLib: сайт закрывает список глав от программ");
   });
 
+  it("RanobeLib и правило «только по-русски»: глав на сайте бот не видит и говорит об этом; тома пишет, только когда нашлись по-русски на RanobeHub; оригинал новостей не даёт", async () => {
+    const u = "https://ranobelib.me/ru/book/278175--heonteomurinjul-aratneunde-setakmurieotda-wn";
+    web.on(u, RANOBELIB_PAGE);
+    const t = await say(`бот читаю ${u}`, MON + MINUTE);
+    expect(t).toContain("RanobeLib: сайт закрывает список глав от программ, поэтому глав там сама не вижу");
+    expect(t).toContain("По RanobeHub попробую найти название ночью");
+    expect(t).not.toContain("MangaUpdates"); // оригинал новых томов не обещает
+    expect(t).not.toContain("MangaDex");
+    expect(rows()[0]).toMatchObject({ kind: "ranobe", site: "ranobelib", ru_ch: null, ru_vol: null, told_ch: 0, told_vol: 0 });
+    expect(siteLed(rows()[0])).toBe(false);
+    const orig = rows()[0].title_orig as string;
+    const ru = rows()[0].title_ru;
+    // ночью страницу сайта не открываем; на RanobeHub такой книги нет: по-русски нет, о новых молчим
+    const n = web.calls.length;
+    await run(NIGHT);
+    expect(web.calls.slice(n).filter((c) => c.url.includes("ranobelib"))).toHaveLength(0);
+    expect(rows()[0]).toMatchObject({ ru_vol: 0, ru_ch: 0, rh_id: null });
+    await run(sat(11, 5));
+    expect(posted("Чтение")).toHaveLength(0);
+    const list = await say("что я читаю", sat(12));
+    expect(list).toContain("на RanobeLib (вручную)");
+    expect(list).toContain("русского перевода на RanobeHub пока нет");
+    // на RanobeHub книга появилась (нашлась по названию): это новость, ссылка «читать» — на RanobeLib, где читает хозяин
+    web.rh[orig] = [rhBook({ id: 500, title: ru, originalTitle: orig, volumes: 3, chapters: 20 })];
+    await run(day(25, 3, 40));
+    expect(rows()[0]).toMatchObject({ rh_id: 500, ru_vol: 3, ru_ch: 20, site: "ranobelib", site_key: "278175--heonteomurinjul-aratneunde-setakmurieotda-wn" });
+    expect(siteLed(rows()[0])).toBe(false); // сайт по-прежнему ручной
+    await run(day(28, 11, 5));
+    const msg = posted("Чтение")[0]?.body.content ?? "";
+    expect(msg).toContain("(ранобэ) — вышел том 3");
+    expect(msg).toContain("по-русски до тома 3 на RanobeHub");
+    expect(msg).toContain(`[читать](<${u}>)`);
+  });
+
   it("Com-X: страница закрыта проверкой браузера — не открываем, берём название из фразы; без названия просим его", async () => {
     const u = "https://com-x.life/12345-chelovek-pauk.html";
     const t0 = await say(`бот читаю ${u}`, MON + MINUTE);

@@ -18,7 +18,7 @@ import {
   rhTitleUrl,
   shikiOne,
 } from "./sources.ts";
-import { type Reading, ruLed, siteLed } from "./core.ts";
+import { type Reading, siteLed } from "./core.ts";
 import { readSiteObs } from "./siteRefresh.ts";
 import type { Patch } from "./store.ts";
 
@@ -47,8 +47,8 @@ export interface SourceInfo {
 }
 
 /**
- * Найти тайтл в источнике счётчиков и прочитать первые цифры. Манга — MangaDex (главы и тома, отдельно русские), ранобэ — MangaUpdates (тома)
- * и RanobeHub (русский перевод: справочно).
+ * Найти тайтл в источнике счётчиков и прочитать первые цифры. Манга — MangaDex (главы и тома, отдельно русские). Ранобэ — RanobeHub (русские тома и главы:
+ * по ним «вышло» и «накопилось») и MangaUpdates (тома по оригиналу: только справка, на вопрос «какая глава / какой том»).
  */
 export async function lookupSource(cand: ReadCand, f: FetchFn): Promise<SourceInfo> {
   const info: SourceInfo = { search: "none", mdId: null, muId: null, ch: 0, vol: 0, ruCh: null, ruVol: null, url: null, counted: false, rhId: null, rhSearch: null };
@@ -91,8 +91,12 @@ export async function lookupSource(cand: ReadCand, f: FetchFn): Promise<SourceIn
   }
   const rh = await findRanobeHub(cand.orig, cand.ru, f);
   if (rh === null) info.rhSearch = "fail";
-  else if (rh === "none") info.rhSearch = "none";
-  else {
+  else if (rh === "none") {
+    // RanobeHub ответил, что такой книги там нет: по-русски нет (это ответ, а не «не знаю»), о новых томах молчим, пока книга не появится
+    info.rhSearch = "none";
+    info.ruCh = 0;
+    info.ruVol = 0;
+  } else {
     info.rhSearch = "ok";
     info.rhId = rh.id;
     info.ruCh = rh.ch;
@@ -108,7 +112,7 @@ export async function lookupSource(cand: ReadCand, f: FetchFn): Promise<SourceIn
 export interface Obs {
   ch?: number;
   vol?: number;
-  /** по-русски (манга: MangaDex `ru`; ранобэ: RanobeHub); не передано — не смотрели */
+  /** по-русски (манга: MangaDex `ru`; ранобэ: RanobeHub; тайтл с сайтом по ссылке — сайт); не передано — не смотрели */
   ruCh?: number;
   ruVol?: number;
   url?: string | null;
@@ -119,48 +123,30 @@ export interface Obs {
 
 /**
  * Применить увиденное: что записать в строку. Счётчики только растут; первая цифра — отправная точка (told = счётчик), рост — новость (src_at).
- * Манга: «про что писала» (told_*) идёт по русскому счётчику (решение 2026-11-18), общий счётчик MangaDex (src_*) остаётся для итогов и фразы «прочитал последнюю главу».
- * Ранобэ: told_* по счётчику источника (MangaUpdates), русская строка с RanobeHub только справочная.
+ * И у манги, и у ранобэ «про что писала» (told_*) идёт по русскому счётчику (решения 2026-11-18 и 2026-11-21): MangaDex, RanobeHub или сайт по ссылке.
+ * Общий счётчик (src_*: MangaDex на всех языках, MangaUpdates) остаётся для итогов, фразы «прочитал последнюю главу» и ответа на «какая глава / какой том»,
+ * «вышла» и «про что писала» он не двигает.
  */
 export function applyObs(r: Reading, o: Obs, now: number): Patch {
   const p: Patch = {};
-  const manga = ruLed(r); // манга, а также тайтл с сайтом по ссылке: «вышла» и «про что писала» считаются по русскому счётчику
   const ch = Math.max(o.ch ?? 0, o.totalCh ?? 0);
   const vol = Math.max(o.vol ?? 0, o.totalVol ?? 0);
   let grew = false;
-  if (ch > r.src_ch) {
-    if (r.src_ch === 0) {
-      p.src_ch = ch;
-      if (!manga) p.told_ch = Math.max(r.told_ch, ch);
-    } else if (ch - r.src_ch <= JUMP_MAX) {
-      p.src_ch = ch;
-      if (!manga) grew = true;
-    }
-  }
-  if (vol > r.src_vol) {
-    if (r.src_vol === 0) {
-      p.src_vol = vol;
-      if (!manga) p.told_vol = Math.max(r.told_vol, vol);
-    } else if (vol - r.src_vol <= JUMP_MAX) {
-      p.src_vol = vol;
-      if (!manga) grew = true;
-    }
-  }
-  // русский счётчик: у манги растёт только вверх и ведёт «про что писала»; у ранобэ — просто последние цифры RanobeHub
+  if (ch > r.src_ch && (r.src_ch === 0 || ch - r.src_ch <= JUMP_MAX)) p.src_ch = ch;
+  if (vol > r.src_vol && (r.src_vol === 0 || vol - r.src_vol <= JUMP_MAX)) p.src_vol = vol;
+  // русский счётчик: растёт только вверх и ведёт «про что писала»
   for (const [seen, key, told, was] of [
     [o.ruCh, "ru_ch", "told_ch", r.ru_ch],
     [o.ruVol, "ru_vol", "told_vol", r.ru_vol],
   ] as const) {
     if (seen === undefined) continue;
-    if (!manga) {
-      p[key] = seen;
-      continue;
-    }
     const v = Math.max(was ?? 0, seen);
     p[key] = v;
     if (was === null) p[told] = v; // первая цифра по-русски — отправная точка, про неё не пишем
     else if (v - was > JUMP_MAX) p[told] = Math.max(r[told], v); // залили разом, как чужую заливку: не новость (накопилось всё равно покажется)
     else if (v > was) grew = true;
+    // «про что писала» не бывает больше, чем есть по-русски: так остаются старые строки ранобэ, где это число шло по MangaUpdates (оригиналу)
+    if (p[told] === undefined && r[told] > v) p[told] = v;
   }
   if (grew) p.src_at = now;
   if (o.url && (grew || r.src_url === null)) p.src_url = o.url;
@@ -240,7 +226,8 @@ export async function refreshTitle(r: Reading, f: FetchFn, now: number): Promise
     if (v.vol > 0) obs.vol = v.vol; // состояние (идёт / закончен) берём только у Shikimori: иначе два источника переключали бы его туда-сюда
   }
 
-  // русский перевод ранобэ — RanobeHub, справочно и необязательно: сайт не ответил — ничего не меняем и не считаем это сбоем проверки
+  // русский перевод ранобэ — RanobeHub: по нему «вышло» и «накопилось». Сайт не ответил — ничего не меняем и не считаем это сбоем проверки
+  // (MangaUpdates остаётся выше: оригинал нужен для ответа на «какой том», но новости по нему не пишем)
   if (r.kind === "ranobe" && !siteLed(r)) {
     const orig = r.title_orig ?? "";
     if (r.rh_id) {
@@ -259,6 +246,10 @@ export async function refreshTitle(r: Reading, f: FetchFn, now: number): Promise
           obs.ruCh = b.ch;
           obs.ruVol = b.vol;
           if (!r.src_url) obs.url = rhTitleUrl(b.id);
+        } else {
+          // искала, на RanobeHub такой книги нет: по-русски нет (0), а не «не смотрела» (null): так о нём честно говорит «что я читаю»
+          obs.ruCh = 0;
+          obs.ruVol = 0;
         }
       }
     }
