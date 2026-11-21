@@ -185,7 +185,7 @@ const q = (s: string): string => `'${s.replace(/'/g, "''")}'`;
  */
 export function renderSql(rows: ImportRow[], now: number): string {
   const head = [
-    "-- Meido: отметки из анкеты вкусов (волны 1 и 3) в таблицу anime. Сделано scripts/import-taste-marks.ts.",
+    "-- Meido: отметки из анкеты вкусов (волны 1, 3 и 5) в таблицу anime. Сделано scripts/import-taste-marks.ts.",
     "-- Повторный запуск безопасен: ON CONFLICT(mal_id) DO NOTHING не трогает уже записанное.",
   ];
   const stmts = rows.map(
