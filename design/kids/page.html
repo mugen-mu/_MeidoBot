@@ -1,0 +1,214 @@
+<title>Аниме для малыша</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;800&display=swap">
+<style>
+/* Макет: одна узкая колонка, три раздела по пригодности (подходит, с оговорками, подождать), у каждого тайтла три отметки.
+   Цвет: холодная мята и тёмная морская зелень; зелёный, янтарный и розовый только для пригодности, синий для «смотрели». */
+:root {
+  --bg: #f3f8f6; --surface: #ffffff; --ink: #18302d; --muted: #586e6b; --line: #d3e3df; --accent: #1c6f66; --on-accent: #ffffff;
+  --a: #1d7f55; --a-bg: #e3f4ec; --b: #8a5a0d; --b-bg: #fbf0d9; --c: #a64453; --c-bg: #f9e4e7;
+  --seen: #3b5fb8; --seen-bg: #e5ebfa; --no: #4f5f5c; --no-bg: #e6ebea;
+  --font: "Nunito", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0e1a19; --surface: #152624; --ink: #e3f0ed; --muted: #9db5b0; --line: #25403c; --accent: #5cc7b8; --on-accent: #08201c;
+    --a: #6fd3a4; --a-bg: #12332a; --b: #ecbd6a; --b-bg: #352a12; --c: #f09aa6; --c-bg: #3a1c22;
+    --seen: #8fb0ff; --seen-bg: #1c2745; --no: #b0bcb9; --no-bg: #232f2d; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0e1a19; --surface: #152624; --ink: #e3f0ed; --muted: #9db5b0; --line: #25403c; --accent: #5cc7b8; --on-accent: #08201c;
+  --a: #6fd3a4; --a-bg: #12332a; --b: #ecbd6a; --b-bg: #352a12; --c: #f09aa6; --c-bg: #3a1c22;
+  --seen: #8fb0ff; --seen-bg: #1c2745; --no: #b0bcb9; --no-bg: #232f2d; color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body { background: var(--bg); color: var(--ink); font: 400 16px/1.5 var(--font); padding-block: 20px 56px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+.wrap { max-width: 720px; margin: 0 auto; }
+.kicker { margin: 0 0 4px; color: var(--accent); font-weight: 800; font-size: 13px; letter-spacing: .06em; text-transform: uppercase; }
+h1 { margin: 0 0 10px; font-size: 32px; line-height: 1.15; font-weight: 800; text-wrap: balance; }
+.lead { margin: 0 0 8px; max-width: 62ch; }
+.how { margin: 0; color: var(--muted); font-size: 14px; max-width: 62ch; }
+.chips { display: flex; flex-wrap: wrap; gap: 8px; margin: 18px 0 6px; }
+.chip { font: 600 14px/1 var(--font); color: var(--ink); background: var(--surface); border: 1px solid var(--line); border-radius: 999px; padding: 10px 14px; min-height: 40px; cursor: pointer; }
+.chip[aria-pressed="true"] { background: var(--accent); border-color: var(--accent); color: var(--on-accent); }
+.chip small { font-weight: 400; opacity: .8; margin-left: 4px; font-variant-numeric: tabular-nums; }
+.sync { min-height: 20px; margin: 0 0 8px; color: var(--muted); font-size: 13px; }
+.tier { margin: 26px 0 10px; }
+.tier h2 { margin: 0 0 4px; font-size: 21px; line-height: 1.2; font-weight: 800; }
+.tier p { margin: 0; color: var(--muted); font-size: 14px; max-width: 62ch; }
+.tier[data-t="A"] h2 { color: var(--a); } .tier[data-t="B"] h2 { color: var(--b); } .tier[data-t="C"] h2 { color: var(--c); }
+.cards { display: grid; gap: 12px; }
+.card { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 14px 14px 12px; min-width: 0; }
+.card header { display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; }
+.card h3 { margin: 0; font-size: 18px; line-height: 1.25; font-weight: 800; overflow-wrap: anywhere; }
+.orig { margin: 2px 0 0; color: var(--muted); font-size: 13px; overflow-wrap: anywhere; }
+.state { flex: none; font-size: 12px; font-weight: 800; border-radius: 999px; padding: 4px 10px; white-space: nowrap; }
+.card[data-s="seen"] .state { background: var(--seen-bg); color: var(--seen); }
+.card[data-s="show"] .state { background: var(--a-bg); color: var(--a); }
+.card[data-s="no"] .state { background: var(--no-bg); color: var(--no); }
+.facts { display: flex; flex-wrap: wrap; gap: 6px; list-style: none; margin: 10px 0; padding: 0; }
+.facts li { font-size: 13px; color: var(--muted); background: var(--bg); border-radius: 8px; padding: 3px 9px; }
+.card p.txt { margin: 6px 0 0; font-size: 15px; }
+.card p.txt b { font-weight: 800; }
+.card footer { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px 14px; margin-top: 12px; }
+.card a { color: var(--accent); font-size: 14px; text-underline-offset: 3px; }
+.marks { display: flex; flex-wrap: wrap; gap: 6px; }
+.mk { font: 600 14px/1 var(--font); color: var(--ink); background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; min-height: 42px; cursor: pointer; }
+.mk[aria-pressed="true"][data-m="seen"] { background: var(--seen-bg); border-color: var(--seen); color: var(--seen); }
+.mk[aria-pressed="true"][data-m="show"] { background: var(--a-bg); border-color: var(--a); color: var(--a); }
+.mk[aria-pressed="true"][data-m="no"] { background: var(--no-bg); border-color: var(--no); color: var(--no); }
+.chip:focus-visible, .mk:focus-visible, .card a:focus-visible, textarea:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+.free { margin-top: 34px; background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 16px; }
+.free h2 { margin: 0 0 6px; font-size: 19px; line-height: 1.25; font-weight: 800; }
+.free p { margin: 0 0 10px; color: var(--muted); font-size: 14px; }
+textarea { width: 100%; min-height: 120px; font: 400 16px/1.45 var(--font); color: var(--ink); background: var(--bg); border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; resize: vertical; }
+.nodb { margin: 10px 0 0; padding: 10px 12px; background: var(--b-bg); color: var(--b); border-radius: 10px; font-size: 14px; }
+.toast { position: fixed; left: 50%; transform: translateX(-50%); bottom: calc(18px + env(safe-area-inset-bottom, 0px)); max-width: min(92vw, 420px); background: var(--ink); color: var(--bg); padding: 10px 14px; border-radius: 10px; font-size: 14px; }
+@media (prefers-reduced-motion: reduce) { * { scroll-behavior: auto !important; transition: none !important; } }
+</style>
+
+<main class="wrap">
+  <header>
+    <p class="kicker">Для малыша четырёх лет</p>
+    <h1>Аниме для малыша</h1>
+    <p class="lead">31 тайтл из каталога Shikimori, разложенный по тому, насколько он подходит четырёхлетнему ребёнку. Начните с первого раздела: там коротко, спокойно и без страшного.</p>
+    <p class="how">Длина, возрастной рейтинг и оценка взяты с Shikimori. Пометки «О чём» и «Что учесть» написала я по описаниям и общему знанию, а не по просмотру, поэтому первую серию лучше посмотреть самому. Есть ли русская озвучка, я не проверяла: для малыша нужна именно озвучка, а не субтитры.</p>
+  </header>
+
+  <nav class="chips" aria-label="Фильтр списка" id="chips"></nav>
+  <p class="sync" id="sync" aria-live="polite"></p>
+  <p class="nodb" id="nodb" hidden>Отметки пока сохраняются только в этом браузере: общее хранилище недоступно.</p>
+
+  <div id="list"></div>
+
+  <section class="free">
+    <h2>Что вы уже смотрели из аниме, чего не было в наших списках?</h2>
+    <p>Названия через запятую или с новой строки, как вспомнится. Я прочитаю и предложу, как добавить их боту. Сохраняется само.</p>
+    <label for="free" hidden>Названия аниме</label>
+    <textarea id="free" placeholder="Например: Берсерк, Монстр, Ковбой Бибоп"></textarea>
+  </section>
+</main>
+<div class="toast" id="toast" hidden></div>
+
+<script>
+const DATA = {"items": [{"id": 523, "ru": "Мой сосед Тоторо", "orig": "Tonari no Totoro", "year": 1988, "format": "Фильм, 86 мин", "score": "8.25", "rating": "G: для любого возраста", "tier": "A", "why": "Две сестры переезжают в деревню и встречают лесных духов. Нет злодеев, события тёплые и неторопливые. Хорошее первое знакомство с Гибли.", "note": "Младшая сестра ненадолго пропадает, а мама лежит в больнице: малыш может переживать, но всё заканчивается хорошо."}, {"id": 2890, "ru": "Рыбка Поньо на утёсе", "orig": "Gake no Ue no Ponyo", "year": 2008, "format": "Фильм, 100 мин", "score": "7.97", "rating": "G: для любого возраста", "tier": "A", "why": "Пятилетний Сосукэ находит рыбку Поньо, которая хочет стать девочкой. Яркий и радостный, герой почти ровесник вашего сына.", "note": "Есть шумный шторм и наводнение. Мама мальчика часто на работе. Громкие сцены лучше проверить заранее."}, {"id": 44235, "ru": "Пуй-пуй Молькар", "orig": "Pui Pui Molcar", "year": 2021, "format": "12 серий по 2 мин", "score": "8.02", "rating": "G: для любого возраста", "tier": "A", "why": "Морские свинки в виде машинок из войлока. Почти без слов, серия идёт две минуты. Дети любят смотреть по несколько серий подряд.", "note": "Взрослым кажется странным. Машинки сталкиваются и падают, но всё в шутку. Продолжения: «Автошкола» (12 серий по 2 минуты) и фильм на 34 минуты."}, {"id": 3841, "ru": "Милый дом Чи", "orig": "Chi's Sweet Home", "year": 2008, "format": "104 серии по 3 мин", "score": "7.68", "rating": "G: для любого возраста", "tier": "A", "why": "Котёнок Чи потерялся и поселился в семье. Серии по три минуты, одна сцена, понятно без объяснений.", "note": "Иногда Чи теряется и грустит, потом находит дом. Продолжения: «Милый дом Чи 2» (104 серии) и «Милый дом Чи 3» (51 серия по 12 минут)."}, {"id": 32664, "ru": "Бананя", "orig": "Bananya", "year": 2016, "format": "13 серий по 3 мин", "score": "6.76", "rating": "G: для любого возраста", "tier": "A", "why": "Коты, которые прячутся в бананах и других фруктах. Очень короткие смешные сценки.", "note": "Серии похожи друг на друга: малыша это может быстро надоесть, а может и наоборот, он захочет пересматривать."}, {"id": 2571, "ru": "Приключения пчёлки Майи", "orig": "Mitsubachi Maya no Bouken", "year": 1975, "format": "52 серии по 25 мин", "score": "6.63", "rating": "G: для любого возраста", "tier": "A", "why": "Классика 1975 года: маленькая пчела Майя знакомится с лугом и его жителями. Спокойный ритм, понятные уроки о дружбе.", "note": "Бывают опасные моменты (паук, шершни), но всё заканчивается хорошо. Русская озвучка есть не у каждой версии, проверьте."}, {"id": 508, "ru": "Хамтаро", "orig": "Tottoko Hamtarou", "year": 2000, "format": "296 серий по 25 мин", "score": "7.03", "rating": "G: для любого возраста", "tier": "A", "why": "Хомяки живут в клубе и устраивают маленькие приключения. Песенки, яркая картинка, добрые истории.", "note": "Серий почти триста по 25 минут: хватит надолго. Сюжеты часто повторяются."}, {"id": 1960, "ru": "Вперёд, Анпанман!", "orig": "Sore Ike! Anpanman", "year": 1988, "format": "Сериал с 1988 года, серия 24 мин, серий очень много", "score": "6.83", "rating": "PG: детям вместе с родителями", "tier": "A", "why": "Герой с булочкой вместо головы кормит голодных и побеждает озорного Бакинмана. Очень известное детское аниме в Японии.", "note": "Идёт с 1988 года, серий очень много. Бои мультяшные. С русской озвучкой может быть плохо, проверьте."}, {"id": 2150, "ru": "Муми-тролли", "orig": "Tanoshii Muumin Ikka", "year": 1990, "format": "78 серий по 24 мин", "score": "8.29", "rating": "G: для любого возраста", "tier": "A", "why": "Мягкая сказка про семью муми-троллей и их друзей. Спокойно, красиво, без насилия.", "note": "Иногда появляются тревожные персонажи, и бывает немного жутковато. Есть продолжение «Счастливое семейство Муми-троллей» (26 серий)."}, {"id": 42514, "ru": "Капибара", "orig": "Anime Kapibara-san", "year": 2020, "format": "24 серии по 1 мин", "score": "6.67", "rating": "G: для любого возраста", "tier": "A", "why": "Капибара просто живёт: серии по одной минуте. Хорошо, чтобы успокоиться перед сном.", "note": "Сюжета почти нет. Для самостоятельного просмотра мало, для отдыха подходит."}, {"id": 512, "ru": "Ведьмина служба доставки", "orig": "Majo no Takkyuubin", "year": 1989, "format": "Фильм, 103 мин", "score": "8.24", "rating": "G: для любого возраста", "tier": "B", "why": "Тринадцатилетняя ведьма начинает самостоятельную жизнь в новом городе. Добрая и красивая, без злодеев.", "note": "Фильм длинный (103 минуты), во второй половине малыш может устать. Героиня переживает одиночество и потерю уверенности, в финале напряжённая сцена с дирижаблем."}, {"id": 7711, "ru": "Ариэтти из страны лилипутов", "orig": "Karigurashi no Arrietty", "year": 2010, "format": "Фильм, 94 мин", "score": "7.9", "rating": "G: для любого возраста", "tier": "B", "why": "Крошечная семья живёт под полом в доме людей. Тихий и красивый, без явных злодеев.", "note": "Есть тревожные сцены (ворона, суматоха с поимкой), финал грустный: герои расстаются. Ближе к пяти годам."}, {"id": 597, "ru": "Возвращение кота", "orig": "Neko no Ongaeshi", "year": 2002, "format": "Фильм, 75 мин", "score": "7.72", "rating": "G: для любого возраста", "tier": "B", "why": "Школьница спасает кота и попадает в королевство кошек. Лёгкая сказка.", "note": "Героине хотят устроить свадьбу с принцем-котом, в замке есть тревожные эпизоды. Скорее для пяти-шести лет."}, {"id": 54633, "ru": "Покемон: Консьерж", "orig": "Pokemon Concierge", "year": 2023, "format": "4 серии по 14 мин", "score": "7.7", "rating": "PG: детям вместе с родителями", "tier": "B", "why": "Кукольный мультфильм про курорт для покемонов: тихо, мягко, красиво. Всего четыре серии.", "note": "Сюжет рассчитан на взрослых (усталость на работе). Малыш поймёт мало, но смотреть приятно."}, {"id": 527, "ru": "Покемон", "orig": "Pokemon", "year": 1997, "format": "276 серий по 24 мин", "score": "7.42", "rating": "PG: детям вместе с родителями", "tier": "B", "why": "Эш и Пикачу: дружба, юмор, забавные покемоны. Знакомо почти всем детям.", "note": "Покемоны дерутся, есть погони и ловушки: на четыре года лучше смотреть вместе. Серий почти 300."}, {"id": 2151, "ru": "Чудесное путешествие Нильса", "orig": "Nils no Fushigi na Tabi", "year": 1980, "format": "52 серии по 29 мин", "score": "7.18", "rating": "G: для любого возраста", "tier": "B", "why": "Мальчик уменьшается и летит с дикими гусями по Швеции. Красивая приключенческая классика.", "note": "Есть хищники и погони, серия идёт 29 минут. Подойдёт скорее с пяти-шести лет."}, {"id": 2390, "ru": "Звезда Кирби", "orig": "Hoshi no Kirby", "year": 2001, "format": "100 серий по 24 мин", "score": "6.96", "rating": "PG: детям вместе с родителями", "tier": "B", "why": "Розовый Кирби живёт в стране Попстар. Смешной и шумный.", "note": "Мультяшные бои, много шума, часть шуток рассчитана на старших. Серий 100."}, {"id": 39250, "ru": "Жизнь в углу", "orig": "Sumikko Gurashi Movie 1: Tobidasu Ehon to Himitsu no Ko", "year": 2019, "format": "Фильм, 65 мин", "score": "7.1", "rating": "G: для любого возраста", "tier": "B", "why": "Милые существа из углов комнаты попадают в книжку-раскладушку. Тихий и добрый фильм.", "note": "Темп медленный, бывают грустные эпизоды про одиночество. Фильм идёт 65 минут."}, {"id": 8687, "ru": "Дораэмон (2005)", "orig": "Doraemon (2005)", "year": 2005, "format": "Сериал с 2005 года, серия 25 мин, серий очень много", "score": "7.79", "rating": "PG: детям вместе с родителями", "tier": "B", "why": "Кот-робот из будущего помогает мальчику Нобите, каждая серия — маленькая история с волшебным предметом.", "note": "Нобиту дразнят одноклассники, есть ссоры и шутливые драки: на четыре года лучше с родителем рядом. Идёт с 2005 года, серий очень много."}, {"id": 4286, "ru": "Боно Боно", "orig": "Bonobono (TV)", "year": 1995, "format": "48 серий по 11 мин", "score": "7.01", "rating": "G: для любого возраста", "tier": "B", "why": "Спокойные истории про зверька Боно Боно и его друзей, медленные и чудаковатые.", "note": "Юмор странный, темп очень медленный: малышу может быть скучно."}, {"id": 513, "ru": "Небесный замок Лапута", "orig": "Tenkuu no Shiro Laputa", "year": 1986, "format": "Фильм, 124 мин", "score": "8.26", "rating": "PG: детям вместе с родителями", "tier": "C", "why": "Приключения с воздушными пиратами и летающим островом.", "note": "Погони, стрельба, падение с высоты. Лучше подождать."}, {"id": 199, "ru": "Унесённые призраками", "orig": "Sen to Chihiro no Kamikakushi", "year": 2001, "format": "Фильм, 124 мин", "score": "8.77", "rating": "PG: детям вместе с родителями", "tier": "C", "why": "Девочка попадает в мир духов и спасает родителей.", "note": "Страшные существа, родители превращаются в свиней. Малышей часто пугает. Лучше подождать."}, {"id": 552, "ru": "Приключения Дигимонов", "orig": "Digimon Adventure", "year": 1999, "format": "54 серии по 24 мин", "score": "7.79", "rating": "PG: детям вместе с родителями", "tier": "C", "why": "Дети в цифровом мире дружат с монстрами-дигимонами.", "note": "Монстры дерутся, есть пугающие моменты. Лучше подождать."}, {"id": 19157, "ru": "Часы ёкаев", "orig": "Youkai Watch", "year": 2014, "format": "214 серий по 23 мин", "score": "6.81", "rating": "G: для любого возраста", "tier": "C", "why": "Мальчик с волшебными часами видит добрых и странных духов-ёкаев.", "note": "Бывают пугающие образы и шутки не для четырёх лет, серий очень много. Лучше подождать."}, {"id": 232, "ru": "Сакура — собирательница карт", "orig": "Cardcaptor Sakura", "year": 1998, "format": "70 серий по 25 мин", "score": "8.19", "rating": "PG: детям вместе с родителями", "tier": "C", "why": "Школьница ловит волшебные карты.", "note": "Влюблённости и более сложные темы, ритм для старших. Лучше подождать."}, {"id": 36936, "ru": "Мирай из будущего", "orig": "Mirai no Mirai", "year": 2018, "format": "Фильм, 98 мин", "score": "7.28", "rating": "PG: детям вместе с родителями", "tier": "C", "why": "Герою Куну четыре года, он ревнует к новорождённой сестре и путешествует по семейной истории.", "note": "Фильм скорее для вас: сложная структура и много взрослых размышлений. Малышу будет непонятно."}, {"id": 1572, "ru": "Император джунглей", "orig": "Jungle Taitei", "year": 1965, "format": "52 серии по 25 мин", "score": "6.66", "rating": "G: для любого возраста", "tier": "C", "why": "Классика 1965 года про львёнка Кимбу.", "note": "В начале погибает отец, много тяжёлых сцен. Лучше подождать."}, {"id": 2828, "ru": "Бездомный мальчик Реми", "orig": "Ie Naki Ko", "year": 1977, "format": "51 серия по 24 мин", "score": "7.93", "rating": "G: для любого возраста", "tier": "C", "why": "Мальчик Реми ищет семью вместе с бродячим артистом.", "note": "Очень грустная история: бедность, смерти, расставания. Лучше подождать."}, {"id": 578, "ru": "Могила светлячков", "orig": "Hotaru no Haka", "year": 1988, "format": "Фильм, 88 мин", "score": "8.54", "rating": "PG-13: с 13 лет", "tier": "C", "why": "Фильм студии Гибли про брата и сестру в военной Японии.", "note": "Он не детский: война, голод и гибель детей. Малышу не показывать."}, {"id": 12815, "ru": "Кафе «У Белого Медведя»", "orig": "Shirokuma Cafe", "year": 2012, "format": "50 серий по 24 мин", "score": "7.89", "rating": "G: для любого возраста", "tier": "C", "why": "Белый медведь держит кафе для зверей и людей.", "note": "Шутки и ситуации про работу и отношения взрослых, малышу будет скучно."}, {"id": 35777, "ru": "Рилаккума и Каору", "orig": "Rilakkuma to Kaoru-san", "year": 2019, "format": "13 серий по 11 мин", "score": "7.66", "rating": "PG: детям вместе с родителями", "tier": "C", "why": "Кукольная анимация про плюшевого медведя и взрослую женщину.", "note": "Милая и уютная, но про взрослую жизнь: работа, одиночество. Малыша не удержит."}]};
+const TIERS = [
+  { t: "A", h: "Подходит сразу", p: "Коротко или с добрым сюжетом, без страшного. С этого можно начинать." },
+  { t: "B", h: "С оговорками", p: "Хорошее, но есть длина, шум или тревожные сцены. Лучше смотреть вместе и сначала посмотреть начало самому." },
+  { t: "C", h: "Подождать", p: "Известные тайтлы, которые малышу тяжелы, страшны или непонятны. Они здесь, чтобы не включить их случайно." }
+];
+const MARKS = [["seen", "Смотрели", "Смотрели"], ["show", "Покажу", "Покажу"], ["no", "Не подойдёт", "Не подойдёт"]];
+const $ = id => document.getElementById(id);
+const S = { marks: {}, free: "", filter: "all", db: null, writing: false, dirty: false, timer: null };
+const byId = new Map(DATA.items.map(i => [String(i.id), i]));
+
+function el(tag, cls, text) { const e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; }
+
+function build() {
+  const list = $("list");
+  TIERS.forEach(tier => {
+    const sec = el("section", "tier"); sec.dataset.t = tier.t;
+    sec.append(el("h2", null, tier.h), el("p", null, tier.p));
+    const cards = el("div", "cards"); cards.style.marginTop = "12px";
+    DATA.items.filter(i => i.tier === tier.t).forEach(i => cards.append(card(i)));
+    list.append(sec, cards);
+  });
+}
+function card(i) {
+  const c = el("article", "card"); c.dataset.id = i.id; c.dataset.tier = i.tier;
+  const head = el("header"), names = el("div");
+  names.append(el("h3", null, i.ru), el("p", "orig", i.orig + " · " + i.year));
+  head.append(names, el("span", "state"));
+  const facts = el("ul", "facts");
+  [i.format, "Shikimori " + Number(i.score).toFixed(2), i.rating].forEach(t => facts.append(el("li", null, t)));
+  const why = el("p", "txt"), note = el("p", "txt");
+  why.append(el("b", null, "О чём. "), document.createTextNode(i.why));
+  note.append(el("b", null, "Что учесть. "), document.createTextNode(i.note));
+  const foot = el("footer"), a = el("a", null, "Страница на Shikimori");
+  a.href = "https://shikimori.io/animes/" + i.id; a.target = "_blank"; a.rel = "noopener";
+  const marks = el("div", "marks");
+  marks.setAttribute("role", "group"); marks.setAttribute("aria-label", "Отметка: " + i.ru);
+  MARKS.forEach(m => { const b = el("button", "mk", m[1]); b.type = "button"; b.dataset.m = m[0]; b.setAttribute("aria-pressed", "false"); marks.append(b); });
+  foot.append(a, marks);
+  c.append(head, facts, why, note, foot);
+  return c;
+}
+function chips() {
+  const n = k => DATA.items.filter(i => k === "all" || i.tier === k || S.marks[i.id] === k).length;
+  const defs = [["all", "Все"], ["A", "Подходит"], ["B", "С оговорками"], ["C", "Подождать"], ["show", "Покажу"], ["seen", "Смотрели"]];
+  const box = $("chips"); box.textContent = "";
+  defs.forEach(d => {
+    const b = el("button", "chip", d[1]); b.type = "button"; b.dataset.f = d[0]; b.setAttribute("aria-pressed", String(S.filter === d[0]));
+    b.append(el("small", null, String(n(d[0])))); box.append(b);
+  });
+}
+function apply() {
+  document.querySelectorAll(".card").forEach(c => {
+    const id = c.dataset.id, s = S.marks[id] || "", f = S.filter;
+    c.dataset.s = s;
+    c.querySelector(".state").textContent = s ? (MARKS.find(m => m[0] === s) || [])[2] || "" : "";
+    c.querySelector(".state").hidden = !s;
+    c.querySelectorAll(".mk").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.m === s)));
+    c.hidden = !(f === "all" || f === c.dataset.tier || f === s);
+  });
+  document.querySelectorAll(".tier").forEach(sec => {
+    const cards = sec.nextElementSibling;
+    const any = cards && [...cards.children].some(c => !c.hidden);
+    sec.hidden = !any; if (cards) cards.hidden = !any;
+  });
+  chips();
+}
+
+/* ---- сохранение: одна запись kids/marks, записи идут по одной ---- */
+function status(t) { $("sync").textContent = t; }
+function toast(t) { const e = $("toast"); e.textContent = t; e.hidden = false; clearTimeout(toast.t); toast.t = setTimeout(() => { e.hidden = true; }, 4000); }
+function saveLocal() { try { localStorage.setItem("kids-marks", JSON.stringify({ marks: S.marks, free: S.free })); } catch (e) { /* браузер не даёт хранить */ } }
+function loadLocal() { try { const v = JSON.parse(localStorage.getItem("kids-marks") || "null"); if (v) { S.marks = v.marks || {}; S.free = v.free || ""; $("free").value = S.free; } } catch (e) { /* пусто */ } }
+async function flush() {
+  S.writing = true; status("сохраняю…");
+  try {
+    do {
+      S.dirty = false;
+      const names = {}; Object.keys(S.marks).forEach(id => { const it = byId.get(id); if (it) names[id] = it.ru; });
+      await S.db.collection("kids").doc("marks").set({ kind: "marks", states: S.marks, names, free: S.free, at: new Date().toISOString() });
+    } while (S.dirty);
+    status("сохранено");
+  } catch (e) { status("не сохранилось"); toast("Не сохранилось: " + (e && (e.message || e.code) || "ошибка") + ". Нажмите ещё раз."); }
+  finally { S.writing = false; }
+}
+function save() { saveLocal(); if (!S.db) return; S.dirty = true; if (!S.writing) flush(); }
+
+document.addEventListener("click", e => {
+  const chip = e.target.closest(".chip");
+  if (chip) { S.filter = chip.dataset.f; apply(); return; }
+  const mk = e.target.closest(".mk");
+  if (mk) {
+    const id = mk.closest(".card").dataset.id;
+    if (S.marks[id] === mk.dataset.m) delete S.marks[id]; else S.marks[id] = mk.dataset.m;
+    apply(); save();
+  }
+});
+$("free").addEventListener("input", e => { S.free = e.target.value; clearTimeout(S.timer); S.timer = setTimeout(() => { S.timer = null; save(); }, 800); });
+
+build(); apply();
+(async () => {
+  let db = null;
+  try { db = await (window.claude && window.claude.use ? window.claude.use("db") : null); } catch (e) { db = null; }
+  if (!db) { $("nodb").hidden = false; loadLocal(); apply(); return; }
+  S.db = db;
+  const slow = setTimeout(() => status("сервер пока не отвечает, отметки могут быть неактуальны"), 10000);
+  db.collection("kids").limit(5).onSnapshot(snap => {
+    if (!snap.metadata.fromCache) { clearTimeout(slow); if ($("sync").textContent.startsWith("сервер")) status(""); }
+    snap.docs.forEach(d => {
+      const v = d.data();
+      if (!v || v.kind !== "marks" || S.writing || S.timer) return;
+      S.marks = v.states || {};
+      S.free = v.free || "";
+      if (document.activeElement !== $("free")) $("free").value = S.free;
+      apply();
+    });
+  }, () => status("хранилище недоступно"));
+})();
+</script>
